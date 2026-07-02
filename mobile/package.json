@@ -1,0 +1,26 @@
+{
+  "name": "chaodee-mobile",
+  "version": "0.1.0",
+  "main": "expo/AppEntry.js",
+  "description": "ChaoDee (เช่าดี) — แอปมือถือสำหรับเจ้าของ/ผู้ดูแล (Expo)",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@supabase/supabase-js": "^2.48.1",
+    "expo": "~52.0.0",
+    "expo-image-picker": "~16.0.0",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-url-polyfill": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.3.12",
+    "typescript": "~5.7.3"
+  },
+  "private": true
+}

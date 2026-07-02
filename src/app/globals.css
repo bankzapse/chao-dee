@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --font-sans: var(--font-noto-thai), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* input/select base */
+.field {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder:text-slate-400;
+}
+
+.label {
+  @apply mb-1 block text-sm font-medium text-slate-700;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60;
+}
+.btn-primary {
+  @apply bg-indigo-600 text-white hover:bg-indigo-700;
+}
+.btn-secondary {
+  @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+}
+.btn-danger {
+  @apply border border-rose-200 bg-white text-rose-600 hover:bg-rose-50;
+}
+
+.card {
+  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+}
+
+/* ---- Print (ใบแจ้งหนี้/ใบเสร็จ) ---- */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}

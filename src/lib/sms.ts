@@ -50,7 +50,11 @@ export async function sendSms(
       Accept: "application/json",
       "User-Agent": UA,
     },
-    body: JSON.stringify({ sender, text: message, destinations: [to] }),
+    body: JSON.stringify({
+      sender,
+      text: message,
+      destinations: [{ destination: to }], // SMSOK: array ของ object, เบอร์ไทย 0xxxxxxxxx
+    }),
   });
 
   if (!res.ok) {

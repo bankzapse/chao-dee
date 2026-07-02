@@ -1,6 +1,6 @@
 # ChaoDee — Backend Database (Data Model)
 
-PostgreSQL บน Supabase · Multi-tenant ด้วย Row Level Security (RLS) · 20 ตาราง
+PostgreSQL บน Supabase · Multi-tenant ด้วย Row Level Security (RLS) · 16 ตาราง
 
 ## แนวคิดหลัก (Multi-tenancy)
 1 เจ้าของ = 1 **organization**. ทุกตารางมี `org_id` (ตรงหรือผ่านความสัมพันธ์) และ RLS บังคับให้เห็นเฉพาะข้อมูลของ org ตนเอง ผ่านฟังก์ชัน `current_org_id()` (อ่าน org จาก `profiles` ของผู้ล็อกอิน)

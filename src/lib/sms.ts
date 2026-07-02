@@ -1,13 +1,17 @@
 /**
- * SMS provider adapter — ส่งข้อความ SMS ผ่านผู้ให้บริการของคุณ
+ * SMS provider adapter — SMSOK (api.smsok.co)
  *
- * ตั้งค่าใน .env.local / Vercel:
- *   SMS_API_URL   = endpoint ส่ง SMS ของ provider (เช่น https://api.provider.com/sms/send)
- *   SMS_API_KEY   = API key / token
- *   SMS_SENDER    = ชื่อผู้ส่ง (sender name) เช่น Chao-Dee
+ * ตั้งค่าใน Vercel / .env.local:
+ *   SMS_API_URL = https://api.smsok.co   (หรือ https://api.smsok.co/s ก็ได้)
+ *   SMS_API_KEY = API key จาก smsok.co (ใช้เป็น username ของ HTTP Basic auth)
+ *   SMS_SENDER  = ชื่อผู้ส่งที่อนุมัติแล้ว เช่น Chao-Dee
  *
- * ⚠️ รูปแบบ request (headers/body) ต่างกันตาม provider — ปรับใน buildRequest() ให้ตรงเอกสาร API ของคุณ
+ * สเปค SMSOK: POST /s · Basic auth (base64("KEY:")) · body { sender, text, destinations:[...] }
+ * ต้องส่ง User-Agent ด้วย ไม่งั้น Cloudflare บล็อก (error 1010)
  */
+
+const UA =
+  "Mozilla/5.0 (compatible; ChaoDee/1.0; +https://chao-dee.com)";
 
 export function isSmsConfigured(): boolean {
   return Boolean(process.env.SMS_API_URL && process.env.SMS_API_KEY);
@@ -15,13 +19,18 @@ export function isSmsConfigured(): boolean {
 
 function normalizeThaiPhone(phone: string): string {
   const d = phone.replace(/\D/g, "");
-  if (d.startsWith("66")) return "0" + d.slice(2); // ผู้ให้บริการไทยส่วนใหญ่ใช้ 0xxxxxxxxx
+  if (d.startsWith("66")) return "0" + d.slice(2); // 66xxxxxxxxx → 0xxxxxxxxx
   if (d.startsWith("0")) return d;
   return d;
 }
 
+function endpoint(base: string): string {
+  const b = base.replace(/\/+$/, "");
+  return b.endsWith("/s") ? b : b + "/s";
+}
+
 export async function sendSms(
-  phoneE164: string,
+  phone: string,
   message: string
 ): Promise<{ ok: boolean; error?: string }> {
   const url = process.env.SMS_API_URL;
@@ -29,23 +38,29 @@ export async function sendSms(
   const sender = process.env.SMS_SENDER ?? "Chao-Dee";
   if (!url || !key) return { ok: false, error: "SMS ยังไม่ได้ตั้งค่า (SMS_API_URL/SMS_API_KEY)" };
 
-  const to = normalizeThaiPhone(phoneE164);
+  const to = normalizeThaiPhone(phone);
+  const auth = "Basic " + Buffer.from(`${key}:`).toString("base64");
 
-  // ---- ปรับส่วนนี้ให้ตรง API ของ provider ----
-  // ค่าเริ่มต้น: POST JSON + Bearer token (รูปแบบที่พบบ่อยของ SMS gateway ไทย)
-  const res = await fetch(url, {
+  const res = await fetch(endpoint(url), {
     method: "POST",
     headers: {
+      Authorization: auth,
       "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+      Accept: "application/json",
+      "User-Agent": UA,
     },
-    body: JSON.stringify({ sender, msisdn: to, message, to, text: message }),
+    body: JSON.stringify({ sender, text: message, destinations: [to] }),
   });
-  // -------------------------------------------
 
   if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    return { ok: false, error: `SMS ส่งไม่สำเร็จ (${res.status}) ${t.slice(0, 200)}` };
+    let detail = "";
+    try {
+      const j = await res.json();
+      detail = j?.error?.description || j?.error?.name || "";
+    } catch {
+      detail = (await res.text().catch(() => "")).slice(0, 150);
+    }
+    return { ok: false, error: `SMSOK ${res.status}: ${detail}` };
   }
   return { ok: true };
 }

@@ -38,7 +38,7 @@ function verifyStandardWebhook(
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.SEND_SMS_HOOK_SECRET;
+  const secret = process.env.SEND_SMS_HOOK_SECRET?.trim();
   const raw = await req.text();
 
   if (!secret || !verifyStandardWebhook(raw, req.headers, secret)) {

@@ -33,9 +33,10 @@ export async function sendSms(
   phone: string,
   message: string
 ): Promise<{ ok: boolean; error?: string }> {
-  const url = process.env.SMS_API_URL;
-  const key = process.env.SMS_API_KEY;
-  const sender = process.env.SMS_SENDER ?? "Chao-Dee";
+  // .trim() กันช่องว่าง/newline ที่ติดมาตอน paste ใน env (ทำให้ auth 401)
+  const url = process.env.SMS_API_URL?.trim();
+  const key = process.env.SMS_API_KEY?.trim();
+  const sender = (process.env.SMS_SENDER ?? "Chao-Dee").trim();
   if (!url || !key) return { ok: false, error: "SMS ยังไม่ได้ตั้งค่า (SMS_API_URL/SMS_API_KEY)" };
 
   const to = normalizeThaiPhone(phone);

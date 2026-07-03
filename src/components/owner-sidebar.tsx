@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/owner", label: "ภาพรวม", icon: "📈", exact: true },
   { href: "/owner/members", label: "สมาชิก", icon: "👥" },
-  { href: "/owner/payments", label: "การชำระเงิน", icon: "💳" },
+  { href: "/owner/payments", label: "การชำระเงิน", icon: "💳", badgeKey: "payments" },
   { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦" },
   { href: "/owner/reports", label: "รายงาน", icon: "📊" },
 ];
 
-export function OwnerSidebar() {
+export function OwnerSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
   const pathname = usePathname();
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">
@@ -41,7 +41,12 @@ export function OwnerSidebar() {
               }`}
             >
               <span className="text-base">{item.icon}</span>
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badgeKey === "payments" && pendingCount > 0 && (
+                <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-bold text-slate-900">
+                  {pendingCount}
+                </span>
+              )}
             </Link>
           );
         })}

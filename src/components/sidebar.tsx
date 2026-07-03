@@ -18,6 +18,7 @@ const NAV = [
   { href: "/parcels", label: "พัสดุ", icon: "📦" },
   { href: "/vehicles", label: "ยานพาหนะ", icon: "🚗" },
   { href: "/expenses", label: "ค่าใช้จ่าย", icon: "💸" },
+  { href: "/team", label: "ทีมงาน", icon: "🧑‍🤝‍🧑", manageTeam: true },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
   { href: "/help", label: "ช่วยเหลือ", icon: "❓" },
 ];
@@ -25,14 +26,17 @@ const NAV = [
 export function Sidebar({
   orgName,
   isPlatformAdmin,
+  canManageTeam,
 }: {
   orgName: string;
   isPlatformAdmin?: boolean;
+  canManageTeam?: boolean;
 }) {
   const pathname = usePathname();
+  const base = NAV.filter((item) => !("manageTeam" in item) || canManageTeam);
   const nav = isPlatformAdmin
-    ? [...NAV, { href: "/owner", label: "แผงเจ้าของระบบ", icon: "👑" }]
-    : NAV;
+    ? [...base, { href: "/owner", label: "แผงเจ้าของระบบ", icon: "👑" }]
+    : base;
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">

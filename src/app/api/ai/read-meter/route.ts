@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
 
@@ -108,6 +109,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ...parsed, anomaly });
   } catch (e) {
+    Sentry.captureException(e);
     if (e instanceof Anthropic.APIError) {
       return NextResponse.json(
         { error: `เรียก AI ไม่สำเร็จ (${e.status})` },

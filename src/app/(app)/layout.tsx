@@ -37,7 +37,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, org_id, is_platform_admin, organizations(name)")
+    .select("full_name, org_id, role, is_platform_admin, organizations(name)")
     .eq("id", user.id)
     .single();
 
@@ -45,6 +45,7 @@ export default async function AppLayout({
     (profile?.organizations as { name?: string } | null)?.name ?? "หอพักของฉัน";
   const displayName = profile?.full_name || user.email || "ผู้ใช้";
   const isPlatformAdmin = Boolean(profile?.is_platform_admin);
+  const canManageTeam = ["owner", "admin"].includes(profile?.role ?? "");
 
   // บังคับสิทธิ์: กิจการที่แพ็คเกจหมดอายุ/ถูกระงับ → เข้าใช้งานไม่ได้ (แอดมินข้ามได้)
   if (!isPlatformAdmin) {
@@ -62,7 +63,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar orgName={orgName} isPlatformAdmin={isPlatformAdmin} />
+      <Sidebar orgName={orgName} isPlatformAdmin={isPlatformAdmin} canManageTeam={canManageTeam} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur md:px-8">
@@ -83,7 +84,10 @@ export default async function AppLayout({
 
         {/* mobile nav */}
         <nav className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-2 md:hidden">
-          {MOBILE_NAV.map((item) => (
+          {(canManageTeam
+            ? [...MOBILE_NAV, { href: "/team", label: "ทีมงาน" }]
+            : MOBILE_NAV
+          ).map((item) => (
             <Link
               key={item.href}
               href={item.href}

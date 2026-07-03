@@ -6,6 +6,26 @@ import { getOrgId } from "@/lib/auth";
 import { packageBySlug } from "@/lib/packages";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
 import { applyPromo } from "@/lib/promo";
+import { isSlipVerifyConfigured, verifySlipImage } from "@/lib/slip";
+
+/** ตรวจสลิปอัตโนมัติ (ถ้าตั้งค่าไว้) แล้วบันทึกผลลง note ของการชำระ — best-effort */
+async function autoCheckSlip(paymentId: string, slipPath: string, expected: number) {
+  if (!isSlipVerifyConfigured() || !slipPath) return;
+  try {
+    const admin = createAdminClient();
+    const { data: blob } = await admin.storage.from("slips").download(slipPath);
+    if (!blob) return;
+    const res = await verifySlipImage(await blob.arrayBuffer(), blob.type);
+    if (!res.ok) return;
+    const matched = typeof res.amount === "number" && Math.abs(res.amount - expected) < 1;
+    const note = matched
+      ? `✓ ตรวจสลิปอัตโนมัติ: ยอด ฿${res.amount} ตรง (ref ${res.transRef || "-"})`
+      : `⚠ ตรวจสลิปอัตโนมัติ: ยอด ฿${res.amount ?? "?"} (คาด ฿${expected}) ref ${res.transRef || "-"}`;
+    await admin.from("subscription_payments").update({ note }).eq("id", paymentId);
+  } catch {
+    /* best-effort */
+  }
+}
 
 /** ราคาตั้งต้นของแพ็คเกจตามรอบ */
 function baseAmount(slug: string, cycle: "monthly" | "yearly"): number | null {
@@ -77,22 +97,27 @@ export async function submitRenewal(data: {
   const supabase = await createClient();
   const org_id = await getOrgId();
 
-  const { error } = await supabase.from("subscription_payments").insert({
-    org_id,
-    package_slug: data.package_slug,
-    cycle: data.cycle,
-    amount,
-    discount,
-    promo_code: promoCode,
-    method: "promptpay",
-    status: "pending",
-    slip_path: data.slip_path,
-    note: promoCode
-      ? `ต่ออายุโดยสมาชิก (รอยืนยัน) · ใช้โค้ด ${promoCode} ลด ${discount}`
-      : "ต่ออายุโดยสมาชิก (รอยืนยัน)",
-  });
+  const { data: inserted, error } = await supabase
+    .from("subscription_payments")
+    .insert({
+      org_id,
+      package_slug: data.package_slug,
+      cycle: data.cycle,
+      amount,
+      discount,
+      promo_code: promoCode,
+      method: "promptpay",
+      status: "pending",
+      slip_path: data.slip_path,
+      note: promoCode
+        ? `ต่ออายุโดยสมาชิก (รอยืนยัน) · ใช้โค้ด ${promoCode} ลด ${discount}`
+        : "ต่ออายุโดยสมาชิก (รอยืนยัน)",
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
 
+  if (inserted?.id) await autoCheckSlip(inserted.id, data.slip_path, amount);
   await notifyAdminsNewRenewal(org_id, pkg.name, amount);
   return { ok: true };
 }

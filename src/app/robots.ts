@@ -1,0 +1,13 @@
+import type { MetadataRoute } from "next";
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      // ไม่ให้ index ส่วนที่ต้องล็อกอิน/ภายใน
+      disallow: ["/dashboard", "/owner", "/owner-login", "/renew", "/subscription-required", "/api/"],
+    },
+    sitemap: "https://www.chao-dee.com/sitemap.xml",
+  };
+}

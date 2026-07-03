@@ -9,8 +9,28 @@ const notoThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "ChaoDee (เช่าดี) — ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์",
-  description: "จัดการอาคาร ห้องพัก ผู้เช่า สัญญา บิล และค่าใช้จ่าย ครบวงจร",
+  metadataBase: new URL("https://www.chao-dee.com"),
+  title: {
+    default: "ChaoDee (เช่าดี) — ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์",
+    template: "%s · ChaoDee",
+  },
+  description:
+    "จัดการอาคาร ห้องพัก ผู้เช่า สัญญา บิล มิเตอร์ และค่าใช้จ่าย ครบวงจร พร้อม LINE และ AI อ่านมิเตอร์ — ทดลองใช้ฟรี 30 วัน",
+  keywords: ["ระบบจัดการหอพัก", "จัดการอพาร์ตเมนต์", "โปรแกรมหอพัก", "จัดการคอนโด", "ออกบิลค่าเช่า", "ChaoDee", "เช่าดี"],
+  applicationName: "ChaoDee",
+  openGraph: {
+    type: "website",
+    locale: "th_TH",
+    url: "https://www.chao-dee.com",
+    siteName: "ChaoDee",
+    title: "ChaoDee — ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์ ครบวงจร",
+    description: "ออกบิลอัตโนมัติ จดมิเตอร์ด้วย AI แจ้งเตือนผ่าน LINE — ทดลองใช้ฟรี 30 วัน",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ChaoDee — ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์",
+    description: "ออกบิลอัตโนมัติ จดมิเตอร์ด้วย AI แจ้งเตือนผ่าน LINE — ทดลองใช้ฟรี 30 วัน",
+  },
 };
 
 export default function RootLayout({

@@ -39,8 +39,20 @@ export default async function OwnerReports() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">รายงาน</h1>
-      <p className="mt-1 text-sm text-slate-500">รายได้และการกระจายแพ็คเกจ</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">รายงาน</h1>
+          <p className="mt-1 text-sm text-slate-500">รายได้และการกระจายแพ็คเกจ</p>
+        </div>
+        <div className="flex flex-wrap gap-2 text-sm">
+          <a href="/owner/reports/export?type=subscriptions" className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+            ⬇︎ สมาชิก (CSV)
+          </a>
+          <a href="/owner/reports/export?type=payments" className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+            ⬇︎ การชำระเงิน (CSV)
+          </a>
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="รายรับสะสม (ยืนยันแล้ว)" value={formatBaht(totalVerified)} accent="emerald" />

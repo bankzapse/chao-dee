@@ -3,17 +3,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
+import { toE164 } from "@/lib/phone";
 
 export type OwnerAuthState = { error?: string } | null;
-
-/** แปลงเบอร์ไทยเป็น E.164 (+66...) */
-function toE164(input: string): string | null {
-  const d = input.replace(/\D/g, "");
-  if (d.startsWith("0") && d.length === 10) return "+66" + d.slice(1);
-  if (d.startsWith("66") && d.length === 11) return "+" + d;
-  if (input.startsWith("+") && d.length >= 11) return "+" + d;
-  return null;
-}
 
 /** เข้าสู่ระบบแผงเจ้าของด้วยเบอร์ + รหัสผ่าน (ไม่ใช้ OTP) */
 export async function ownerLogin(

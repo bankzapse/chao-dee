@@ -3,15 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { toE164Digits } from "@/lib/phone";
 import type { FormState } from "@/components/action-form";
-
-/** แปลงเบอร์ไทยให้ตรงรูปแบบที่ auth เก็บ (66xxxxxxxxx ไม่มี +) */
-function normalizePhone(input: string): string | null {
-  const d = input.replace(/\D/g, "");
-  if (d.startsWith("0") && d.length === 10) return "66" + d.slice(1);
-  if (d.startsWith("66") && d.length === 11) return d;
-  return null;
-}
 
 /** ดึงโปรไฟล์ผู้เรียก (id, org, role) */
 async function currentProfile() {
@@ -34,7 +27,7 @@ export async function inviteMember(_prev: FormState, formData: FormData): Promis
   if (!me) return { error: "กรุณาเข้าสู่ระบบ" };
   if (!["owner", "admin"].includes(me.role)) return { error: "คุณไม่มีสิทธิ์เชิญทีมงาน" };
 
-  const phone = normalizePhone(String(formData.get("phone") ?? ""));
+  const phone = toE164Digits(String(formData.get("phone") ?? ""));
   if (!phone) return { error: "เบอร์โทรไม่ถูกต้อง (เช่น 0812345678)" };
   const full_name = String(formData.get("full_name") ?? "").trim();
   const role = String(formData.get("role") ?? "staff") === "admin" ? "admin" : "staff";

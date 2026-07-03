@@ -10,18 +10,13 @@
  * ต้องส่ง User-Agent ด้วย ไม่งั้น Cloudflare บล็อก (error 1010)
  */
 
+import { toLocalThai } from "@/lib/phone";
+
 const UA =
   "Mozilla/5.0 (compatible; ChaoDee/1.0; +https://chao-dee.com)";
 
 export function isSmsConfigured(): boolean {
   return Boolean(process.env.SMS_API_URL && process.env.SMS_API_KEY);
-}
-
-function normalizeThaiPhone(phone: string): string {
-  const d = phone.replace(/\D/g, "");
-  if (d.startsWith("66")) return "0" + d.slice(2); // 66xxxxxxxxx → 0xxxxxxxxx
-  if (d.startsWith("0")) return d;
-  return d;
 }
 
 function endpoint(base: string): string {
@@ -39,7 +34,7 @@ export async function sendSms(
   const sender = (process.env.SMS_SENDER ?? "Chao-Dee").trim();
   if (!url || !key) return { ok: false, error: "SMS ยังไม่ได้ตั้งค่า (SMS_API_URL/SMS_API_KEY)" };
 
-  const to = normalizeThaiPhone(phone);
+  const to = toLocalThai(phone);
   const auth = "Basic " + Buffer.from(`${key}:`).toString("base64");
 
   const res = await fetch(endpoint(url), {

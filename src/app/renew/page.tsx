@@ -82,17 +82,27 @@ export default async function RenewPage() {
                     <span className="ml-2 text-slate-500">{formatBaht(p.amount)}</span>
                     <span className="ml-2 text-xs text-slate-400">{formatDate(p.paid_at)}</span>
                   </div>
-                  <Badge
-                    className={
-                      p.status === "verified"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : p.status === "rejected"
-                          ? "bg-rose-100 text-rose-700"
-                          : "bg-amber-100 text-amber-700"
-                    }
-                  >
-                    {p.status === "verified" ? "เปิดสิทธิ์แล้ว" : p.status === "rejected" ? "ไม่ผ่าน" : "รอตรวจสอบ"}
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    {p.status === "verified" && (
+                      <Link
+                        href={`/renew/receipt/${p.id}`}
+                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                      >
+                        ใบเสร็จ
+                      </Link>
+                    )}
+                    <Badge
+                      className={
+                        p.status === "verified"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : p.status === "rejected"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-amber-100 text-amber-700"
+                      }
+                    >
+                      {p.status === "verified" ? "เปิดสิทธิ์แล้ว" : p.status === "rejected" ? "ไม่ผ่าน" : "รอตรวจสอบ"}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </div>

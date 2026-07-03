@@ -2,17 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { toE164 } from "@/lib/phone";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
-
-/** แปลงเบอร์ไทยเป็น E.164 (+66...) */
-function toE164(input: string): string | null {
-  const d = input.replace(/\D/g, "");
-  if (d.startsWith("0") && d.length === 10) return "+66" + d.slice(1);
-  if (d.startsWith("66") && d.length === 11) return "+" + d;
-  if (input.startsWith("+") && d.length >= 11) return "+" + d;
-  return null;
-}
 
 /** ขั้น 1: ขอรหัส OTP ส่งไปยังเบอร์ */
 export async function requestOtp(

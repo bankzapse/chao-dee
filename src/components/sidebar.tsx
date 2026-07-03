@@ -22,8 +22,17 @@ const NAV = [
   { href: "/help", label: "ช่วยเหลือ", icon: "❓" },
 ];
 
-export function Sidebar({ orgName }: { orgName: string }) {
+export function Sidebar({
+  orgName,
+  isPlatformAdmin,
+}: {
+  orgName: string;
+  isPlatformAdmin?: boolean;
+}) {
   const pathname = usePathname();
+  const nav = isPlatformAdmin
+    ? [...NAV, { href: "/admin/members", label: "สมาชิก & แพ็คเกจ", icon: "👑" }]
+    : NAV;
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
@@ -38,7 +47,7 @@ export function Sidebar({ orgName }: { orgName: string }) {
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
-        {NAV.map((item) => {
+        {nav.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (

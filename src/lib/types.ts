@@ -125,6 +125,28 @@ export type Payment = {
   created_at: string;
 };
 
+export type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "cancelled"
+  | "expired";
+export type BillingCycle = "monthly" | "yearly";
+
+export type Subscription = {
+  id: string;
+  org_id: string;
+  package_slug: string;
+  cycle: BillingCycle;
+  status: SubscriptionStatus;
+  price: number;
+  started_at: string;
+  expires_at: string | null;
+  note: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type MaintenanceStatus = "open" | "in_progress" | "done" | "cancelled";
 export type ParcelStatus = "pending" | "picked_up";
 export type VehicleType = "car" | "motorcycle" | "other";

@@ -78,6 +78,22 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   other: "อื่นๆ",
 };
 
+export const SUBSCRIPTION_STATUS_LABEL: Record<string, string> = {
+  trialing: "ทดลองใช้",
+  active: "ใช้งานอยู่",
+  past_due: "ค้างชำระ",
+  cancelled: "ยกเลิก",
+  expired: "หมดอายุ",
+};
+
+export const SUBSCRIPTION_STATUS_STYLE: Record<string, string> = {
+  trialing: "bg-sky-100 text-sky-700",
+  active: "bg-emerald-100 text-emerald-700",
+  past_due: "bg-amber-100 text-amber-700",
+  cancelled: "bg-slate-100 text-slate-500",
+  expired: "bg-rose-100 text-rose-700",
+};
+
 export const MAINTENANCE_STATUS_LABEL: Record<MaintenanceStatus, string> = {
   open: "รอดำเนินการ",
   in_progress: "กำลังซ่อม",

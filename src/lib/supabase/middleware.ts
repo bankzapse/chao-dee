@@ -35,7 +35,10 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login");
   const isPublic =
-    isAuthRoute || pathname.startsWith("/auth") || pathname.startsWith("/api");
+    pathname === "/" || // หน้า landing สาธารณะ
+    isAuthRoute ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api");
 
   // ยังไม่ล็อกอิน + เข้าหน้าที่ต้องล็อกอิน → ส่งไป /login
   if (!user && !isPublic) {

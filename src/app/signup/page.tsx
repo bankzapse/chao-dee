@@ -16,9 +16,14 @@ export default function SignupPage() {
             </span>
             <span className="font-bold text-slate-900">ChaoDee</span>
           </Link>
-          <Link href="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-            เข้าสู่ระบบ
-          </Link>
+          <div className="flex items-center gap-4 text-sm font-medium">
+            <Link href="/" className="text-slate-500 hover:text-slate-800">
+              ← กลับหน้าแรก
+            </Link>
+            <Link href="/login" className="text-indigo-600 hover:text-indigo-700">
+              เข้าสู่ระบบ
+            </Link>
+          </div>
         </div>
       </header>
 

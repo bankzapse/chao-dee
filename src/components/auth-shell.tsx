@@ -48,7 +48,14 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ---- ฟอร์ม ---- */}
-      <div className="flex w-full flex-col items-center justify-center bg-slate-50 px-6 py-12 lg:w-1/2">
+      <div className="relative flex w-full flex-col items-center justify-center bg-slate-50 px-6 py-12 lg:w-1/2">
+        {/* ปุ่มกลับหน้าแรก */}
+        <Link
+          href="/"
+          className="absolute left-5 top-5 flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800"
+        >
+          ← กลับหน้าแรก
+        </Link>
         {/* โลโก้บนมือถือ */}
         <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">

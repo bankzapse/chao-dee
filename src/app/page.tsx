@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Pricing } from "@/components/landing/pricing";
+import { HeaderCta } from "@/components/landing/header-cta";
 
 const FEATURES = [
   { icon: "📊", title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
@@ -50,17 +51,7 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-slate-900">ราคา</a>
             <a href="#faq" className="hover:text-slate-900">คำถามที่พบบ่อย</a>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-              เข้าสู่ระบบ
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-            >
-              เริ่มใช้ฟรี
-            </Link>
-          </div>
+          <HeaderCta />
         </nav>
       </header>
 

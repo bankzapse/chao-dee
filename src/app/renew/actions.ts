@@ -5,6 +5,27 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { packageBySlug } from "@/lib/packages";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
+import { applyPromo } from "@/lib/promo";
+
+/** ราคาตั้งต้นของแพ็คเกจตามรอบ */
+function baseAmount(slug: string, cycle: "monthly" | "yearly"): number | null {
+  const pkg = packageBySlug(slug);
+  if (!pkg || pkg.priceMonthly === null) return null;
+  return cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly;
+}
+
+/** ตรวจโค้ดส่วนลด (เรียกจากฟอร์มก่อนชำระ) */
+export async function checkPromo(
+  code: string,
+  package_slug: string,
+  cycle: "monthly" | "yearly"
+): Promise<{ ok?: boolean; error?: string; discount?: number; final?: number }> {
+  const base = baseAmount(package_slug, cycle);
+  if (base === null) return { error: "แพ็คเกจนี้กรุณาติดต่อทีมงาน" };
+  const res = await applyPromo(code, base);
+  if (!res.ok) return { error: res.error };
+  return { ok: true, discount: res.discount, final: res.final };
+}
 
 /** แจ้งเตือนผู้ดูแลแพลตฟอร์มว่ามีคำขอต่ออายุใหม่ (best-effort ไม่ทำให้คำขอล้มเหลว) */
 async function notifyAdminsNewRenewal(org_id: string, pkgName: string, amount: number) {
@@ -33,13 +54,25 @@ export async function submitRenewal(data: {
   package_slug: string;
   cycle: "monthly" | "yearly";
   slip_path: string;
+  promo_code?: string;
 }): Promise<{ ok?: boolean; error?: string }> {
   const pkg = packageBySlug(data.package_slug);
   if (!pkg || pkg.priceMonthly === null) {
     return { error: "แพ็คเกจนี้กรุณาติดต่อทีมงานโดยตรง" };
   }
-  const amount =
-    data.cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly;
+  const base = data.cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly;
+
+  // คำนวณส่วนลดใหม่ฝั่ง server (กันการปลอมยอด)
+  let amount = base;
+  let discount = 0;
+  let promoCode = "";
+  if (data.promo_code?.trim()) {
+    const res = await applyPromo(data.promo_code, base);
+    if (!res.ok) return { error: res.error };
+    amount = res.final;
+    discount = res.discount;
+    promoCode = res.code;
+  }
 
   const supabase = await createClient();
   const org_id = await getOrgId();
@@ -49,10 +82,14 @@ export async function submitRenewal(data: {
     package_slug: data.package_slug,
     cycle: data.cycle,
     amount,
+    discount,
+    promo_code: promoCode,
     method: "promptpay",
     status: "pending",
     slip_path: data.slip_path,
-    note: "ต่ออายุโดยสมาชิก (รอยืนยัน)",
+    note: promoCode
+      ? `ต่ออายุโดยสมาชิก (รอยืนยัน) · ใช้โค้ด ${promoCode} ลด ${discount}`
+      : "ต่ออายุโดยสมาชิก (รอยืนยัน)",
   });
   if (error) return { error: error.message };
 

@@ -3,6 +3,7 @@
 import { requirePlatformAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
+import { incrementPromoUse } from "@/lib/promo";
 import type { FormState } from "@/components/action-form";
 
 function addPeriod(from: Date, cycle: string): Date {
@@ -86,12 +87,14 @@ export async function verifyPayment(paymentId: string): Promise<void> {
     })
     .eq("org_id", pay.org_id);
 
+  if (pay.promo_code) await incrementPromoUse(pay.promo_code);
+
   await logAudit({
     org_id: pay.org_id,
     actor_id: adminId,
     action: "ยืนยันการชำระเงิน",
     target: pay.package_slug,
-    meta: { amount: Number(pay.amount), cycle: pay.cycle, payment_id: paymentId },
+    meta: { amount: Number(pay.amount), cycle: pay.cycle, payment_id: paymentId, promo: pay.promo_code || null },
   });
 }
 

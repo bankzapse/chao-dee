@@ -8,6 +8,7 @@ const NAV = [
   { href: "/owner/members", label: "สมาชิก", icon: "👥" },
   { href: "/owner/payments", label: "การชำระเงิน", icon: "💳", badgeKey: "payments" },
   { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦" },
+  { href: "/owner/promos", label: "คูปองส่วนลด", icon: "🎟️" },
   { href: "/owner/reports", label: "รายงาน", icon: "📊" },
   { href: "/owner/audit", label: "บันทึกกิจกรรม", icon: "📝" },
 ];

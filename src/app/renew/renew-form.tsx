@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PromptPayQR } from "@/components/promptpay-qr";
 import { PACKAGES } from "@/lib/packages";
 import { formatBaht } from "@/lib/format";
-import { submitRenewal } from "./actions";
+import { submitRenewal, checkPromo } from "./actions";
 
 export function RenewForm({
   platformPromptPay,
@@ -24,10 +24,36 @@ export function RenewForm({
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discount: number; final: number } | null>(null);
+  const [promoMsg, setPromoMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
 
   const pkg = PACKAGES.find((p) => p.slug === slug)!;
-  const amount =
+  const baseAmount =
     cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly!;
+  const amount = promo ? promo.final : baseAmount;
+
+  // เปลี่ยนแพ็คเกจ/รอบ → ล้างส่วนลดเดิม (ต้องเช็คโค้ดใหม่)
+  function resetPromo() {
+    setPromo(null);
+    setPromoMsg(null);
+  }
+
+  async function applyCode() {
+    if (!promoInput.trim()) return;
+    setPromoBusy(true);
+    setPromoMsg(null);
+    const res = await checkPromo(promoInput, slug, cycle);
+    setPromoBusy(false);
+    if (res.error) {
+      setPromo(null);
+      setPromoMsg({ text: res.error });
+    } else {
+      setPromo({ code: promoInput.trim().toUpperCase(), discount: res.discount!, final: res.final! });
+      setPromoMsg({ ok: true, text: `ใช้โค้ดสำเร็จ ลด ${formatBaht(res.discount!)}` });
+    }
+  }
 
   async function submit() {
     setBusy(true);
@@ -46,7 +72,12 @@ export function RenewForm({
         }
         slipPath = path;
       }
-      const res = await submitRenewal({ package_slug: slug, cycle, slip_path: slipPath });
+      const res = await submitRenewal({
+        package_slug: slug,
+        cycle,
+        slip_path: slipPath,
+        promo_code: promo?.code,
+      });
       if (res.error) setMsg({ text: res.error });
       else {
         setMsg({ ok: true, text: "ส่งคำขอต่ออายุแล้ว! ทีมงานจะยืนยันและเปิดสิทธิ์ให้เร็วที่สุด" });
@@ -68,7 +99,10 @@ export function RenewForm({
               <button
                 key={p.slug}
                 type="button"
-                onClick={() => setSlug(p.slug)}
+                onClick={() => {
+                  setSlug(p.slug);
+                  resetPromo();
+                }}
                 className={`rounded-xl border p-4 text-left transition ${
                   slug === p.slug
                     ? "border-indigo-400 bg-indigo-50 ring-1 ring-indigo-300"
@@ -87,14 +121,20 @@ export function RenewForm({
           <div className="inline-flex rounded-lg bg-slate-100 p-1">
             <button
               type="button"
-              onClick={() => setCycle("monthly")}
+              onClick={() => {
+                setCycle("monthly");
+                resetPromo();
+              }}
               className={`rounded-md px-4 py-1.5 text-sm font-medium ${cycle === "monthly" ? "bg-white shadow-sm" : "text-slate-500"}`}
             >
               รายเดือน
             </button>
             <button
               type="button"
-              onClick={() => setCycle("yearly")}
+              onClick={() => {
+                setCycle("yearly");
+                resetPromo();
+              }}
               className={`rounded-md px-4 py-1.5 text-sm font-medium ${cycle === "yearly" ? "bg-white shadow-sm" : "text-slate-500"}`}
             >
               รายปี (คุ้มที่สุด)
@@ -102,9 +142,47 @@ export function RenewForm({
           </div>
         </div>
 
+        <div>
+          <label className="label">โค้ดส่วนลด (ถ้ามี)</label>
+          <div className="flex gap-2">
+            <input
+              className="field flex-1 uppercase"
+              placeholder="เช่น NEWYEAR"
+              value={promoInput}
+              onChange={(e) => {
+                setPromoInput(e.target.value);
+                if (promo) resetPromo();
+              }}
+            />
+            <button
+              type="button"
+              onClick={applyCode}
+              disabled={promoBusy || !promoInput.trim()}
+              className="btn-secondary whitespace-nowrap"
+            >
+              {promoBusy ? "…" : "ใช้โค้ด"}
+            </button>
+          </div>
+          {promoMsg && (
+            <p className={`mt-1 text-xs ${promoMsg.ok ? "text-emerald-600" : "text-rose-600"}`}>
+              {promoMsg.text}
+            </p>
+          )}
+        </div>
+
         <div className="rounded-xl bg-slate-50 p-4">
           <p className="text-sm text-slate-500">ยอดชำระ</p>
-          <p className="text-3xl font-bold text-indigo-600">{formatBaht(amount)}</p>
+          {promo ? (
+            <>
+              <p className="text-sm text-slate-400 line-through">{formatBaht(baseAmount)}</p>
+              <p className="text-3xl font-bold text-indigo-600">{formatBaht(amount)}</p>
+              <p className="text-xs text-emerald-600">
+                ส่วนลด {formatBaht(promo.discount)} · โค้ด {promo.code}
+              </p>
+            </>
+          ) : (
+            <p className="text-3xl font-bold text-indigo-600">{formatBaht(amount)}</p>
+          )}
           <p className="text-xs text-slate-400">
             {pkg.name} · {cycle === "yearly" ? "รายปี" : "รายเดือน"}
           </p>

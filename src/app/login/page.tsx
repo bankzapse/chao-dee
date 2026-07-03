@@ -1,10 +1,10 @@
 import { AuthShell } from "@/components/auth-shell";
-import { OtpForm } from "./otp-form";
+import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
   return (
     <AuthShell>
-      <OtpForm />
+      <LoginForm />
     </AuthShell>
   );
 }

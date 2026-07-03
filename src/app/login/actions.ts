@@ -51,6 +51,22 @@ export async function verifyOtp(
   redirect("/dashboard");
 }
 
+/** เข้าสู่ระบบด้วยเบอร์ + รหัสผ่าน (สำหรับผู้ใช้ที่ตั้งรหัสผ่านตอนสมัคร) */
+export async function loginWithPassword(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const phone = toE164(String(formData.get("phone") ?? ""));
+  const password = String(formData.get("password") ?? "");
+  if (!phone) return { error: "เบอร์โทรไม่ถูกต้อง (เช่น 0812345678)" };
+  if (!password) return { error: "กรุณากรอกรหัสผ่าน" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ phone, password });
+  if (error) return { error: "เบอร์หรือรหัสผ่านไม่ถูกต้อง", phone };
+  redirect("/dashboard");
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

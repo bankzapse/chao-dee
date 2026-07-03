@@ -31,7 +31,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const nav = isPlatformAdmin
-    ? [...NAV, { href: "/admin/members", label: "สมาชิก & แพ็คเกจ", icon: "👑" }]
+    ? [...NAV, { href: "/owner", label: "แผงเจ้าของระบบ", icon: "👑" }]
     : NAV;
 
   return (

@@ -46,6 +46,20 @@ export default async function AppLayout({
   const displayName = profile?.full_name || user.email || "ผู้ใช้";
   const isPlatformAdmin = Boolean(profile?.is_platform_admin);
 
+  // บังคับสิทธิ์: กิจการที่แพ็คเกจหมดอายุ/ถูกระงับ → เข้าใช้งานไม่ได้ (แอดมินข้ามได้)
+  if (!isPlatformAdmin) {
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("status, expires_at")
+      .eq("org_id", profile?.org_id ?? "")
+      .maybeSingle();
+    const ok =
+      sub &&
+      ["active", "trialing"].includes(sub.status) &&
+      (!sub.expires_at || new Date(sub.expires_at) > new Date());
+    if (!ok) redirect("/subscription-required");
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar orgName={orgName} isPlatformAdmin={isPlatformAdmin} />

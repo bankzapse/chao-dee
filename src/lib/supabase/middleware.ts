@@ -37,6 +37,7 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     pathname === "/" || // หน้า landing สาธารณะ
     isAuthRoute ||
+    pathname.startsWith("/signup") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api");
 

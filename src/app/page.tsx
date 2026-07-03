@@ -55,7 +55,7 @@ export default function LandingPage() {
               เข้าสู่ระบบ
             </Link>
             <Link
-              href="/login"
+              href="/signup"
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
             >
               เริ่มใช้ฟรี
@@ -88,7 +88,7 @@ export default function LandingPage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/login"
+                  href="/signup"
                   className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700"
                 >
                   เริ่มใช้งานฟรี 30 วัน
@@ -256,7 +256,7 @@ export default function LandingPage() {
             เริ่มใช้ฟรี 30 วันวันนี้ ตั้งค่าเสร็จใน 10 นาที ไม่ต้องผูกบัตร
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/login" className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
+            <Link href="/signup" className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
               เริ่มใช้งานฟรี
             </Link>
             <a href="https://line.me" target="_blank" rel="noreferrer" className="rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">

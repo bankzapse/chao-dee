@@ -21,7 +21,7 @@ export function Pricing() {
         </p>
 
         {/* toggle */}
-        <div className="mt-6 inline-flex items-center gap-3 rounded-full bg-slate-100 p-1">
+        <div className="mt-6 inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
           <button
             onClick={() => setYearly(false)}
             className={`rounded-full px-5 py-2 text-sm font-medium transition ${
@@ -36,14 +36,18 @@ export function Pricing() {
               yearly ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
             }`}
           >
-            รายปี <span className="text-emerald-600">ประหยัดกว่า</span>
+            รายปี{" "}
+            <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+              คุ้มที่สุด!
+            </span>
           </button>
         </div>
       </div>
 
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
         {PACKAGES.map((p) => {
-          const price = yearly ? p.priceYearly : p.priceMonthly;
+          const isCustom = p.priceMonthly === null;
+          const perMonth = yearly ? p.priceYearlyPerMonth : p.priceMonthly;
           return (
             <div
               key={p.slug}
@@ -61,21 +65,31 @@ export function Pricing() {
               <h3 className="text-xl font-bold text-slate-900">{p.name}</h3>
               <p className="mt-1 text-sm text-slate-500">{p.tagline}</p>
 
-              <div className="mt-5">
-                {price === null ? (
-                  <p className="text-3xl font-bold text-slate-900">ติดต่อเรา</p>
+              <div className="mt-5 min-h-[92px]">
+                {isCustom ? (
+                  <>
+                    <p className="text-3xl font-bold text-slate-900">ติดต่อเรา</p>
+                    <p className="mt-1 text-sm text-slate-500">ราคาตามการใช้งานจริง</p>
+                  </>
                 ) : (
-                  <p className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-slate-900">
-                      ฿{price.toLocaleString()}
-                    </span>
-                    <span className="text-slate-500">/เดือน</span>
-                  </p>
-                )}
-                {price !== null && yearly && (
-                  <p className="mt-1 text-xs text-emerald-600">
-                    จ่ายรายปี · จากปกติ ฿{p.priceMonthly?.toLocaleString()}/เดือน
-                  </p>
+                  <>
+                    {yearly && (
+                      <span className="inline-block rounded bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                        รายปี · คุ้มที่สุด!
+                      </span>
+                    )}
+                    <p className="mt-1 flex items-baseline gap-1">
+                      <span className="text-4xl font-bold text-slate-900">
+                        ฿{perMonth?.toLocaleString()}
+                      </span>
+                      <span className="text-slate-500">/เดือน</span>
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {yearly
+                        ? `ชำระ ฿${p.priceYearlyTotal?.toLocaleString()} ต่อปี`
+                        : "ชำระเป็นรายเดือน"}
+                    </p>
+                  </>
                 )}
               </div>
 
@@ -95,7 +109,7 @@ export function Pricing() {
               </ul>
 
               <Link
-                href="/login"
+                href={isCustom ? "#contact" : "/signup"}
                 className={`mt-7 rounded-xl px-4 py-3 text-center text-sm font-semibold transition ${
                   p.highlight
                     ? "bg-indigo-600 text-white hover:bg-indigo-700"

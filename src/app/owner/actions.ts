@@ -2,6 +2,7 @@
 
 import { requirePlatformAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 import type { FormState } from "@/components/action-form";
 
 function addPeriod(from: Date, cycle: string): Date {
@@ -84,15 +85,34 @@ export async function verifyPayment(paymentId: string): Promise<void> {
       updated_at: new Date().toISOString(),
     })
     .eq("org_id", pay.org_id);
+
+  await logAudit({
+    org_id: pay.org_id,
+    actor_id: adminId,
+    action: "ยืนยันการชำระเงิน",
+    target: pay.package_slug,
+    meta: { amount: Number(pay.amount), cycle: pay.cycle, payment_id: paymentId },
+  });
 }
 
 export async function rejectPayment(paymentId: string): Promise<void> {
-  await requirePlatformAdmin();
+  const adminId = await requirePlatformAdmin();
   const admin = createAdminClient();
+  const { data: pay } = await admin
+    .from("subscription_payments")
+    .select("org_id, amount")
+    .eq("id", paymentId)
+    .maybeSingle();
   await admin
     .from("subscription_payments")
     .update({ status: "rejected" })
     .eq("id", paymentId);
+  await logAudit({
+    org_id: pay?.org_id ?? null,
+    actor_id: adminId,
+    action: "ปฏิเสธการชำระเงิน",
+    meta: { amount: pay ? Number(pay.amount) : null, payment_id: paymentId },
+  });
 }
 
 /** เปิด/ระงับสิทธิ์เร็ว */
@@ -100,12 +120,17 @@ export async function setOrgStatus(
   orgId: string,
   status: "active" | "cancelled"
 ): Promise<void> {
-  await requirePlatformAdmin();
+  const adminId = await requirePlatformAdmin();
   const admin = createAdminClient();
   await admin
     .from("subscriptions")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("org_id", orgId);
+  await logAudit({
+    org_id: orgId,
+    actor_id: adminId,
+    action: status === "active" ? "เปิดสิทธิ์การใช้งาน" : "ระงับการใช้งาน",
+  });
 }
 
 /** แก้ไขแพ็คเกจ/สถานะ/วันหมดอายุด้วยมือ */
@@ -114,16 +139,18 @@ export async function updateSubscription(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  await requirePlatformAdmin();
+  const adminId = await requirePlatformAdmin();
   const admin = createAdminClient();
   const expiresRaw = String(formData.get("expires_at") ?? "").trim();
+  const pkg = String(formData.get("package_slug") ?? "pro");
+  const status = String(formData.get("status") ?? "trialing");
 
   const { error } = await admin
     .from("subscriptions")
     .update({
-      package_slug: String(formData.get("package_slug") ?? "pro"),
+      package_slug: pkg,
       cycle: String(formData.get("cycle") ?? "monthly"),
-      status: String(formData.get("status") ?? "trialing"),
+      status,
       price: Number(formData.get("price") ?? 0),
       expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
       note: String(formData.get("note") ?? "").trim(),
@@ -131,5 +158,12 @@ export async function updateSubscription(
     })
     .eq("org_id", orgId);
   if (error) return { error: error.message };
+  await logAudit({
+    org_id: orgId,
+    actor_id: adminId,
+    action: "แก้ไขการสมัครสมาชิก",
+    target: pkg,
+    meta: { status, expires_at: expiresRaw || null },
+  });
   return { ok: true };
 }

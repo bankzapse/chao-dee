@@ -31,6 +31,17 @@ export function formatDate(value: string | null | undefined): string {
   }).format(new Date(value));
 }
 
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
   vacant: "ว่าง",
   occupied: "มีผู้เช่า",

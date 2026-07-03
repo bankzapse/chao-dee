@@ -9,6 +9,7 @@ const NAV = [
   { href: "/owner/payments", label: "การชำระเงิน", icon: "💳", badgeKey: "payments" },
   { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦" },
   { href: "/owner/reports", label: "รายงาน", icon: "📊" },
+  { href: "/owner/audit", label: "บันทึกกิจกรรม", icon: "📝" },
 ];
 
 export function OwnerSidebar({ pendingCount = 0 }: { pendingCount?: number }) {

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { toE164Digits } from "@/lib/phone";
+import { toE164Digits, toLocalThai } from "@/lib/phone";
+import { logAudit } from "@/lib/audit";
 import type { FormState } from "@/components/action-form";
 
 /** ดึงโปรไฟล์ผู้เรียก (id, org, role) */
@@ -53,6 +54,13 @@ export async function inviteMember(_prev: FormState, formData: FormData): Promis
     if (error.code === "23505") return { error: "เบอร์นี้ถูกเชิญไว้แล้ว (รอผู้ใช้สมัคร)" };
     return { error: error.message };
   }
+  await logAudit({
+    org_id: me.org_id,
+    actor_id: me.id,
+    action: "เชิญทีมงาน",
+    target: toLocalThai(phone),
+    meta: { role },
+  });
   revalidatePath("/team");
   return { ok: true };
 }
@@ -79,7 +87,7 @@ export async function removeMember(targetId: string): Promise<{ error?: string }
   const admin = createAdminClient();
   const { data: target } = await admin
     .from("profiles")
-    .select("id, org_id, role")
+    .select("id, org_id, role, phone")
     .eq("id", targetId)
     .single();
   if (!target || target.org_id !== me.org_id) return { error: "ไม่พบสมาชิกนี้" };
@@ -88,6 +96,13 @@ export async function removeMember(targetId: string): Promise<{ error?: string }
 
   const { error } = await admin.auth.admin.deleteUser(targetId);
   if (error) return { error: error.message };
+  await logAudit({
+    org_id: me.org_id,
+    actor_id: me.id,
+    action: "ถอดสมาชิกออกจากทีม",
+    target: toLocalThai(target.phone ?? ""),
+    meta: { role: target.role },
+  });
   revalidatePath("/team");
   return {};
 }

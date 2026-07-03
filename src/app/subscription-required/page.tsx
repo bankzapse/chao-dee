@@ -49,16 +49,11 @@ export default async function SubscriptionRequired() {
         )}
 
         <div className="mt-6 flex flex-col gap-3">
-          <a
-            href="https://line.me"
-            target="_blank"
-            rel="noreferrer"
-            className="btn-primary w-full"
-          >
-            💬 ติดต่อต่ออายุผ่าน LINE
+          <a href="/renew" className="btn-primary w-full">
+            ต่ออายุตอนนี้
           </a>
           <a href="mailto:support@chao-dee.com" className="btn-secondary w-full">
-            ✉️ อีเมลทีมงาน
+            ✉️ ติดต่อทีมงาน
           </a>
         </div>
 

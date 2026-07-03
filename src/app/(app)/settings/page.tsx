@@ -39,7 +39,7 @@ export default async function SettingsPage() {
             {sub?.price ? ` · ${formatBaht(sub.price)}/${sub.cycle === "yearly" ? "ปี" : "เดือน"}` : ""}
           </p>
         </div>
-        <a href="https://line.me" target="_blank" rel="noreferrer" className="btn-secondary">
+        <a href="/renew" className="btn-secondary">
           ต่ออายุ / อัปเกรด
         </a>
       </div>

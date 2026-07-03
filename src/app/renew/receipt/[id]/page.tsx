@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { packageBySlug } from "@/lib/packages";
 import { formatBaht, formatDate } from "@/lib/format";
 import { PrintButton } from "./print-button";
+import { COMPANY } from "@/lib/company";
 
 export const metadata = { title: "ใบเสร็จรับเงิน", robots: { index: false } };
 
@@ -58,8 +59,10 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               </div>
               <div>
                 <p className="text-lg font-bold text-slate-900">ChaoDee (เช่าดี)</p>
-                <p className="text-xs text-slate-500">chao-dee.com · support@chao-dee.com</p>
-                <p className="text-xs text-slate-400">[ชื่อบริษัท / เลขผู้เสียภาษี]</p>
+                <p className="text-xs text-slate-500">chao-dee.com · {COMPANY.email}</p>
+                <p className="text-xs text-slate-400">
+                  {COMPANY.name} · เลขผู้เสียภาษี {COMPANY.taxId}
+                </p>
               </div>
             </div>
             <div className="text-right">

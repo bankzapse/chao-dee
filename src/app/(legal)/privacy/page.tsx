@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalShell, Section } from "../legal";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "นโยบายความเป็นส่วนตัว · ChaoDee",
@@ -17,8 +18,8 @@ export default function PrivacyPage() {
 
       <Section heading="1. ผู้ควบคุมข้อมูลส่วนบุคคล">
         <p>
-          [ชื่อบริษัท/ผู้ประกอบการ] ที่อยู่ [ที่อยู่] เลขประจำตัวผู้เสียภาษี [เลขที่]
-          ติดต่อได้ที่ support@chao-dee.com
+          {COMPANY.name} ที่อยู่ {COMPANY.address} เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}
+          {COMPANY.phone ? ` โทร ${COMPANY.phone}` : ""} ติดต่อได้ที่ {COMPANY.email}
         </p>
       </Section>
 

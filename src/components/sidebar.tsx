@@ -25,18 +25,14 @@ const NAV = [
 
 export function Sidebar({
   orgName,
-  isPlatformAdmin,
   canManageTeam,
 }: {
   orgName: string;
-  isPlatformAdmin?: boolean;
   canManageTeam?: boolean;
 }) {
   const pathname = usePathname();
-  const base = NAV.filter((item) => !("manageTeam" in item) || canManageTeam);
-  const nav = isPlatformAdmin
-    ? [...base, { href: "/owner", label: "แผงเจ้าของระบบ", icon: "👑" }]
-    : base;
+  // แอปจัดการหอแยกขาดจากแผงเจ้าของระบบ — เข้า /owner ได้ทาง /owner-login เท่านั้น
+  const nav = NAV.filter((item) => !("manageTeam" in item) || canManageTeam);
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">

@@ -63,7 +63,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar orgName={orgName} isPlatformAdmin={isPlatformAdmin} canManageTeam={canManageTeam} />
+      <Sidebar orgName={orgName} canManageTeam={canManageTeam} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur md:px-8">

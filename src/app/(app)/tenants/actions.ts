@@ -4,12 +4,15 @@ import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { checkLimit } from "@/lib/limits";
+import { toLocalThai } from "@/lib/phone";
 import type { FormState } from "@/components/action-form";
 
 function parse(formData: FormData) {
+  const rawPhone = String(formData.get("phone") ?? "").trim();
   return {
     full_name: String(formData.get("full_name") ?? "").trim(),
-    phone: String(formData.get("phone") ?? "").trim(),
+    // เก็บเบอร์เป็นตัวเลขล้วน (0xxxxxxxxx) เพื่อให้ผูก LINE ด้วยเบอร์ได้แม่น
+    phone: rawPhone ? toLocalThai(rawPhone) : "",
     email: String(formData.get("email") ?? "").trim(),
     id_card: String(formData.get("id_card") ?? "").trim(),
     note: String(formData.get("note") ?? "").trim(),

@@ -8,6 +8,7 @@ import {
   isLineConfigured,
 } from "@/lib/line";
 import { formatBaht, formatPeriod } from "@/lib/format";
+import { toLocalThai } from "@/lib/phone";
 
 export const runtime = "nodejs";
 
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     if (event.type === "follow") {
       await replyMessage(replyToken, [
         textMessage(
-          "ยินดีต้อนรับสู่ ChaoDee 🏠\nกรุณาพิมพ์ “รหัสเชื่อมบัญชี” ที่ได้รับจากผู้ดูแลหอพัก เพื่อผูกบัญชีของคุณ"
+          "ยินดีต้อนรับสู่ ChaoDee 🏠\nกรุณาพิมพ์ “เบอร์โทรของคุณ” (เช่น 0812345678) หรือ “รหัสเชื่อมบัญชี” ที่ได้รับจากผู้ดูแล เพื่อผูกบัญชี"
         ),
       ]);
       continue;
@@ -131,9 +132,35 @@ export async function POST(req: Request) {
       continue;
     }
 
+    // ลองจับคู่ด้วยเบอร์โทร (ผู้เช่าที่ลงทะเบียนไว้และยังไม่ได้ผูก LINE)
+    const localPhone = toLocalThai(text);
+    if (/^0\d{9}$/.test(localPhone)) {
+      const { data: byPhone } = await supabase
+        .from("tenants")
+        .select("id, full_name")
+        .eq("phone", localPhone)
+        .eq("line_user_id", "");
+      if (byPhone && byPhone.length === 1) {
+        await supabase
+          .from("tenants")
+          .update({ line_user_id: userId, line_link_code: "" })
+          .eq("id", byPhone[0].id);
+        await replyMessage(replyToken, [
+          textMessage(`เชื่อมบัญชีสำเร็จ ✅\nสวัสดีคุณ ${byPhone[0].full_name}\n\n${HELP}`),
+        ]);
+        continue;
+      }
+      if (byPhone && byPhone.length > 1) {
+        await replyMessage(replyToken, [
+          textMessage("เบอร์นี้มีหลายรายการในระบบ\nกรุณาใช้รหัสเชื่อมบัญชีที่ได้รับจากผู้ดูแลแทนครับ"),
+        ]);
+        continue;
+      }
+    }
+
     await replyMessage(replyToken, [
       textMessage(
-        "ยังไม่พบการเชื่อมบัญชี\nกรุณาพิมพ์รหัสเชื่อมบัญชีที่ได้รับจากผู้ดูแลหอพัก"
+        "ยังไม่พบข้อมูล\nกรุณาพิมพ์เบอร์โทรที่ลงทะเบียนไว้ (เช่น 0812345678) หรือรหัสเชื่อมบัญชีจากผู้ดูแล"
       ),
     ]);
   }

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -22,6 +24,25 @@ const READING_SCHEMA = {
 } as const;
 
 export async function POST(req: Request) {
+  // ต้องล็อกอินก่อน — กันการยิง Claude จากภายนอก
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+  }
+
+  // จำกัดความถี่ต่อผู้ใช้ (20 ครั้ง/นาที)
+  sweepIfNeeded();
+  const rl = rateLimit(`read-meter:${user.id}`, 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `เรียกถี่เกินไป ลองใหม่ใน ${rl.retryAfter} วินาที` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

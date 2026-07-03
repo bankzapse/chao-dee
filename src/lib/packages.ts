@@ -8,6 +8,8 @@ export type Package = {
   priceYearlyPerMonth: number | null; // ราคาต่อเดือนเมื่อจ่ายรายปี ("฿699/เดือน")
   priceYearlyTotal: number | null; // ยอดชำระต่อปี ("ชำระ ฿7,390/ปี")
   limits: { buildings: string; rooms: string; tenants: string };
+  /** เพดานเชิงตัวเลขไว้บังคับใช้จริง (null = ไม่จำกัด) */
+  caps: { buildings: number | null; rooms: number | null; tenants: number | null };
   highlight?: boolean;
   cta: string;
 };
@@ -33,6 +35,7 @@ export const PACKAGES: Package[] = [
     priceYearlyPerMonth: 699,
     priceYearlyTotal: 7390,
     limits: { buildings: "4 อาคาร", rooms: "100 ห้อง", tenants: "100 ผู้เช่า" },
+    caps: { buildings: 4, rooms: 100, tenants: 100 },
     cta: "เริ่มใช้ Plus",
   },
   {
@@ -43,6 +46,7 @@ export const PACKAGES: Package[] = [
     priceYearlyPerMonth: 999,
     priceYearlyTotal: 11190,
     limits: { buildings: "10 อาคาร", rooms: "300 ห้อง", tenants: "300 ผู้เช่า" },
+    caps: { buildings: 10, rooms: 300, tenants: 300 },
     highlight: true,
     cta: "เริ่มใช้ Pro",
   },
@@ -54,6 +58,7 @@ export const PACKAGES: Package[] = [
     priceYearlyPerMonth: null,
     priceYearlyTotal: null,
     limits: { buildings: "ไม่จำกัด", rooms: "ไม่จำกัด", tenants: "ไม่จำกัด" },
+    caps: { buildings: null, rooms: null, tenants: null },
     cta: "ติดต่อเรา",
   },
 ];

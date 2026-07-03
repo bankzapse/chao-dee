@@ -38,6 +38,9 @@ export async function updateSession(request: NextRequest) {
     pathname === "/" || // หน้า landing สาธารณะ
     isAuthRoute ||
     pathname.startsWith("/signup") ||
+    pathname.startsWith("/owner-login") || // ทางเข้าแผงเจ้าของ (ตรวจสิทธิ์ในหน้าเอง)
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/terms") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api");
 

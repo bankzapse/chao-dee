@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { checkLimit } from "@/lib/limits";
 import type { FormState } from "@/components/action-form";
 
 export async function createBuilding(
@@ -10,6 +11,9 @@ export async function createBuilding(
 ): Promise<FormState> {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "กรุณาระบุชื่ออาคาร" };
+
+  const limit = await checkLimit("buildings");
+  if (limit) return limit;
 
   const supabase = await createClient();
   const org_id = await getOrgId();

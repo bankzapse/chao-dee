@@ -70,6 +70,18 @@ export function OtpForm({ signup }: { signup?: boolean }) {
           {reqState?.error && (
             <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{reqState.error}</p>
           )}
+          {signup && (
+            <p className="text-xs leading-relaxed text-slate-400">
+              การสมัครถือว่าคุณยอมรับ{" "}
+              <Link href="/terms" className="text-indigo-600 hover:underline">
+                ข้อกำหนดการใช้งาน
+              </Link>{" "}
+              และ{" "}
+              <Link href="/privacy" className="text-indigo-600 hover:underline">
+                นโยบายความเป็นส่วนตัว
+              </Link>
+            </p>
+          )}
           <SubmitButton label={signup ? "สมัครและรับรหัส OTP" : "ส่งรหัส OTP"} />
         </form>
       ) : (

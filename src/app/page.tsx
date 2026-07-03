@@ -274,9 +274,11 @@ export default function LandingPage() {
             <span className="font-bold text-slate-900">ChaoDee</span>
             <span className="text-sm text-slate-400">— ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์</span>
           </div>
-          <div className="flex gap-6 text-sm text-slate-500">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
             <a href="#features" className="hover:text-slate-900">ฟีเจอร์</a>
             <a href="#pricing" className="hover:text-slate-900">ราคา</a>
+            <Link href="/privacy" className="hover:text-slate-900">ความเป็นส่วนตัว</Link>
+            <Link href="/terms" className="hover:text-slate-900">ข้อกำหนด</Link>
             <Link href="/login" className="hover:text-slate-900">เข้าสู่ระบบ</Link>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { checkLimit } from "@/lib/limits";
 import type { FormState } from "@/components/action-form";
 
 function parse(formData: FormData) {
@@ -21,6 +22,9 @@ export async function createTenant(
 ): Promise<FormState> {
   const data = parse(formData);
   if (!data.full_name) return { error: "กรุณาระบุชื่อผู้เช่า" };
+
+  const limit = await checkLimit("tenants");
+  if (limit) return limit;
 
   const supabase = await createClient();
   const org_id = await getOrgId();

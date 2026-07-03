@@ -7,7 +7,7 @@ export async function requirePlatformAdmin() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/owner-login");
 
   const { data } = await supabase
     .from("profiles")

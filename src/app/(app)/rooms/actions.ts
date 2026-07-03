@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { checkLimit } from "@/lib/limits";
 import type { FormState } from "@/components/action-form";
 import type { RoomStatus } from "@/lib/types";
 
@@ -25,6 +26,9 @@ export async function createRoom(
   const data = parseRoom(formData);
   if (!data.building_id) return { error: "กรุณาเลือกอาคาร" };
   if (!data.room_number) return { error: "กรุณาระบุเลขห้อง" };
+
+  const limit = await checkLimit("rooms");
+  if (limit) return limit;
 
   const supabase = await createClient();
   const { error } = await supabase.from("rooms").insert(data);

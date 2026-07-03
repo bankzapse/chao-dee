@@ -47,6 +47,12 @@ export default async function AppLayout({
   const isPlatformAdmin = Boolean(profile?.is_platform_admin);
   const canManageTeam = ["owner", "admin"].includes(profile?.role ?? "");
 
+  // จำนวนงานแจ้งซ่อมที่รอดำเนินการ (แสดงเป็น badge ที่เมนู)
+  const { count: openMaintenance } = await supabase
+    .from("maintenance_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "open");
+
   // บังคับสิทธิ์: กิจการที่แพ็คเกจหมดอายุ/ถูกระงับ → เข้าใช้งานไม่ได้ (แอดมินข้ามได้)
   if (!isPlatformAdmin) {
     const { data: sub } = await supabase
@@ -63,7 +69,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar orgName={orgName} canManageTeam={canManageTeam} />
+      <Sidebar orgName={orgName} canManageTeam={canManageTeam} openMaintenance={openMaintenance ?? 0} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur md:px-8">

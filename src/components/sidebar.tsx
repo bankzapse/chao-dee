@@ -26,9 +26,11 @@ const NAV = [
 export function Sidebar({
   orgName,
   canManageTeam,
+  openMaintenance = 0,
 }: {
   orgName: string;
   canManageTeam?: boolean;
+  openMaintenance?: number;
 }) {
   const pathname = usePathname();
   // แอปจัดการหอแยกขาดจากแผงเจ้าของระบบ — เข้า /owner ได้ทาง /owner-login เท่านั้น
@@ -61,7 +63,12 @@ export function Sidebar({
               }`}
             >
               <span className="text-base">{item.icon}</span>
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/maintenance" && openMaintenance > 0 && (
+                <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                  {openMaintenance}
+                </span>
+              )}
             </Link>
           );
         })}

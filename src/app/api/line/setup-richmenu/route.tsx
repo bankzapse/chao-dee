@@ -8,16 +8,21 @@ export const runtime = "nodejs";
 const LINE_API = "https://api.line.me/v2/bot";
 const LINE_DATA_API = "https://api-data.line.me/v2/bot";
 
-// 4 ปุ่ม (2500x843) → ส่งเป็นข้อความให้ webhook ประมวลผล
+// 6 ปุ่ม (2 แถว x 3 คอลัมน์, 2500x1686) → ส่งข้อความให้ webhook ประมวลผล
 const BUTTONS = [
-  { label: "บิล/ยอดค้าง", emoji: "🧾", text: "บิล" },
-  { label: "แจ้งซ่อม", emoji: "🔧", text: "แจ้งซ่อม" },
-  { label: "พัสดุ", emoji: "📦", text: "พัสดุ" },
-  { label: "ข้อมูลห้อง", emoji: "🚪", text: "ข้อมูลห้อง" },
+  { label: "บิล / ยอดค้าง", emoji: "🧾", text: "บิล", bg: "#4f46e5" },
+  { label: "แจ้งซ่อม", emoji: "🔧", text: "แจ้งซ่อม", bg: "#6366f1" },
+  { label: "พัสดุ", emoji: "📦", text: "พัสดุ", bg: "#0ea5e9" },
+  { label: "ข้อมูลห้อง", emoji: "🏠", text: "ข้อมูลห้อง", bg: "#06b6d4" },
+  { label: "วิธีชำระเงิน", emoji: "💳", text: "ชำระเงิน", bg: "#0891b2" },
+  { label: "ติดต่อผู้ดูแล", emoji: "☎️", text: "ติดต่อ", bg: "#4338ca" },
 ];
 const W = 2500;
-const H = 843;
-const COL = W / BUTTONS.length;
+const H = 1686;
+const COLS = 3;
+const ROWS = 2;
+const CW = W / COLS;
+const CH = H / ROWS;
 
 /** ตั้งค่า Rich Menu ของ LINE OA — ต้องเป็นแอดมินแพลตฟอร์ม หรือแนบ Bearer CRON_SECRET */
 export async function POST(req: Request) {
@@ -51,7 +56,12 @@ export async function POST(req: Request) {
     name: "ChaoDee Menu",
     chatBarText: "เมนู ChaoDee",
     areas: BUTTONS.map((b, i) => ({
-      bounds: { x: Math.round(i * COL), y: 0, width: Math.round(COL), height: H },
+      bounds: {
+        x: Math.round((i % COLS) * CW),
+        y: Math.round(Math.floor(i / COLS) * CH),
+        width: Math.round(CW),
+        height: Math.round(CH),
+      },
       action: { type: "message", text: b.text },
     })),
   };
@@ -68,24 +78,25 @@ export async function POST(req: Request) {
   // 2) สร้างรูปเมนูด้วย ImageResponse แล้วอัปโหลด
   const img = new ImageResponse(
     (
-      <div style={{ display: "flex", width: W, height: H, background: "#4f46e5" }}>
-        {BUTTONS.map((b, i) => (
+      <div style={{ display: "flex", flexWrap: "wrap", width: W, height: H }}>
+        {BUTTONS.map((b) => (
           <div
             key={b.text}
             style={{
-              width: COL,
-              height: H,
+              width: CW,
+              height: CH,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: 24,
+              gap: 28,
               color: "white",
-              borderRight: i < BUTTONS.length - 1 ? "2px solid rgba(255,255,255,0.25)" : "none",
+              background: b.bg,
+              border: "3px solid rgba(255,255,255,0.14)",
             }}
           >
-            <div style={{ fontSize: 150 }}>{b.emoji}</div>
-            <div style={{ fontSize: 60, fontWeight: 700 }}>{b.label}</div>
+            <div style={{ fontSize: 170 }}>{b.emoji}</div>
+            <div style={{ fontSize: 68, fontWeight: 700 }}>{b.label}</div>
           </div>
         ))}
       </div>

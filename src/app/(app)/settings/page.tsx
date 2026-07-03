@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Badge } from "@/components/ui";
 import { SettingsForm } from "./settings-form";
+import { LineOwnerCard } from "./line-owner-card";
 import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
@@ -14,7 +15,7 @@ export default async function SettingsPage() {
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase
       .from("organizations")
-      .select("name, promptpay_id, promptpay_name, invoice_note")
+      .select("name, promptpay_id, promptpay_name, invoice_note, owner_line_user_id, line_link_code")
       .single(),
     supabase.from("subscriptions").select("*").maybeSingle(),
   ]);
@@ -43,6 +44,12 @@ export default async function SettingsPage() {
           ต่ออายุ / อัปเกรด
         </a>
       </div>
+
+      {/* แจ้งเตือน LINE เจ้าของหอ */}
+      <LineOwnerCard
+        linked={Boolean(org?.owner_line_user_id)}
+        code={org?.line_link_code ?? ""}
+      />
 
       <SettingsForm
         org={{

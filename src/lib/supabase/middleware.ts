@@ -55,10 +55,11 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/opengraph-image") ||
     pathname.startsWith("/icon");
 
-  // ยังไม่ล็อกอิน + เข้าหน้าที่ต้องล็อกอิน → ส่งไป /login
+  // ยังไม่ล็อกอิน + เข้าหน้าที่ต้องล็อกอิน → ส่งไปหน้าเข้าระบบที่ถูกต้อง
+  // (แผงเจ้าของระบบ /owner/* ใช้ทางเข้า /owner-login แยกจากแอปเจ้าของหอ)
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = pathname.startsWith("/owner") ? "/owner-login" : "/login";
     return NextResponse.redirect(url);
   }
 

@@ -5,7 +5,14 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { signUpRequest, type SignupState } from "./actions";
 import { verifyOtp, type AuthState } from "@/app/login/actions";
-import { BUILDING_TYPES, ROOM_BUCKETS, PROPERTY_STATUS, PROVINCES } from "@/lib/signup-options";
+import { BUILDING_TYPES, ROOM_BUCKETS, PROPERTY_STATUS } from "@/lib/signup-options";
+
+async function fetchGeo(params: Record<string, string>): Promise<string[]> {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`/api/geo?${qs}`);
+  const data = (await res.json()) as { options: string[] };
+  return data.options ?? [];
+}
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -16,10 +23,30 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function SignupForm() {
+export function SignupForm({ provinces }: { provinces: string[] }) {
   const [reqState, reqAction] = useActionState<SignupState, FormData>(signUpRequest, null);
   const [verState, verAction] = useActionState<AuthState, FormData>(verifyOtp, null);
   const [buildingType, setBuildingType] = useState("dorm");
+
+  // ที่ตั้ง: จังหวัด → อำเภอ → ตำบล (โหลดต่อเนื่อง)
+  const [province, setProvince] = useState("");
+  const [amphoe, setAmphoe] = useState("");
+  const [tambon, setTambon] = useState("");
+  const [amphoes, setAmphoes] = useState<string[]>([]);
+  const [tambons, setTambons] = useState<string[]>([]);
+
+  async function onProvince(v: string) {
+    setProvince(v);
+    setAmphoe("");
+    setTambon("");
+    setTambons([]);
+    setAmphoes(v ? await fetchGeo({ province: v }) : []);
+  }
+  async function onAmphoe(v: string) {
+    setAmphoe(v);
+    setTambon("");
+    setTambons(v ? await fetchGeo({ province, amphoe: v }) : []);
+  }
 
   const otpStep = Boolean(reqState?.otpSent);
   const phone = reqState?.phone ?? "";
@@ -66,26 +93,62 @@ export function SignupForm() {
         <input name="org_name" className="field" placeholder="เช่น หอพักสุขใจ" required />
       </div>
 
-      {/* ที่ตั้ง */}
+      {/* ที่ตั้ง: จังหวัด / อำเภอ / ตำบล */}
       <div>
         <label className="label">
           ที่ตั้งหอพัก <span className="text-rose-500">*</span>
         </label>
         <div className="grid gap-3 sm:grid-cols-3">
-          <select className="field" disabled defaultValue="TH">
-            <option value="TH">Thailand</option>
-          </select>
-          <select name="province" className="field" required defaultValue="">
+          <select
+            name="province"
+            className="field"
+            required
+            value={province}
+            onChange={(e) => onProvince(e.target.value)}
+          >
             <option value="" disabled>
               เลือกจังหวัด
             </option>
-            {PROVINCES.map((p) => (
+            {provinces.map((p) => (
               <option key={p} value={p}>
                 {p}
               </option>
             ))}
           </select>
-          <input name="district" className="field" placeholder="อำเภอ/เขต" />
+          <select
+            name="district"
+            className="field"
+            required
+            value={amphoe}
+            onChange={(e) => onAmphoe(e.target.value)}
+            disabled={!province}
+          >
+            <option value="" disabled>
+              เลือกอำเภอ/เขต
+            </option>
+            {amphoes.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+          <select
+            name="subdistrict"
+            className="field"
+            required
+            value={tambon}
+            onChange={(e) => setTambon(e.target.value)}
+            disabled={!amphoe}
+          >
+            <option value="" disabled>
+              เลือกตำบล/แขวง
+            </option>
+            {tambons.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

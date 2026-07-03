@@ -21,7 +21,8 @@
     "next": "^15.1.6",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "thai-address-database": "^0.0.30"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",

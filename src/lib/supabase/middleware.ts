@@ -34,10 +34,16 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login");
+  // หน้า auth ที่ถ้าล็อกอินแล้วควรเด้งกลับแดชบอร์ด
+  const authedShouldLeave =
+    isAuthRoute ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/forgot-password");
   const isPublic =
     pathname === "/" || // หน้า landing สาธารณะ
     isAuthRoute ||
     pathname.startsWith("/signup") ||
+    pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/owner-login") || // ทางเข้าแผงเจ้าของ (ตรวจสิทธิ์ในหน้าเอง)
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
@@ -56,8 +62,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ล็อกอินแล้วแต่ยังอยู่หน้า login → ส่งไปแดชบอร์ด
-  if (user && isAuthRoute) {
+  // ล็อกอินแล้วแต่ยังอยู่หน้า auth → ส่งไปแดชบอร์ด
+  if (user && authedShouldLeave) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

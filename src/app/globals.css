@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
+  --background: #f6f7fb;
   --foreground: #0f172a;
 }
 
@@ -10,42 +10,98 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(99, 102, 241, 0.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 0%, rgba(6, 182, 212, 0.05), transparent 55%),
+    var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* input/select base */
+::selection {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+/* scrollbar ที่ดูสะอาดขึ้น */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.45);
+  background-clip: content-box;
+}
+
+/* ---- Inputs ---- */
 .field {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder:text-slate-400;
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10;
+}
+.field:disabled {
+  @apply cursor-not-allowed bg-slate-50 text-slate-400;
 }
 
 .label {
-  @apply mb-1 block text-sm font-medium text-slate-700;
+  @apply mb-1.5 block text-sm font-medium text-slate-700;
 }
 
+/* ---- Buttons ---- */
 .btn-primary,
 .btn-secondary,
 .btn-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
 }
 .btn-primary {
-  @apply bg-indigo-600 text-white hover:bg-indigo-700;
+  @apply text-white shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25;
+  background-image: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+.btn-primary:hover {
+  background-image: linear-gradient(135deg, #6d70f3, #4338ca);
 }
 .btn-secondary {
-  @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+  @apply border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50;
 }
 .btn-danger {
-  @apply border border-rose-200 bg-white text-rose-600 hover:bg-rose-50;
+  @apply border border-rose-200 bg-white text-rose-600 shadow-sm hover:bg-rose-50;
 }
 
+/* ---- Cards ---- */
 .card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  @apply rounded-2xl border border-slate-200/70 bg-white shadow-sm transition-shadow duration-200;
+}
+.card-hover {
+  @apply hover:-translate-y-0.5 hover:shadow-md;
+}
+
+/* subtle fade-in สำหรับเนื้อหาหน้า */
+@keyframes chao-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-in {
+  animation: chao-fade-in 0.28s ease-out both;
 }
 
 /* ---- Print (ใบแจ้งหนี้/ใบเสร็จ) ---- */
 @media print {
-  .no-print {
+  .no-print,
+  .print\:hidden {
     display: none !important;
   }
   body {

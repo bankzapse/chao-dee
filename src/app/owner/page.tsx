@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { StatCard, Badge } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import { BarChart, type BarDatum } from "@/components/bar-chart";
 import {
   formatBaht,
@@ -57,32 +57,78 @@ export default async function OwnerDashboard() {
     value: revByPeriod.get(p) ?? 0,
   }));
 
+  const totalMembers = (orgs ?? []).length;
+  const pendingAmount = pendingPays.reduce((s, p) => s + Number(p.amount), 0);
+  const statusTotal = Math.max(1, active + trialing + inactive);
+
+  const kpis = [
+    { icon: "👥", label: "สมาชิกทั้งหมด", value: String(totalMembers), hint: `+${newThisMonth} เดือนนี้`, grad: "from-indigo-500 to-violet-500" },
+    { icon: "💰", label: "รายได้/เดือน (MRR)", value: formatBaht(mrr), hint: `ARR ${formatBaht(mrr * 12)}`, grad: "from-emerald-500 to-teal-500" },
+    { icon: "📈", label: "รายได้เดือนนี้", value: formatBaht(revenueThisMonth), hint: "จากที่ยืนยันแล้ว", grad: "from-cyan-500 to-sky-500" },
+    { icon: "⏳", label: "รอยืนยันชำระ", value: String(pendingPays.length), hint: formatBaht(pendingAmount), grad: "from-amber-500 to-orange-500" },
+  ];
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-slate-900">ภาพรวมระบบ</h1>
-      <p className="mt-1 text-sm text-slate-500">สรุปสมาชิกและรายได้ของ ChaoDee</p>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="สมาชิกทั้งหมด" value={String((orgs ?? []).length)} hint={`+${newThisMonth} เดือนนี้`} accent="indigo" />
-        <StatCard label="รายได้/เดือน (MRR)" value={formatBaht(mrr)} hint={`ARR ${formatBaht(mrr * 12)}`} accent="emerald" />
-        <StatCard label="รายได้เดือนนี้" value={formatBaht(revenueThisMonth)} accent="emerald" />
-        <StatCard label="รอยืนยันชำระ" value={String(pendingPays.length)} hint={formatBaht(pendingPays.reduce((s, p) => s + Number(p.amount), 0))} accent="amber" />
+    <div className="animate-in space-y-6">
+      {/* hero */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-cyan-500 p-6 text-white shadow-lg shadow-indigo-500/20 md:p-8">
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative">
+          <p className="text-sm text-indigo-100">แผงเจ้าของระบบ · ChaoDee</p>
+          <h1 className="mt-1 text-2xl font-bold md:text-3xl">ภาพรวมระบบ</h1>
+          <p className="mt-1 text-sm text-indigo-100">
+            {totalMembers} กิจการ · {active} ใช้งานอยู่ · {formatBaht(mrr)}/เดือน
+          </p>
+        </div>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="ใช้งานอยู่ (active)" value={String(active)} accent="emerald" />
-        <StatCard label="ทดลองใช้ (trial)" value={String(trialing)} accent="slate" />
-        <StatCard label="หมดอายุ/ระงับ" value={String(inactive)} accent="rose" />
+      {/* KPI cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map((k) => (
+          <div key={k.label} className="card card-hover p-5">
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${k.grad} text-xl shadow-sm`}>
+              {k.icon}
+            </div>
+            <p className="mt-3 text-sm text-slate-500">{k.label}</p>
+            <p className="mt-0.5 text-2xl font-bold text-slate-900">{k.value}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{k.hint}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      {/* สถานะสมาชิก + แถบสัดส่วน */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">สถานะสมาชิก</h2>
+          <span className="text-xs text-slate-400">รวม {active + trialing + inactive} กิจการ</span>
+        </div>
+        <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="bg-emerald-500" style={{ width: `${(active / statusTotal) * 100}%` }} />
+          <div className="bg-slate-300" style={{ width: `${(trialing / statusTotal) * 100}%` }} />
+          <div className="bg-rose-400" style={{ width: `${(inactive / statusTotal) * 100}%` }} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> ใช้งานอยู่ <b className="text-slate-900">{active}</b></span>
+          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-slate-300" /> ทดลองใช้ <b className="text-slate-900">{trialing}</b></span>
+          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-rose-400" /> หมดอายุ/ระงับ <b className="text-slate-900">{inactive}</b></span>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
         <div className="card p-5">
           <h2 className="mb-3 font-semibold text-slate-900">รายได้ย้อนหลัง 6 เดือน</h2>
           <BarChart data={revChart} />
         </div>
 
         <div className="card p-5">
-          <h2 className="mb-3 font-semibold text-slate-900">ครบกำหนดใน 7 วัน</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">ครบกำหนดใน 7 วัน</h2>
+            {expiringSoon.length > 0 && (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                {expiringSoon.length} รายการ
+              </span>
+            )}
+          </div>
           {expiringSoon.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-400">ไม่มีสมาชิกใกล้ครบกำหนด 🎉</p>
           ) : (
@@ -91,7 +137,7 @@ export default async function OwnerDashboard() {
                 <Link
                   key={s.id}
                   href={`/owner/members/${s.org_id}`}
-                  className="flex items-center justify-between py-2.5 text-sm hover:opacity-70"
+                  className="flex items-center justify-between py-2.5 text-sm transition hover:opacity-70"
                 >
                   <span className="font-medium text-slate-900">
                     {(s.organizations as { name?: string } | null)?.name ?? "-"}

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { SignupForm } from "./signup-form";
+import { getProvinces } from "@/lib/thai-geo";
 
 export const metadata = { title: "สมัครใช้งาน" };
 
 export default function SignupPage() {
+  const provinces = getProvinces();
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
@@ -28,7 +30,7 @@ export default function SignupPage() {
           </p>
         </div>
         <div className="card p-6 sm:p-8">
-          <SignupForm />
+          <SignupForm provinces={provinces} />
         </div>
       </main>
     </div>

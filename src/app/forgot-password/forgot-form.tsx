@@ -1,0 +1,84 @@
+"use client";
+
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import Link from "next/link";
+import {
+  requestPasswordReset,
+  confirmPasswordReset,
+  type AuthState,
+} from "@/app/login/actions";
+
+function SubmitButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="btn-primary w-full" disabled={pending}>
+      {pending ? "กำลังดำเนินการ…" : label}
+    </button>
+  );
+}
+
+export function ForgotForm() {
+  const [reqState, reqAction] = useActionState<AuthState, FormData>(requestPasswordReset, null);
+  const [confState, confAction] = useActionState<AuthState, FormData>(confirmPasswordReset, null);
+
+  const step2 = Boolean(reqState?.otpSent);
+  const phone = reqState?.phone ?? "";
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">ลืมรหัสผ่าน</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          {step2 ? "กรอกรหัส OTP และตั้งรหัสผ่านใหม่" : "กรอกเบอร์โทร เพื่อรับรหัส OTP ยืนยันตัวตน"}
+        </p>
+      </div>
+
+      {!step2 ? (
+        <form action={reqAction} className="space-y-4">
+          <div>
+            <label className="label">เบอร์โทรศัพท์</label>
+            <input name="phone" type="tel" inputMode="numeric" className="field" placeholder="0812345678" required autoFocus />
+          </div>
+          {reqState?.error && (
+            <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{reqState.error}</p>
+          )}
+          <SubmitButton label="ส่งรหัส OTP" />
+        </form>
+      ) : (
+        <form action={confAction} className="space-y-4">
+          <p className="text-sm text-slate-500">
+            ส่งรหัสไปที่ <span className="font-medium text-slate-800">{phone}</span> แล้ว
+          </p>
+          <input type="hidden" name="phone" value={phone} />
+          <div>
+            <label className="label">รหัส OTP</label>
+            <input
+              name="code"
+              inputMode="numeric"
+              className="field text-center text-lg tracking-[0.5em]"
+              placeholder="______"
+              maxLength={6}
+              required
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="label">รหัสผ่านใหม่</label>
+            <input name="password" type="password" className="field" placeholder="อย่างน้อย 8 ตัวอักษร" minLength={8} required />
+          </div>
+          {confState?.error && (
+            <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{confState.error}</p>
+          )}
+          <SubmitButton label="ตั้งรหัสผ่านใหม่ & เข้าสู่ระบบ" />
+        </form>
+      )}
+
+      <p className="mt-6 text-center text-sm text-slate-500">
+        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">
+          ← กลับหน้าเข้าสู่ระบบ
+        </Link>
+      </p>
+    </div>
+  );
+}

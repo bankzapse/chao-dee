@@ -57,13 +57,18 @@ export function LoginForm() {
             <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{pwState.error}</p>
           )}
           <SubmitButton label="เข้าสู่ระบบ" />
-          <button
-            type="button"
-            onClick={() => setMode("otp")}
-            className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700"
-          >
-            เข้าสู่ระบบด้วยรหัส OTP แทน
-          </button>
+          <div className="flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => setMode("otp")}
+              className="text-indigo-600 hover:text-indigo-700"
+            >
+              เข้าด้วยรหัส OTP
+            </button>
+            <Link href="/forgot-password" className="text-slate-400 hover:text-slate-600">
+              ลืมรหัสผ่าน?
+            </Link>
+          </div>
         </form>
       )}
 

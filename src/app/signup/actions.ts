@@ -18,6 +18,7 @@ export async function signUpRequest(_prev: SignupState, formData: FormData): Pro
   const org_name = g("org_name");
   const province = g("province");
   const district = g("district");
+  const subdistrict = g("subdistrict");
   const room_count = g("room_count");
   const building_type = g("building_type") || "dorm";
   const prop_status = g("prop_status");
@@ -30,7 +31,8 @@ export async function signUpRequest(_prev: SignupState, formData: FormData): Pro
 
   // ตรวจความครบถ้วน (ตามฟิลด์บังคับ *)
   if (!org_name) return { error: "กรุณากรอกชื่อหอพัก" };
-  if (!province) return { error: "กรุณาเลือกจังหวัด" };
+  if (!province || !district || !subdistrict)
+    return { error: "กรุณาเลือกจังหวัด อำเภอ และตำบลให้ครบ" };
   if (!room_count) return { error: "กรุณาเลือกจำนวนห้องพัก" };
   if (!prop_status) return { error: "กรุณาเลือกสถานะหอพัก" };
   if (!first || !last) return { error: "กรุณากรอกชื่อ-นามสกุล" };
@@ -50,6 +52,7 @@ export async function signUpRequest(_prev: SignupState, formData: FormData): Pro
         room_count,
         province,
         district,
+        subdistrict,
         prop_status,
         email,
         promo,

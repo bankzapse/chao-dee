@@ -42,7 +42,12 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/api");
+    pathname.startsWith("/api") ||
+    // ไฟล์ SEO / metadata สาธารณะ
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname.startsWith("/opengraph-image") ||
+    pathname.startsWith("/icon");
 
   // ยังไม่ล็อกอิน + เข้าหน้าที่ต้องล็อกอิน → ส่งไป /login
   if (!user && !isPublic) {

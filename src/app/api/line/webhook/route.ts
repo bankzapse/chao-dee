@@ -72,12 +72,20 @@ export async function POST(req: Request) {
     // 1) เป็นผู้เช่าที่ผูกแล้วไหม
     const { data: tenant } = await supabase
       .from("tenants")
-      .select("id, full_name, org_id")
+      .select("id, full_name, org_id, line_state")
       .eq("line_user_id", userId)
       .maybeSingle();
 
     if (tenant) {
-      await handleCommand(supabase, replyToken, tenant.id, tenant.org_id, tenant.full_name, text);
+      await handleCommand(
+        supabase,
+        replyToken,
+        tenant.id,
+        tenant.org_id,
+        tenant.full_name,
+        tenant.line_state ?? "",
+        text
+      );
       continue;
     }
 
@@ -193,52 +201,81 @@ async function handleOwner(
   ]);
 }
 
+/** สร้างงานแจ้งซ่อม + ตอบขอบคุณ + แจ้งเตือนเจ้าของ */
+async function createMaintenanceRequest(
+  supabase: ReturnType<typeof createAdminClient>,
+  replyToken: string,
+  orgId: string,
+  tenantId: string,
+  fullName: string,
+  detail: string
+) {
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("room_id, rooms(room_number)")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .maybeSingle();
+  await supabase.from("maintenance_requests").insert({
+    org_id: orgId,
+    tenant_id: tenantId,
+    room_id: contract?.room_id ?? null,
+    title: detail.slice(0, 80),
+    description: detail,
+    source: "line",
+    status: "open",
+  });
+  const room = (contract?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "-";
+  await replyMessage(replyToken, [
+    textMessage(
+      `ขอบคุณที่แจ้งครับ 🙏\nเรารับเรื่อง “${detail}” และส่งให้ทีมงานดำเนินการแล้ว\nจะรีบดำเนินการให้เร็วที่สุดครับ 🛠️`
+    ),
+  ]);
+  await notifyOwner(
+    supabase,
+    orgId,
+    `🔧 แจ้งซ่อมใหม่\nห้อง ${room} · ${fullName}\n“${detail}”\nดูรายละเอียดในแอป ChaoDee`
+  );
+}
+
+const MENU_CMD_RE =
+  /^(บิล|ยอดค้าง|ค้างชำระ|พัสดุ|ห้อง|ข้อมูล|ชำระ|จ่ายเงิน|โอน|ติดต่อ|ผู้ดูแล|เจ้าของ|แจ้งซ่อม)/;
+
 async function handleCommand(
   supabase: ReturnType<typeof createAdminClient>,
   replyToken: string,
   tenantId: string,
   orgId: string,
   fullName: string,
+  pendingState: string,
   text: string
 ) {
   const t = text.toLowerCase();
+
+  // กำลังรอรายละเอียดแจ้งซ่อม → ข้อความนี้คือรายละเอียด (เว้นแต่เป็นคำสั่งเมนู)
+  if (pendingState === "maintenance") {
+    await supabase.from("tenants").update({ line_state: "" }).eq("id", tenantId);
+    if (!MENU_CMD_RE.test(text.trim())) {
+      await createMaintenanceRequest(supabase, replyToken, orgId, tenantId, fullName, text.trim());
+      return;
+    }
+    // เป็นคำสั่งเมนู → ล้าง state แล้วทำคำสั่งปกติต่อด้านล่าง
+  }
 
   // แจ้งซ่อม
   if (text.startsWith("แจ้งซ่อม")) {
     const detail = text.replace(/^แจ้งซ่อม\s*/, "").trim();
     if (!detail) {
+      // ยังไม่ระบุ → จำสถานะไว้ ให้พิมพ์รายละเอียดในข้อความถัดไปได้เลย
+      await supabase.from("tenants").update({ line_state: "maintenance" }).eq("id", tenantId);
       await replyMessage(replyToken, [
         textMessage(
-          "กรุณาพิมพ์รายละเอียดต่อจาก “แจ้งซ่อม” เช่น:\n• แจ้งซ่อม แอร์ไม่เย็น\n• แจ้งซ่อม ก๊อกน้ำห้องน้ำรั่ว"
+          "แจ้งซ่อมเรื่องอะไรครับ? พิมพ์รายละเอียดมาได้เลย เช่น\n• แอร์ไม่เย็น\n• ก๊อกน้ำห้องน้ำรั่ว"
         ),
       ]);
       return;
     }
-    const { data: contract } = await supabase
-      .from("contracts")
-      .select("room_id, rooms(room_number)")
-      .eq("tenant_id", tenantId)
-      .eq("status", "active")
-      .maybeSingle();
-    await supabase.from("maintenance_requests").insert({
-      org_id: orgId,
-      tenant_id: tenantId,
-      room_id: contract?.room_id ?? null,
-      title: detail.slice(0, 80),
-      description: detail,
-      source: "line",
-      status: "open",
-    });
-    const room = (contract?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "-";
-    await replyMessage(replyToken, [
-      textMessage(`รับแจ้งซ่อมเรียบร้อย ✅\n“${detail}”\nเจ้าหน้าที่จะดำเนินการโดยเร็วครับ`),
-    ]);
-    // แจ้งเตือนเจ้าของหอ
-    await notifyOwner(
-      supabase,
-      orgId,
-      `🔧 แจ้งซ่อมใหม่\nห้อง ${room} · ${fullName}\n“${detail}”\nดูรายละเอียดในแอป ChaoDee`
-    );
+    await createMaintenanceRequest(supabase, replyToken, orgId, tenantId, fullName, detail);
     return;
   }
 

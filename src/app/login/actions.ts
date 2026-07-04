@@ -38,7 +38,8 @@ export async function requestOtp(
 
   if (error) {
     if (error.status === 429) return { error: "ขอรหัสถี่เกินไป กรุณารอสักครู่", phone };
-    return { error: error.message, phone };
+    // ส่ง OTP ไม่สำเร็จ (เช่น ผู้ให้บริการ SMS ขัดข้อง) → แนะนำใช้รหัสผ่าน
+    return { error: "ส่งรหัส OTP ไม่สำเร็จชั่วคราว กรุณาลองใหม่ หรือเข้าสู่ระบบด้วยรหัสผ่าน", phone };
   }
   return { otpSent: true, phone };
 }
@@ -95,7 +96,8 @@ export async function requestPasswordReset(
   });
   if (error) {
     if (error.status === 429) return { error: "ขอรหัสถี่เกินไป กรุณารอสักครู่", phone };
-    return { error: error.message, phone };
+    // ส่ง OTP ไม่สำเร็จ (เช่น ผู้ให้บริการ SMS ขัดข้อง) → แนะนำใช้รหัสผ่าน
+    return { error: "ส่งรหัส OTP ไม่สำเร็จชั่วคราว กรุณาลองใหม่ หรือเข้าสู่ระบบด้วยรหัสผ่าน", phone };
   }
   return { otpSent: true, phone };
 }

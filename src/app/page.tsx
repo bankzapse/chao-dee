@@ -33,6 +33,15 @@ const FAQ = [
   { q: "ทดลองใช้ได้ไหม?", a: "ได้ ทดลองฟรี 30 วัน ไม่ต้องผูกบัตร ยกเลิกได้ทุกเมื่อ" },
 ];
 
+const HERO_IMAGE =
+  "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80";
+
+const GALLERY = [
+  { src: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=75", label: "อพาร์ตเมนต์" },
+  { src: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=600&q=75", label: "หอพัก" },
+  { src: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=75", label: "คอนโด" },
+];
+
 export default function LandingPage() {
   return (
     <div className="bg-white text-slate-800">
@@ -96,37 +105,38 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* hero visual: mock dashboard */}
-            <div className="relative">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-indigo-100">
-                <div className="mb-4 flex items-center justify-between">
+            {/* hero visual: รูปตึกจริง + การ์ดแดชบอร์ดลอยทับ */}
+            <div className="relative pb-12 sm:pb-16">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={HERO_IMAGE}
+                alt="อาคารอพาร์ตเมนต์"
+                className="h-80 w-full rounded-3xl object-cover shadow-2xl shadow-indigo-200/70 sm:h-[440px]"
+              />
+              {/* การ์ดแดชบอร์ดลอย */}
+              <div className="absolute -bottom-2 left-2 right-2 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur sm:left-6 sm:right-6 sm:p-5">
+                <div className="mb-3 flex items-center justify-between">
                   <p className="font-semibold text-slate-900">แดชบอร์ด</p>
                   <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
                     เรียลไทม์
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <MockStat label="อัตราเข้าพัก" value="92%" accent="text-indigo-600" />
-                  <MockStat label="รายได้/เดือน" value="฿284,500" accent="text-emerald-600" />
-                  <MockStat label="ห้องว่าง" value="8" accent="text-amber-600" />
-                  <MockStat label="ค้างชำระ" value="฿12,400" accent="text-rose-600" />
-                </div>
-                <div className="mt-4 rounded-xl bg-slate-50 p-4">
-                  <p className="mb-2 text-xs text-slate-500">รายได้ 6 เดือน</p>
-                  <div className="flex items-end gap-2" style={{ height: 70 }}>
-                    {[45, 60, 52, 72, 66, 88].map((h, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 rounded-t bg-gradient-to-t from-indigo-500 to-cyan-400"
-                        style={{ height: `${h}%` }}
-                      />
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <MockStat label="เข้าพัก" value="92%" accent="text-indigo-600" />
+                  <MockStat label="รายได้" value="฿284k" accent="text-emerald-600" />
+                  <MockStat label="ว่าง" value="8" accent="text-amber-600" />
+                  <MockStat label="ค้าง" value="฿12k" accent="text-rose-600" />
                 </div>
               </div>
-              <div className="absolute -bottom-4 -left-4 hidden rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-lg sm:block">
+              {/* การ์ด AI ลอย */}
+              <div className="absolute right-2 top-4 rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-lg sm:-right-5 sm:top-6">
                 <p className="text-xs text-slate-500">🤖 AI อ่านมิเตอร์</p>
                 <p className="text-sm font-bold text-slate-900">248 → +42 หน่วย</p>
+              </div>
+              {/* การ์ด LINE ลอย (เดสก์ท็อป) */}
+              <div className="absolute -left-5 top-24 hidden rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-lg lg:block">
+                <p className="text-xs text-slate-500">💬 แจ้งผ่าน LINE</p>
+                <p className="text-sm font-bold text-emerald-600">แจ้งซ่อมใหม่ 1</p>
               </div>
             </div>
           </div>
@@ -145,6 +155,30 @@ export default function LandingPage() {
             <div key={l} className="text-center">
               <p className="text-2xl font-bold text-indigo-600 sm:text-3xl">{v}</p>
               <p className="mt-1 text-sm text-slate-500">{l}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== PROPERTY TYPES (gallery) ===== */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="text-center">
+          <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">รองรับทุกแบบ</p>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">ดูแลได้ทุกประเภทที่พัก</h2>
+          <p className="mt-3 text-slate-500">หอพัก · คอนโด · อพาร์ตเมนต์ · เซอร์วิสอพาร์ตเมนต์ — จัดการได้ในระบบเดียว</p>
+        </div>
+        <div className="mt-10 grid gap-5 sm:grid-cols-3">
+          {GALLERY.map((g) => (
+            <div key={g.label} className="group relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={g.src}
+                alt={g.label}
+                loading="lazy"
+                className="h-60 w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/10 to-transparent" />
+              <p className="absolute bottom-4 left-5 text-xl font-bold text-white drop-shadow">{g.label}</p>
             </div>
           ))}
         </div>

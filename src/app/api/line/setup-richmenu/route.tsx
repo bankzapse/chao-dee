@@ -10,12 +10,12 @@ const LINE_DATA_API = "https://api-data.line.me/v2/bot";
 
 // 6 ปุ่ม (2 แถว x 3 คอลัมน์, 2500x1686) → ส่งข้อความให้ webhook ประมวลผล
 const BUTTONS = [
-  { label: "บิล / ยอดค้าง", emoji: "🧾", text: "บิล", bg: "#4f46e5" },
-  { label: "แจ้งซ่อม", emoji: "🔧", text: "แจ้งซ่อม", bg: "#6366f1" },
-  { label: "พัสดุ", emoji: "📦", text: "พัสดุ", bg: "#0ea5e9" },
+  { label: "บิล / ยอดค้าง", emoji: "🧾", text: "บิล", bg: "#6366f1" },
+  { label: "แจ้งซ่อม", emoji: "🔧", text: "แจ้งซ่อม", bg: "#f59e0b" },
+  { label: "พัสดุ", emoji: "📦", text: "พัสดุ", bg: "#10b981" },
   { label: "ข้อมูลห้อง", emoji: "🏠", text: "ข้อมูลห้อง", bg: "#06b6d4" },
-  { label: "วิธีชำระเงิน", emoji: "💳", text: "ชำระเงิน", bg: "#0891b2" },
-  { label: "ติดต่อผู้ดูแล", emoji: "☎️", text: "ติดต่อ", bg: "#4338ca" },
+  { label: "วิธีชำระเงิน", emoji: "💳", text: "ชำระเงิน", bg: "#8b5cf6" },
+  { label: "ติดต่อผู้ดูแล", emoji: "☎️", text: "ติดต่อ", bg: "#f43f5e" },
 ];
 const W = 2500;
 const H = 1686;
@@ -23,6 +23,70 @@ const COLS = 3;
 const ROWS = 2;
 const CW = W / COLS;
 const CH = H / ROWS;
+
+/** รูปเมนู (glass cards บนพื้น gradient) */
+function menuImage() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: W,
+          height: H,
+          backgroundImage: "linear-gradient(135deg, #4338ca 0%, #4f46e5 45%, #0e7490 100%)",
+        }}
+      >
+        {BUTTONS.map((b) => (
+          <div
+            key={b.text}
+            style={{ width: CW, height: CH, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <div
+              style={{
+                width: CW - 72,
+                height: CH - 72,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 30,
+                borderRadius: 48,
+                background: "rgba(255,255,255,0.10)",
+                border: "2px solid rgba(255,255,255,0.22)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  width: 190,
+                  height: 190,
+                  borderRadius: 999,
+                  background: b.bg,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 104,
+                }}
+              >
+                {b.emoji}
+              </div>
+              <div style={{ fontSize: 62, fontWeight: 700, color: "white" }}>{b.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+    { width: W, height: H }
+  );
+}
+
+/** ดูตัวอย่างรูปเมนู (เฉพาะ dev — กันยิงถี่เปลือง CPU บน production) */
+export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "not available" }, { status: 404 });
+  }
+  return menuImage();
+}
 
 /** ตั้งค่า Rich Menu ของ LINE OA — ต้องเป็นแอดมินแพลตฟอร์ม หรือแนบ Bearer CRON_SECRET */
 export async function POST(req: Request) {
@@ -48,6 +112,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "ยังไม่ได้ตั้งค่า LINE (LINE_CHANNEL_ACCESS_TOKEN)" }, { status: 400 });
   }
   const token = lineToken();
+
+  // 0) ลบ rich menu เก่าทั้งหมด (กันสะสมตอนรันซ้ำ)
+  try {
+    const listRes = await fetch(`${LINE_API}/richmenu/list`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (listRes.ok) {
+      const { richmenus } = (await listRes.json()) as { richmenus: { richMenuId: string }[] };
+      await Promise.all(
+        (richmenus ?? []).map((r) =>
+          fetch(`${LINE_API}/richmenu/${r.richMenuId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        )
+      );
+    }
+  } catch {
+    /* best-effort */
+  }
 
   // 1) สร้าง rich menu object
   const richmenu = {
@@ -75,35 +159,8 @@ export async function POST(req: Request) {
   }
   const { richMenuId } = (await createRes.json()) as { richMenuId: string };
 
-  // 2) สร้างรูปเมนูด้วย ImageResponse แล้วอัปโหลด
-  const img = new ImageResponse(
-    (
-      <div style={{ display: "flex", flexWrap: "wrap", width: W, height: H }}>
-        {BUTTONS.map((b) => (
-          <div
-            key={b.text}
-            style={{
-              width: CW,
-              height: CH,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 28,
-              color: "white",
-              background: b.bg,
-              border: "3px solid rgba(255,255,255,0.14)",
-            }}
-          >
-            <div style={{ fontSize: 170 }}>{b.emoji}</div>
-            <div style={{ fontSize: 68, fontWeight: 700 }}>{b.label}</div>
-          </div>
-        ))}
-      </div>
-    ),
-    { width: W, height: H }
-  );
-  const imgBytes = new Uint8Array(await img.arrayBuffer());
+  // 2) สร้างรูปเมนู แล้วอัปโหลด
+  const imgBytes = new Uint8Array(await menuImage().arrayBuffer());
 
   const uploadRes = await fetch(`${LINE_DATA_API}/richmenu/${richMenuId}/content`, {
     method: "POST",

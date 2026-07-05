@@ -187,6 +187,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <p className="mt-6 text-center text-xs text-slate-400">
             เอกสารนี้ออกโดยระบบอัตโนมัติ · ชำระผ่าน {pay.method === "promptpay" ? "PromptPay" : "โอนเงิน"}
           </p>
+          {!isTaxInvoice && (
+            <p className="mt-1 text-center text-xs text-slate-400">
+              * ราคานี้ไม่มีภาษีมูลค่าเพิ่ม (ผู้ประกอบการยังไม่ได้จดทะเบียน VAT)
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -59,10 +59,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               </div>
               <div>
                 <p className="text-lg font-bold text-slate-900">ChaoDee (เช่าดี)</p>
-                <p className="text-xs text-slate-500">chao-dee.com · {COMPANY.email}</p>
-                <p className="text-xs text-slate-400">
-                  {COMPANY.name} · เลขผู้เสียภาษี {COMPANY.taxId}
+                <p className="text-xs text-slate-600">
+                  โดย {COMPANY.name} · เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}
                 </p>
+                <p className="text-xs text-slate-400">{COMPANY.address}</p>
+                <p className="text-xs text-slate-400">chao-dee.com · {COMPANY.email}</p>
               </div>
             </div>
             <div className="text-right">

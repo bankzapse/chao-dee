@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Badge } from "@/components/ui";
 import { SettingsForm } from "./settings-form";
 import { LineOwnerCard } from "./line-owner-card";
+import { TaxInfoCard } from "./tax-info-card";
 import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
@@ -15,7 +16,7 @@ export default async function SettingsPage() {
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase
       .from("organizations")
-      .select("name, promptpay_id, promptpay_name, invoice_note, owner_line_user_id, line_link_code")
+      .select("name, promptpay_id, promptpay_name, invoice_note, owner_line_user_id, line_link_code, tax_name, tax_id, tax_address, tax_branch")
       .single(),
     supabase.from("subscriptions").select("*").maybeSingle(),
   ]);
@@ -49,6 +50,16 @@ export default async function SettingsPage() {
       <LineOwnerCard
         linked={Boolean(org?.owner_line_user_id)}
         code={org?.line_link_code ?? ""}
+      />
+
+      {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ ChaoDee) */}
+      <TaxInfoCard
+        org={{
+          tax_name: org?.tax_name ?? "",
+          tax_id: org?.tax_id ?? "",
+          tax_address: org?.tax_address ?? "",
+          tax_branch: org?.tax_branch ?? "สำนักงานใหญ่",
+        }}
       />
 
       <SettingsForm

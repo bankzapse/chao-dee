@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Pricing } from "@/components/landing/pricing";
 import { HeaderCta } from "@/components/landing/header-cta";
+import { COMPANY } from "@/lib/company";
 
 const FEATURES = [
   { icon: "📊", title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
@@ -307,9 +308,14 @@ export default function LandingPage() {
             <Link href="/login" className="hover:text-slate-900">เข้าสู่ระบบ</Link>
           </div>
         </div>
-        <p className="pb-8 text-center text-xs text-slate-400">
-          © 2026 ChaoDee (เช่าดี) · chao-dee.com
-        </p>
+        <div className="pb-8 text-center text-xs text-slate-400">
+          <p>
+            ChaoDee เป็นผลิตภัณฑ์ในเครือ{" "}
+            <span className="font-semibold text-slate-500">ServHub</span> · ดำเนินการโดย{" "}
+            {COMPANY.name}
+          </p>
+          <p className="mt-1">© 2026 ServHub · chao-dee.com · เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}</p>
+        </div>
       </footer>
     </div>
   );

@@ -25,3 +25,23 @@ export async function updateOrgSettings(
   if (error) return { error: error.message };
   return { ok: true };
 }
+
+/** บันทึกข้อมูลสำหรับออกใบกำกับภาษี (ข้อมูลผู้ซื้อ = กิจการนี้) */
+export async function updateTaxInfo(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const supabase = await createClient();
+  const org_id = await getOrgId();
+  const { error } = await supabase
+    .from("organizations")
+    .update({
+      tax_name: String(formData.get("tax_name") ?? "").trim(),
+      tax_id: String(formData.get("tax_id") ?? "").replace(/\D/g, ""),
+      tax_address: String(formData.get("tax_address") ?? "").trim(),
+      tax_branch: String(formData.get("tax_branch") ?? "สำนักงานใหญ่").trim(),
+    })
+    .eq("id", org_id);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

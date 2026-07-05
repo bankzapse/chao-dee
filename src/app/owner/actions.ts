@@ -4,6 +4,7 @@ import { requirePlatformAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { incrementPromoUse } from "@/lib/promo";
+import { COMPANY } from "@/lib/company";
 import type { FormState } from "@/components/action-form";
 
 function addPeriod(from: Date, cycle: string): Date {
@@ -64,6 +65,13 @@ export async function verifyPayment(paymentId: string): Promise<void> {
   const newExpiry = addPeriod(base, pay.cycle);
   const periodStart = new Date().toISOString().slice(0, 10);
 
+  // ออกเลขที่ใบกำกับภาษี (เฉพาะเมื่อจด VAT แล้ว และยังไม่เคยออก)
+  let taxInvoiceNo = pay.tax_invoice_no ?? "";
+  if (COMPANY.vatRegistered && !taxInvoiceNo) {
+    const { data: no } = await admin.rpc("next_tax_invoice_no");
+    if (typeof no === "string") taxInvoiceNo = no;
+  }
+
   await admin
     .from("subscription_payments")
     .update({
@@ -72,6 +80,7 @@ export async function verifyPayment(paymentId: string): Promise<void> {
       verified_at: new Date().toISOString(),
       period_start: periodStart,
       period_end: newExpiry.toISOString().slice(0, 10),
+      tax_invoice_no: taxInvoiceNo,
     })
     .eq("id", paymentId);
 

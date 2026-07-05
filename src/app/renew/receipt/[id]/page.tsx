@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { packageBySlug } from "@/lib/packages";
 import { formatBaht, formatDate } from "@/lib/format";
 import { PrintButton } from "./print-button";
-import { COMPANY } from "@/lib/company";
+import { COMPANY, splitVat } from "@/lib/company";
 
 export const metadata = { title: "ใบเสร็จรับเงิน", robots: { index: false } };
 
@@ -18,7 +18,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("org_id, full_name, organizations(name)")
+    .select("org_id, full_name, organizations(name, tax_name, tax_id, tax_address, tax_branch)")
     .eq("id", user.id)
     .single();
 
@@ -35,10 +35,21 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
     redirect("/renew");
   }
 
-  const orgName = (profile?.organizations as { name?: string } | null)?.name ?? "-";
+  const org = (profile?.organizations as {
+    name?: string;
+    tax_name?: string;
+    tax_id?: string;
+    tax_address?: string;
+    tax_branch?: string;
+  } | null) ?? {};
+  const orgName = org.name ?? "-";
   const pkg = packageBySlug(pay.package_slug);
   const receiptNo = `CD-${String(pay.id).slice(0, 8).toUpperCase()}`;
   const amount = Number(pay.amount);
+
+  // โหมดใบกำกับภาษี: เปิดเมื่อจด VAT แล้ว + การชำระนี้มีเลขที่ใบกำกับ
+  const isTaxInvoice = COMPANY.vatRegistered && Boolean(pay.tax_invoice_no);
+  const { base, vat } = splitVat(amount);
 
   return (
     <div className="min-h-screen bg-slate-100 py-8 print:bg-white print:py-0">
@@ -67,18 +78,41 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold text-slate-900">ใบเสร็จรับเงิน</p>
-              <p className="text-xs text-slate-500">RECEIPT</p>
-              <p className="mt-2 text-sm font-medium text-slate-700">เลขที่ {receiptNo}</p>
+              <p className="text-lg font-bold text-slate-900">
+                {isTaxInvoice ? "ใบเสร็จรับเงิน / ใบกำกับภาษี" : "ใบเสร็จรับเงิน"}
+              </p>
+              <p className="text-xs text-slate-500">
+                {isTaxInvoice ? "RECEIPT / TAX INVOICE" : "RECEIPT"}
+              </p>
+              {isTaxInvoice ? (
+                <>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    เลขที่ {pay.tax_invoice_no}
+                  </p>
+                  <p className="text-xs text-slate-400">อ้างอิง {receiptNo}</p>
+                </>
+              ) : (
+                <p className="mt-2 text-sm font-medium text-slate-700">เลขที่ {receiptNo}</p>
+              )}
             </div>
           </div>
 
-          {/* ผู้รับ + วันที่ */}
+          {/* ผู้ซื้อ/ลูกค้า + วันที่ */}
           <div className="grid grid-cols-2 gap-6 py-6 text-sm">
             <div>
-              <p className="text-slate-400">ลูกค้า</p>
-              <p className="mt-1 font-medium text-slate-900">{orgName}</p>
-              {profile?.full_name && <p className="text-slate-500">{profile.full_name}</p>}
+              <p className="text-slate-400">{isTaxInvoice ? "ผู้ซื้อ / ลูกค้า" : "ลูกค้า"}</p>
+              <p className="mt-1 font-medium text-slate-900">
+                {(isTaxInvoice && org.tax_name) || orgName}
+              </p>
+              {isTaxInvoice ? (
+                <>
+                  {org.tax_id && <p className="text-slate-500">เลขผู้เสียภาษี {org.tax_id}</p>}
+                  {org.tax_branch && <p className="text-slate-500">{org.tax_branch}</p>}
+                  {org.tax_address && <p className="text-slate-500">{org.tax_address}</p>}
+                </>
+              ) : (
+                profile?.full_name && <p className="text-slate-500">{profile.full_name}</p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-slate-400">วันที่ชำระ</p>
@@ -115,15 +149,34 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
 
           {/* รวม */}
           <div className="mt-4 flex justify-end">
-            <div className="w-56 space-y-1 text-sm">
-              <div className="flex justify-between text-slate-500">
-                <span>ยอดรวม</span>
-                <span>{formatBaht(amount)}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
-                <span>รวมทั้งสิ้น</span>
-                <span>{formatBaht(amount)}</span>
-              </div>
+            <div className="w-64 space-y-1 text-sm">
+              {isTaxInvoice ? (
+                <>
+                  <div className="flex justify-between text-slate-500">
+                    <span>มูลค่าสินค้า/บริการ</span>
+                    <span>{formatBaht(base)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>ภาษีมูลค่าเพิ่ม {COMPANY.vatRate}%</span>
+                    <span>{formatBaht(vat)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
+                    <span>รวมทั้งสิ้น</span>
+                    <span>{formatBaht(amount)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between text-slate-500">
+                    <span>ยอดรวม</span>
+                    <span>{formatBaht(amount)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
+                    <span>รวมทั้งสิ้น</span>
+                    <span>{formatBaht(amount)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

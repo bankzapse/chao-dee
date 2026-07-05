@@ -13,4 +13,16 @@ export const COMPANY = {
   phone: process.env.NEXT_PUBLIC_COMPANY_PHONE || "",
   /** แบรนด์สินค้า (ผลิตภัณฑ์ภายใต้นิติบุคคล) */
   brand: "ChaoDee (เช่าดี)",
+  /** แบรนด์บริษัทแม่ (เครือ) */
+  parent: process.env.NEXT_PUBLIC_PARENT_BRAND || "ServHub",
+  /** จด VAT แล้วหรือยัง — ตั้ง NEXT_PUBLIC_COMPANY_VAT=true เมื่อจด VAT เพื่อเปิดใบกำกับภาษี */
+  vatRegistered: process.env.NEXT_PUBLIC_COMPANY_VAT === "true",
+  vatRate: 7,
 };
+
+/** แยกยอดรวม (รวม VAT แล้ว) เป็นฐาน + VAT */
+export function splitVat(total: number, rate = COMPANY.vatRate) {
+  const base = Math.round((total / (1 + rate / 100)) * 100) / 100;
+  const vat = Math.round((total - base) * 100) / 100;
+  return { base, vat, total };
+}

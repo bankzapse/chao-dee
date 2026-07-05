@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandMark } from "@/components/brand-mark";
 
 const NAV = [
   { href: "/dashboard", label: "แดชบอร์ด", icon: "📊" },
@@ -39,9 +40,7 @@ export function Sidebar({
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-          CD
-        </div>
+        <BrandMark size={36} />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">{orgName}</p>
           <p className="text-xs text-slate-400">Chao-Dee</p>

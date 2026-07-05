@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 
 const POINTS = [
   "จดมิเตอร์ด้วย AI + ออกบิลอัตโนมัติ",
@@ -58,9 +59,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         </Link>
         {/* โลโก้บนมือถือ */}
         <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">
-            CD
-          </div>
+          <BrandMark size={40} />
           <span className="text-xl font-bold text-slate-900">Chao-Dee</span>
         </Link>
         <div className="w-full max-w-sm">{children}</div>

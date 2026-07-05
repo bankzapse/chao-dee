@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BrandMark } from "@/components/brand-mark";
 
 /** เลย์เอาต์ร่วมสำหรับหน้าเอกสารทางกฎหมาย */
 export function LegalShell({
@@ -16,9 +17,7 @@ export function LegalShell({
       <header className="border-b border-slate-200 px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-              CD
-            </span>
+            <BrandMark size={32} />
             <span className="font-bold text-slate-900">Chao-Dee</span>
           </Link>
           <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">

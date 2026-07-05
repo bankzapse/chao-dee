@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui";
 import { RenewForm } from "./renew-form";
+import { BrandMark } from "@/components/brand-mark";
 import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
@@ -41,9 +42,9 @@ export default async function RenewPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">CD</div>
+            <BrandMark size={32} />
             <span className="font-bold text-slate-900">Chao-Dee</span>
           </Link>
           <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">
@@ -52,7 +53,7 @@ export default async function RenewPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-6 py-10">
         <h1 className="text-2xl font-bold text-slate-900">ต่ออายุ / อัปเกรดแพ็คเกจ</h1>
         <p className="mt-1 text-sm text-slate-500">{orgName}</p>
 
@@ -64,7 +65,7 @@ export default async function RenewPage() {
           {sub?.expires_at && <span className="text-sm text-slate-400">หมดอายุ {formatDate(sub.expires_at)}</span>}
         </div>
 
-        <div className="mt-6 card p-6">
+        <div className="mt-6">
           <RenewForm platformPromptPay={platformPromptPay} defaultSlug={sub?.package_slug} />
         </div>
 

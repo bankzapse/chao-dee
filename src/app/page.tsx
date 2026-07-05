@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Pricing } from "@/components/landing/pricing";
 import { HeaderCta } from "@/components/landing/header-cta";
 import { COMPANY } from "@/lib/company";
+import { BrandMark } from "@/components/brand-mark";
 
 const FEATURES = [
   { icon: "📊", title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
@@ -50,9 +51,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-              CD
-            </div>
+            <BrandMark size={36} />
             <span className="text-lg font-bold text-slate-900">Chao-Dee</span>
           </div>
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
@@ -296,7 +295,7 @@ export default function LandingPage() {
       <footer className="border-t border-slate-100 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">CD</div>
+            <BrandMark size={32} />
             <span className="font-bold text-slate-900">Chao-Dee</span>
             <span className="text-sm text-slate-400">— ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์</span>
           </div>

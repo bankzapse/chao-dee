@@ -33,7 +33,7 @@ export const PACKAGES: Package[] = [
     tagline: "สำหรับหอพักขนาดเล็ก–กลาง",
     priceMonthly: 799,
     priceYearlyPerMonth: 699,
-    priceYearlyTotal: 7390,
+    priceYearlyTotal: 8388, // 699 × 12 — ประหยัด 1,200/ปี
     limits: { buildings: "4 อาคาร", rooms: "100 ห้อง", tenants: "100 ผู้เช่า" },
     caps: { buildings: 4, rooms: 100, tenants: 100 },
     cta: "เริ่มใช้ Plus",
@@ -44,7 +44,7 @@ export const PACKAGES: Package[] = [
     tagline: "สำหรับธุรกิจที่กำลังเติบโต",
     priceMonthly: 1199,
     priceYearlyPerMonth: 999,
-    priceYearlyTotal: 11190,
+    priceYearlyTotal: 11988, // 999 × 12 — ประหยัด 2,400/ปี
     limits: { buildings: "10 อาคาร", rooms: "300 ห้อง", tenants: "300 ผู้เช่า" },
     caps: { buildings: 10, rooms: 300, tenants: 300 },
     highlight: true,
@@ -65,4 +65,10 @@ export const PACKAGES: Package[] = [
 
 export function packageBySlug(slug: string): Package | undefined {
   return PACKAGES.find((p) => p.slug === slug);
+}
+
+/** ส่วนลดต่อปีเมื่อจ่ายรายปี (เทียบกับจ่ายรายเดือน 12 เดือน) */
+export function yearlyDiscount(p: Package): number {
+  if (p.priceMonthly === null || p.priceYearlyTotal === null) return 0;
+  return p.priceMonthly * 12 - p.priceYearlyTotal;
 }

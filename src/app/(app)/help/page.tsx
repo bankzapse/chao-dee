@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/ui";
+import { COMPANY } from "@/lib/company";
 
 const GUIDES = [
   {
@@ -20,43 +21,70 @@ const GUIDES = [
     ],
   },
   {
-    icon: "📢",
+    icon: "💬",
     title: "เชื่อม LINE กับผู้เช่า",
     steps: [
-      "ตั้งค่า LINE Channel ใน .env.local (ดูคู่มือใน README)",
-      "ที่เมนู “ผู้เช่า” กด “สร้างรหัสเชื่อม LINE” แล้วส่งรหัสให้ผู้เช่า",
-      "ผู้เช่าพิมพ์รหัสใน LINE OA เพื่อผูกบัญชี จากนั้นเช็คยอด/แจ้งซ่อม/รับพัสดุผ่าน LINE ได้",
+      "ที่เมนู “ผู้เช่า” เลือกผู้เช่า แล้วกด “เชื่อม LINE” จะได้รหัส 6 หลัก",
+      "ให้ผู้เช่าแอด LINE OA “Chao-Dee” เป็นเพื่อน",
+      "ผู้เช่าพิมพ์ “รหัส” หรือ “เบอร์โทรที่ลงทะเบียนไว้” ในแชต OA เพื่อผูกบัญชี — จากนั้นเช็คยอด/แจ้งซ่อม/รับพัสดุผ่าน LINE ได้เลย",
     ],
   },
   {
     icon: "🤖",
     title: "AI อ่านมิเตอร์",
     steps: [
-      "ใส่ ANTHROPIC_API_KEY ใน .env.local",
-      "ที่หน้าจดมิเตอร์ กดปุ่ม 📷 ข้างช่องกรอก แล้วถ่าย/เลือกรูปหน้าปัดมิเตอร์",
-      "ระบบจะอ่านตัวเลขให้อัตโนมัติ พร้อมเตือนหากค่าผิดปกติ",
+      "ที่หน้า “จดมิเตอร์” กดปุ่ม 📷 ข้างช่องกรอกเลขมิเตอร์",
+      "ถ่ายรูปหรือเลือกรูปหน้าปัดมิเตอร์",
+      "ระบบอ่านตัวเลขให้อัตโนมัติ พร้อมเตือนหากค่าผิดปกติ — ตรวจสอบแล้วกดบันทึกได้เลย",
+    ],
+  },
+  {
+    icon: "🔔",
+    title: "รับแจ้งเตือนแจ้งซ่อมทาง LINE",
+    steps: [
+      "ไปเมนู “ตั้งค่า” → การ์ด “แจ้งเตือนผ่าน LINE (เจ้าของหอ)” กด “สร้างรหัสเชื่อม”",
+      "แอด LINE OA “Chao-Dee” แล้วส่งรหัสนั้นในแชต",
+      "เมื่อผู้เช่าแจ้งซ่อมผ่าน LINE คุณจะได้รับแจ้งเตือนเข้ามือถือทันที",
+    ],
+  },
+  {
+    icon: "🎫",
+    title: "ต่ออายุ & ใบเสร็จ",
+    steps: [
+      "ไปเมนู “ตั้งค่า” → “ต่ออายุ/อัปเกรด” เลือกแพ็คเกจและรอบการชำระ",
+      "สแกน PromptPay จ่ายเงิน แล้วแนบสลิป",
+      "เมื่อทีมงานยืนยัน ระบบเปิดสิทธิ์ต่อและออกใบเสร็จให้ดาวน์โหลด/พิมพ์",
     ],
   },
 ];
 
 const FAQ = [
   {
+    q: "รองรับกี่อาคาร/ห้อง/ผู้เช่า?",
+    a: "ขึ้นกับแพ็คเกจ — Plus: 4 อาคาร / 100 ห้อง / 100 ผู้เช่า, Pro: 10 อาคาร / 300 ห้อง / 300 ผู้เช่า, Exclusive: ไม่จำกัด (ติดต่อทีมงาน)",
+  },
+  {
     q: "ข้อมูลของแต่ละหอแยกกันไหม?",
-    a: "แยกกันสมบูรณ์ ระบบใช้ Row Level Security แต่ละบัญชี/องค์กรเห็นเฉพาะข้อมูลของตัวเอง",
+    a: "แยกกันสมบูรณ์ ระบบใช้ Row Level Security แต่ละบัญชีเห็นเฉพาะข้อมูลของตัวเอง",
   },
   {
     q: "ผู้เช่าต้องโหลดแอปไหม?",
-    a: "ไม่ต้อง ผู้เช่าใช้งานผ่าน LINE OA ได้เลย ส่วนเจ้าของ/แอดมินใช้เว็บและแอปมือถือ",
+    a: "ไม่ต้อง ผู้เช่าใช้งานผ่าน LINE OA ได้เลย — เช็คยอด แจ้งซ่อม รับพัสดุ ผ่านเมนูใน LINE",
   },
   {
-    q: "รองรับกี่อาคาร/ห้อง/ผู้เช่า?",
-    a: "ไม่จำกัด ทั้งอาคาร ห้องพัก ผู้เช่า และสัญญา",
+    q: "ลืมรหัสผ่านทำอย่างไร?",
+    a: "ที่หน้าเข้าสู่ระบบ กด “ลืมรหัสผ่าน” แล้วยืนยันด้วยรหัส OTP ที่ส่งไปยังเบอร์โทร เพื่อตั้งรหัสใหม่",
+  },
+  {
+    q: "เปลี่ยน/อัปเกรดแพ็คเกจได้ไหม?",
+    a: "ได้ ไปที่ “ตั้งค่า → ต่ออายุ/อัปเกรด” เลือกแพ็คเกจที่ต้องการได้ตลอดเวลา",
   },
 ];
 
 export default function HelpPage() {
+  const lineUrl = process.env.NEXT_PUBLIC_SUPPORT_LINE_URL || "";
   return (
-    <div>
+    <div className="animate-in">
       <PageHeader
         title="ช่วยเหลือ & คำปรึกษา"
         subtitle="คู่มือการใช้งานและช่องทางติดต่อทีมงาน"
@@ -92,26 +120,28 @@ export default function HelpPage() {
         ))}
       </div>
 
-      <div className="mt-8 rounded-xl bg-indigo-600 p-6 text-white">
+      <div className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 p-6 text-white shadow-lg shadow-indigo-500/20">
         <h2 className="text-lg font-semibold">ต้องการความช่วยเหลือเพิ่มเติม?</h2>
         <p className="mt-1 text-sm text-indigo-100">
-          ทีมงานพร้อมให้คำปรึกษาการใช้งานและการตั้งค่าระบบ
+          ทีมงาน Chao-Dee พร้อมให้คำปรึกษาการใช้งาน (จันทร์–เสาร์ 9:00–18:00)
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <a
-            href="mailto:support@chaodee.app"
+            href={`mailto:${COMPANY.email}`}
             className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
           >
-            ✉️ อีเมลทีมงาน
+            ✉️ {COMPANY.email}
           </a>
-          <a
-            href="https://line.me"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg border border-white/40 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
-          >
-            💬 แชทผ่าน LINE
-          </a>
+          {lineUrl && (
+            <a
+              href={lineUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-white/40 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
+            >
+              💬 แชทผ่าน LINE OA
+            </a>
+          )}
         </div>
       </div>
     </div>

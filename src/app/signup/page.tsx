@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignupForm } from "./signup-form";
 import { getProvinces } from "@/lib/thai-geo";
+import { BrandMark } from "@/components/brand-mark";
 
 export const metadata = { title: "สมัครใช้งาน" };
 
@@ -51,7 +52,7 @@ export default function SignupPage() {
       <main className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <Link href="/" className="flex items-center gap-2 lg:invisible">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">CD</span>
+            <BrandMark size={32} />
             <span className="font-bold text-slate-900">Chao-Dee</span>
           </Link>
           <div className="flex items-center gap-4 text-sm font-medium">

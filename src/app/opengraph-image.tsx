@@ -24,18 +24,19 @@ export default function OgImage() {
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <div
             style={{
-              width: 96,
-              height: 96,
-              borderRadius: 24,
-              background: "rgba(255,255,255,0.18)",
+              width: 104,
+              height: 104,
+              borderRadius: 26,
+              background: "rgba(255,255,255,0.16)",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 60,
-              fontWeight: 700,
+              gap: 2,
             }}
           >
-            CD
+            <div style={{ fontSize: 34, lineHeight: 1, letterSpacing: -2 }}>⌂</div>
+            <div style={{ fontSize: 46, fontWeight: 800, letterSpacing: -3, marginTop: -6 }}>CD</div>
           </div>
           <div style={{ fontSize: 64, fontWeight: 800 }}>Chao-Dee · เช่าดี</div>
         </div>

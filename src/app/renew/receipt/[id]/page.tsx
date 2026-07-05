@@ -5,6 +5,7 @@ import { packageBySlug } from "@/lib/packages";
 import { formatBaht, formatDate } from "@/lib/format";
 import { PrintButton } from "./print-button";
 import { COMPANY, splitVat } from "@/lib/company";
+import { BrandMark } from "@/components/brand-mark";
 
 export const metadata = { title: "ใบเสร็จรับเงิน", robots: { index: false } };
 
@@ -65,9 +66,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           {/* หัวใบเสร็จ */}
           <div className="flex items-start justify-between border-b border-slate-200 pb-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">
-                CD
-              </div>
+              <BrandMark size={44} />
               <div>
                 <p className="text-lg font-bold text-slate-900">Chao-Dee (เช่าดี)</p>
                 <p className="text-xs text-slate-600">

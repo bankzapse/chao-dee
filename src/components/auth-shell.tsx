@@ -17,10 +17,10 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
 
-        <Link href="/" className="relative flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl font-bold">
-            CD
-          </div>
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <span className="rounded-2xl bg-white p-1.5 shadow-sm">
+            <BrandMark size={34} />
+          </span>
           <span className="text-xl font-bold">Chao-Dee</span>
         </Link>
 

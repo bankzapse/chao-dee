@@ -31,9 +31,9 @@ export const PACKAGES: Package[] = [
     slug: "plus",
     name: "Plus",
     tagline: "สำหรับหอพักขนาดเล็ก–กลาง",
-    priceMonthly: 799,
-    priceYearlyPerMonth: 666,
-    priceYearlyTotal: 7990, // จ่าย 10 เดือน = ฟรี 2 เดือน (ประหยัด 1,598/ปี)
+    priceMonthly: 499,
+    priceYearlyPerMonth: 416,
+    priceYearlyTotal: 4990, // จ่าย 10 เดือน = ฟรี 2 เดือน (ประหยัด 998/ปี)
     limits: { buildings: "4 อาคาร", rooms: "100 ห้อง", tenants: "100 ผู้เช่า" },
     caps: { buildings: 4, rooms: 100, tenants: 100 },
     cta: "เริ่มใช้ Plus",
@@ -42,9 +42,9 @@ export const PACKAGES: Package[] = [
     slug: "pro",
     name: "Pro",
     tagline: "สำหรับธุรกิจที่กำลังเติบโต",
-    priceMonthly: 1199,
-    priceYearlyPerMonth: 999,
-    priceYearlyTotal: 11990, // จ่าย 10 เดือน = ฟรี 2 เดือน (ประหยัด 2,398/ปี)
+    priceMonthly: 699,
+    priceYearlyPerMonth: 583,
+    priceYearlyTotal: 6990, // จ่าย 10 เดือน = ฟรี 2 เดือน (ประหยัด 1,398/ปี)
     limits: { buildings: "10 อาคาร", rooms: "300 ห้อง", tenants: "300 ผู้เช่า" },
     caps: { buildings: 10, rooms: 300, tenants: 300 },
     highlight: true,

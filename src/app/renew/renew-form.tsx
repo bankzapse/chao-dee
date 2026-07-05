@@ -110,8 +110,10 @@ export function RenewForm({
                 </div>
                 <p className="text-xs text-slate-500">{p.tagline}</p>
                 <p className="mt-2 text-sm font-semibold text-indigo-600">
-                  ฿{p.priceYearlyPerMonth?.toLocaleString()}
-                  <span className="text-xs font-normal text-slate-400">/เดือน (รายปี)</span>
+                  ฿{(cycle === "yearly" ? p.priceYearlyPerMonth : p.priceMonthly)?.toLocaleString()}
+                  <span className="text-xs font-normal text-slate-400">
+                    /เดือน{cycle === "yearly" ? " (รายปี)" : ""}
+                  </span>
                 </p>
               </button>
             ))}

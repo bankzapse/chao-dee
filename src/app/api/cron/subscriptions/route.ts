@@ -50,7 +50,7 @@ export async function GET(req: Request) {
       const name = (s.organizations as { name?: string } | null)?.name ?? "หอพักของคุณ";
       const res = await sendSms(
         owner.phone,
-        `แพ็คเกจ ChaoDee ของ ${name} ใกล้หมดอายุ ต่ออายุได้ที่ https://chao-dee.com/renew เพื่อใช้งานต่อเนื่อง`
+        `แพ็คเกจ Chao-Dee ของ ${name} ใกล้หมดอายุ ต่ออายุได้ที่ https://chao-dee.com/renew เพื่อใช้งานต่อเนื่อง`
       );
       if (res.ok) reminded++;
     }

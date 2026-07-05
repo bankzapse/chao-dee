@@ -40,11 +40,11 @@ export function Sidebar({
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-          ช
+          CD
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">{orgName}</p>
-          <p className="text-xs text-slate-400">ChaoDee</p>
+          <p className="text-xs text-slate-400">Chao-Dee</p>
         </div>
       </div>
 

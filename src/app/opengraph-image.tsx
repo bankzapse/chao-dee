@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "ChaoDee — ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์";
+export const alt = "Chao-Dee — ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -35,9 +35,9 @@ export default function OgImage() {
               fontWeight: 700,
             }}
           >
-            ช
+            CD
           </div>
-          <div style={{ fontSize: 64, fontWeight: 800 }}>ChaoDee · เช่าดี</div>
+          <div style={{ fontSize: 64, fontWeight: 800 }}>Chao-Dee · เช่าดี</div>
         </div>
         <div style={{ marginTop: 40, fontSize: 44, fontWeight: 700, lineHeight: 1.2 }}>
           ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์ ครบวงจร

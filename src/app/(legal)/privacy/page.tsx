@@ -3,15 +3,15 @@ import { LegalShell, Section } from "../legal";
 import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
-  title: "นโยบายความเป็นส่วนตัว · ChaoDee",
-  description: "นโยบายความเป็นส่วนตัวและการคุ้มครองข้อมูลส่วนบุคคล (PDPA) ของ ChaoDee",
+  title: "นโยบายความเป็นส่วนตัว · Chao-Dee",
+  description: "นโยบายความเป็นส่วนตัวและการคุ้มครองข้อมูลส่วนบุคคล (PDPA) ของ Chao-Dee",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalShell title="นโยบายความเป็นส่วนตัว" updated="3 กรกฎาคม 2568">
       <p>
-        ChaoDee (&ldquo;เรา&rdquo;) ให้ความสำคัญกับการคุ้มครองข้อมูลส่วนบุคคลของผู้ใช้บริการ
+        Chao-Dee (&ldquo;เรา&rdquo;) ให้ความสำคัญกับการคุ้มครองข้อมูลส่วนบุคคลของผู้ใช้บริการ
         นโยบายนี้อธิบายว่าเราเก็บ ใช้ เปิดเผย และคุ้มครองข้อมูลของท่านอย่างไร
         ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)
       </p>

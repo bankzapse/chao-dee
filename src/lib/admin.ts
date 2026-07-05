@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-/** ตรวจว่าเป็นผู้ดูแลแพลตฟอร์ม (ทีม ChaoDee) ไม่ใช่ → เด้งกลับแดชบอร์ด */
+/** ตรวจว่าเป็นผู้ดูแลแพลตฟอร์ม (ทีม Chao-Dee) ไม่ใช่ → เด้งกลับแดชบอร์ด */
 export async function requirePlatformAdmin() {
   const supabase = await createClient();
   const {

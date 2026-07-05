@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { OwnerLoginForm } from "./owner-login-form";
 
 export const metadata: Metadata = {
-  title: "แผงเจ้าของระบบ · ChaoDee",
+  title: "แผงเจ้าของระบบ · Chao-Dee",
   robots: { index: false, follow: false },
 };
 
@@ -28,10 +28,10 @@ export default async function OwnerLoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-2xl font-bold text-white">
-            ช
+            CD
           </div>
           <h1 className="text-xl font-bold text-white">แผงเจ้าของระบบ</h1>
-          <p className="mt-1 text-sm text-slate-400">สำหรับทีมงาน ChaoDee เท่านั้น</p>
+          <p className="mt-1 text-sm text-slate-400">สำหรับทีมงาน Chao-Dee เท่านั้น</p>
         </div>
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
           <OwnerLoginForm />

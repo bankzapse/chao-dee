@@ -22,8 +22,8 @@ export default function SignupPage() {
         <div className="absolute -bottom-20 -left-10 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl" />
 
         <Link href="/" className="relative flex items-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl font-bold">ช</span>
-          <span className="text-xl font-bold">ChaoDee</span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl font-bold">CD</span>
+          <span className="text-xl font-bold">Chao-Dee</span>
         </Link>
 
         <div className="relative">
@@ -51,8 +51,8 @@ export default function SignupPage() {
       <main className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <Link href="/" className="flex items-center gap-2 lg:invisible">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">ช</span>
-            <span className="font-bold text-slate-900">ChaoDee</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">CD</span>
+            <span className="font-bold text-slate-900">Chao-Dee</span>
           </Link>
           <div className="flex items-center gap-4 text-sm font-medium">
             <Link href="/" className="text-slate-500 hover:text-slate-800">← หน้าแรก</Link>
@@ -63,7 +63,7 @@ export default function SignupPage() {
         <div className="flex flex-1 items-start justify-center overflow-y-auto px-6 py-10">
           <div className="w-full max-w-xl">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-slate-900">สมัครใช้งาน ChaoDee</h1>
+              <h1 className="text-2xl font-bold text-slate-900">สมัครใช้งาน Chao-Dee</h1>
               <p className="mt-1 text-sm text-slate-500">กรอกไม่กี่ขั้นตอน แล้วเริ่มใช้ได้ทันที</p>
             </div>
             <div className="card p-6 sm:p-8">

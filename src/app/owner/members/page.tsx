@@ -48,7 +48,7 @@ export default async function OwnerMembers({
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900">สมาชิก</h1>
-      <p className="mt-1 text-sm text-slate-500">ลูกค้าที่ใช้งาน ChaoDee ทั้งหมด ({list.length})</p>
+      <p className="mt-1 text-sm text-slate-500">ลูกค้าที่ใช้งาน Chao-Dee ทั้งหมด ({list.length})</p>
 
       {/* filter/search */}
       <form className="mt-5 flex flex-wrap gap-2" action="/owner/members">

@@ -51,9 +51,9 @@ export default function LandingPage() {
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-              ช
+              CD
             </div>
-            <span className="text-lg font-bold text-slate-900">ChaoDee</span>
+            <span className="text-lg font-bold text-slate-900">Chao-Dee</span>
           </div>
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
             <a href="#features" className="hover:text-slate-900">ฟีเจอร์</a>
@@ -239,7 +239,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">รีวิวจากผู้ใช้จริง</p>
-            <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">เจ้าของหอไว้ใจ ChaoDee</h2>
+            <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">เจ้าของหอไว้ใจ Chao-Dee</h2>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {TESTIMONIALS.map((t) => (
@@ -296,8 +296,8 @@ export default function LandingPage() {
       <footer className="border-t border-slate-100 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">ช</div>
-            <span className="font-bold text-slate-900">ChaoDee</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">CD</div>
+            <span className="font-bold text-slate-900">Chao-Dee</span>
             <span className="text-sm text-slate-400">— ระบบจัดการหอพัก คอนโด อพาร์ตเมนต์</span>
           </div>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
@@ -309,12 +309,8 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="pb-8 text-center text-xs text-slate-400">
-          <p>
-            ChaoDee เป็นผลิตภัณฑ์ในเครือ{" "}
-            <span className="font-semibold text-slate-500">ServHub</span> · ดำเนินการโดย{" "}
-            {COMPANY.name}
-          </p>
-          <p className="mt-1">© 2026 ServHub · chao-dee.com · เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}</p>
+          <p>Chao-Dee เป็นผลิตภัณฑ์ในเครือกลุ๊ป · ดำเนินการโดย {COMPANY.name}</p>
+          <p className="mt-1">© 2026 Chao-Dee · chao-dee.com · เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}</p>
         </div>
       </footer>
     </div>

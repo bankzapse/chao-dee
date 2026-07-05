@@ -2,20 +2,20 @@ import type { Metadata } from "next";
 import { LegalShell, Section } from "../legal";
 
 export const metadata: Metadata = {
-  title: "ข้อกำหนดการใช้งาน · ChaoDee",
-  description: "ข้อกำหนดและเงื่อนไขการใช้บริการ ChaoDee",
+  title: "ข้อกำหนดการใช้งาน · Chao-Dee",
+  description: "ข้อกำหนดและเงื่อนไขการใช้บริการ Chao-Dee",
 };
 
 export default function TermsPage() {
   return (
     <LegalShell title="ข้อกำหนดการใช้งาน" updated="3 กรกฎาคม 2568">
       <p>
-        ข้อกำหนดนี้เป็นข้อตกลงระหว่างท่านกับ ChaoDee การสมัครและใช้บริการถือว่าท่านยอมรับข้อกำหนดทั้งหมดนี้
+        ข้อกำหนดนี้เป็นข้อตกลงระหว่างท่านกับ Chao-Dee การสมัครและใช้บริการถือว่าท่านยอมรับข้อกำหนดทั้งหมดนี้
       </p>
 
       <Section heading="1. บริการ">
         <p>
-          ChaoDee เป็นซอฟต์แวร์บริหารจัดการหอพัก คอนโด และอพาร์ตเมนต์แบบออนไลน์
+          Chao-Dee เป็นซอฟต์แวร์บริหารจัดการหอพัก คอนโด และอพาร์ตเมนต์แบบออนไลน์
           รวมถึงการออกบิล จดมิเตอร์ แจ้งเตือนผ่าน SMS/LINE และรายงานต่าง ๆ
         </p>
       </Section>

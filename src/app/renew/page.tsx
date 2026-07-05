@@ -43,8 +43,8 @@ export default async function RenewPage() {
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">ช</div>
-            <span className="font-bold text-slate-900">ChaoDee</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">CD</div>
+            <span className="font-bold text-slate-900">Chao-Dee</span>
           </Link>
           <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">
             ← กลับแดชบอร์ด

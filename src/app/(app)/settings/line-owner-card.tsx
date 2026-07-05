@@ -45,7 +45,7 @@ export function LineOwnerCard({
             )}
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            เชื่อม LINE ของคุณกับ ChaoDee OA เพื่อรับแจ้งเตือนทันทีเมื่อผู้เช่าแจ้งซ่อม
+            เชื่อม LINE ของคุณกับ Chao-Dee OA เพื่อรับแจ้งเตือนทันทีเมื่อผู้เช่าแจ้งซ่อม
           </p>
         </div>
         {linked ? (
@@ -62,7 +62,7 @@ export function LineOwnerCard({
       {!linked && shownCode && (
         <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
           <p className="text-sm text-slate-600">
-            1) แอด <b>ChaoDee OA</b> เป็นเพื่อน แล้วส่งรหัสนี้เข้าแชต:
+            1) แอด <b>Chao-Dee OA</b> เป็นเพื่อน แล้วส่งรหัสนี้เข้าแชต:
           </p>
           <p className="mt-2 text-center text-3xl font-bold tracking-[0.3em] text-indigo-700">
             {shownCode}

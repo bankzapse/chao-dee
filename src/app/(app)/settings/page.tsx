@@ -52,7 +52,7 @@ export default async function SettingsPage() {
         code={org?.line_link_code ?? ""}
       />
 
-      {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ ChaoDee) */}
+      {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ Chao-Dee) */}
       <TaxInfoCard
         org={{
           tax_name: org?.tax_name ?? "",

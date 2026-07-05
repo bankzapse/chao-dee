@@ -69,7 +69,7 @@ export default async function DashboardPage() {
 
       {isEmpty ? (
         <EmptyState
-          title="ยินดีต้อนรับสู่ ChaoDee 🎉"
+          title="ยินดีต้อนรับสู่ Chao-Dee 🎉"
           description="เริ่มต้นด้วยการเพิ่มอาคารและห้องพัก หรือลองโหลดข้อมูลตัวอย่างเพื่อดูการทำงานของระบบ"
           action={
             <div className="flex gap-2">

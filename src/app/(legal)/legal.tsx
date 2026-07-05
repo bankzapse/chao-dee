@@ -17,9 +17,9 @@ export function LegalShell({
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">
-              ช
+              CD
             </span>
-            <span className="font-bold text-slate-900">ChaoDee</span>
+            <span className="font-bold text-slate-900">Chao-Dee</span>
           </Link>
           <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
             ← กลับหน้าแรก

@@ -74,7 +74,7 @@ export default async function OwnerDashboard() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-cyan-500 p-6 text-white shadow-lg shadow-indigo-500/20 md:p-8">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="relative">
-          <p className="text-sm text-indigo-100">แผงเจ้าของระบบ · ChaoDee</p>
+          <p className="text-sm text-indigo-100">แผงเจ้าของระบบ · Chao-Dee</p>
           <h1 className="mt-1 text-2xl font-bold md:text-3xl">ภาพรวมระบบ</h1>
           <p className="mt-1 text-sm text-indigo-100">
             {totalMembers} กิจการ · {active} ใช้งานอยู่ · {formatBaht(mrr)}/เดือน

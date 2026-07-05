@@ -18,9 +18,9 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 
         <Link href="/" className="relative flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl font-bold">
-            ช
+            CD
           </div>
-          <span className="text-xl font-bold">ChaoDee</span>
+          <span className="text-xl font-bold">Chao-Dee</span>
         </Link>
 
         <div className="relative">
@@ -59,9 +59,9 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         {/* โลโก้บนมือถือ */}
         <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">
-            ช
+            CD
           </div>
-          <span className="text-xl font-bold text-slate-900">ChaoDee</span>
+          <span className="text-xl font-bold text-slate-900">Chao-Dee</span>
         </Link>
         <div className="w-full max-w-sm">{children}</div>
       </div>

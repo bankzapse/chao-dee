@@ -57,7 +57,7 @@ async function notifyAdminsNewRenewal(org_id: string, pkgName: string, amount: n
       admin.from("profiles").select("phone").eq("is_platform_admin", true),
     ]);
     const orgName = org?.name ?? "กิจการ";
-    const msg = `ChaoDee: มีคำขอต่ออายุใหม่จาก "${orgName}" แพ็คเกจ ${pkgName} ฿${amount.toLocaleString()} — ตรวจสอบที่ chao-dee.com/owner/payments`;
+    const msg = `Chao-Dee: มีคำขอต่ออายุใหม่จาก "${orgName}" แพ็คเกจ ${pkgName} ฿${amount.toLocaleString()} — ตรวจสอบที่ chao-dee.com/owner/payments`;
     await Promise.all(
       (admins ?? [])
         .map((a) => a.phone)

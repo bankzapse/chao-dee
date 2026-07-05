@@ -12,7 +12,7 @@ export const COMPANY = {
   email: process.env.NEXT_PUBLIC_COMPANY_EMAIL || "support@chao-dee.com",
   phone: process.env.NEXT_PUBLIC_COMPANY_PHONE || "",
   /** แบรนด์สินค้า (ผลิตภัณฑ์ภายใต้นิติบุคคล) */
-  brand: "ChaoDee (เช่าดี)",
+  brand: "Chao-Dee (เช่าดี)",
   /** แบรนด์บริษัทแม่ (เครือ) */
   parent: process.env.NEXT_PUBLIC_PARENT_BRAND || "ServHub",
   /** จด VAT แล้วหรือยัง — ตั้ง NEXT_PUBLIC_COMPANY_VAT=true เมื่อจด VAT เพื่อเปิดใบกำกับภาษี */

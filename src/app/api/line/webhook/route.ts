@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     if (event.type === "follow") {
       await replyMessage(replyToken, [
         textMessage(
-          "ยินดีต้อนรับสู่ ChaoDee 🏠\nกรุณาพิมพ์ “เบอร์โทรของคุณ” (เช่น 0812345678) หรือ “รหัสเชื่อมบัญชี” ที่ได้รับจากผู้ดูแล เพื่อผูกบัญชี"
+          "ยินดีต้อนรับสู่ Chao-Dee 🏠\nกรุณาพิมพ์ “เบอร์โทรของคุณ” (เช่น 0812345678) หรือ “รหัสเชื่อมบัญชี” ที่ได้รับจากผู้ดูแล เพื่อผูกบัญชี"
         ),
       ]);
       continue;
@@ -192,12 +192,12 @@ async function handleOwner(
       .eq("org_id", orgId)
       .eq("status", "open");
     await replyMessage(replyToken, [
-      textMessage(`🔧 ${orgName}\nงานแจ้งซ่อมที่รอดำเนินการ: ${count ?? 0} รายการ\n\nดูรายละเอียดในแอป ChaoDee`),
+      textMessage(`🔧 ${orgName}\nงานแจ้งซ่อมที่รอดำเนินการ: ${count ?? 0} รายการ\n\nดูรายละเอียดในแอป Chao-Dee`),
     ]);
     return;
   }
   await replyMessage(replyToken, [
-    textMessage(`สวัสดีเจ้าของหอ ${orgName} 👋\nพิมพ์ “แจ้งซ่อม” เพื่อดูจำนวนงานที่รอดำเนินการ\nจัดการทั้งหมดได้ในแอป ChaoDee`),
+    textMessage(`สวัสดีเจ้าของหอ ${orgName} 👋\nพิมพ์ “แจ้งซ่อม” เพื่อดูจำนวนงานที่รอดำเนินการ\nจัดการทั้งหมดได้ในแอป Chao-Dee`),
   ]);
 }
 
@@ -234,7 +234,7 @@ async function createMaintenanceRequest(
   await notifyOwner(
     supabase,
     orgId,
-    `🔧 แจ้งซ่อมใหม่\nห้อง ${room} · ${fullName}\n“${detail}”\nดูรายละเอียดในแอป ChaoDee`
+    `🔧 แจ้งซ่อมใหม่\nห้อง ${room} · ${fullName}\n“${detail}”\nดูรายละเอียดในแอป Chao-Dee`
   );
 }
 

@@ -137,8 +137,8 @@ export async function POST(req: Request) {
   const richmenu = {
     size: { width: W, height: H },
     selected: true,
-    name: "ChaoDee Menu",
-    chatBarText: "เมนู ChaoDee",
+    name: "Chao-Dee Menu",
+    chatBarText: "เมนู Chao-Dee",
     areas: BUTTONS.map((b, i) => ({
       bounds: {
         x: Math.round((i % COLS) * CW),

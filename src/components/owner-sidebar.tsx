@@ -19,10 +19,10 @@ export function OwnerSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
     <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">
       <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 font-bold text-white">
-          ช
+          CD
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">ChaoDee Console</p>
+          <p className="truncate text-sm font-semibold text-white">Chao-Dee Console</p>
           <p className="text-xs text-slate-500">แผงเจ้าของระบบ</p>
         </div>
       </div>

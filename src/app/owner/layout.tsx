@@ -23,7 +23,7 @@ export default async function OwnerLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-8">
           <p className="text-sm font-medium text-slate-500">
-            แผงเจ้าของระบบ · ChaoDee
+            แผงเจ้าของระบบ · Chao-Dee
           </p>
           <form action={signOut}>
             <button className="btn-secondary" type="submit">

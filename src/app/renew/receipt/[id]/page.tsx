@@ -66,10 +66,10 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <div className="flex items-start justify-between border-b border-slate-200 pb-6">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">
-                ช
+                CD
               </div>
               <div>
-                <p className="text-lg font-bold text-slate-900">ChaoDee (เช่าดี)</p>
+                <p className="text-lg font-bold text-slate-900">Chao-Dee (เช่าดี)</p>
                 <p className="text-xs text-slate-600">
                   โดย {COMPANY.name} · เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}
                 </p>

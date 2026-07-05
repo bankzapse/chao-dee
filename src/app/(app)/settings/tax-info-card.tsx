@@ -15,7 +15,7 @@ export function TaxInfoCard({ org }: { org: TaxInfo }) {
     <div className="card mb-6 p-5">
       <h2 className="font-semibold text-slate-900">ข้อมูลสำหรับใบกำกับภาษี</h2>
       <p className="mt-1 text-xs text-slate-500">
-        กรอกข้อมูลนิติบุคคล/ผู้เสียภาษีของคุณ เพื่อให้เราออก <b>ใบกำกับภาษี</b> ค่าบริการ ChaoDee ได้ถูกต้อง (ไว้ลดหย่อน)
+        กรอกข้อมูลนิติบุคคล/ผู้เสียภาษีของคุณ เพื่อให้เราออก <b>ใบกำกับภาษี</b> ค่าบริการ Chao-Dee ได้ถูกต้อง (ไว้ลดหย่อน)
       </p>
       <div className="mt-4">
         <ActionForm action={updateTaxInfo} submitLabel="บันทึกข้อมูลภาษี">

@@ -13,7 +13,7 @@
 import { toLocalThai } from "@/lib/phone";
 
 const UA =
-  "Mozilla/5.0 (compatible; ChaoDee/1.0; +https://chao-dee.com)";
+  "Mozilla/5.0 (compatible; Chao-Dee/1.0; +https://chao-dee.com)";
 
 export function isSmsConfigured(): boolean {
   return Boolean(process.env.SMS_API_URL && process.env.SMS_API_KEY);

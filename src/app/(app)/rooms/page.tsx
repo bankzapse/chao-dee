@@ -4,7 +4,7 @@ import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatBaht, ROOM_STATUS_LABEL, ROOM_STATUS_STYLE } from "@/lib/format";
 import type { Building, Room, RoomStatus } from "@/lib/types";
-import { AddRoomButton, EditRoomButton } from "./room-buttons";
+import { AddRoomButton, BulkAddRoomsButton, EditRoomButton } from "./room-buttons";
 import { deleteRoom } from "./actions";
 
 type RoomRow = Room & { buildings: { name: string } | null };
@@ -48,7 +48,12 @@ export default async function RoomsPage({
       <PageHeader
         title="ห้องพัก"
         subtitle="จัดการห้องพักแยกตามชั้น · แก้ไขเลขห้อง/ชั้นได้"
-        action={<AddRoomButton buildings={buildingList} defaultBuilding={building} />}
+        action={
+          <div className="flex gap-2">
+            <BulkAddRoomsButton buildings={buildingList} defaultBuilding={building} />
+            <AddRoomButton buildings={buildingList} defaultBuilding={building} />
+          </div>
+        }
       />
 
       {buildingList.length === 0 ? (

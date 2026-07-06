@@ -17,7 +17,7 @@ export async function generateInvoices(period: string): Promise<FormState> {
       supabase
         .from("contracts")
         .select(
-          "id, room_id, tenant_id, rent_amount, rooms(water_rate, electricity_rate)"
+          "id, room_id, tenant_id, rent_amount, occupant_count, late_fee, rooms(water_rate, water_mode, water_flat_per_person, electricity_rate)"
         )
         .eq("status", "active"),
       supabase
@@ -53,14 +53,26 @@ export async function generateInvoices(period: string): Promise<FormState> {
     .map((c) => {
       const room = c.rooms as unknown as {
         water_rate: number;
+        water_mode: "unit" | "flat_person";
+        water_flat_per_person: number;
         electricity_rate: number;
       } | null;
       const m = meterMap.get(c.room_id);
-      const waterUnits =
-        m?.cur && m?.prev ? Math.max(0, m.cur.w - m.prev.w) : 0;
+      const occupants = Math.max(1, Number(c.occupant_count ?? 1));
+
+      // ค่าน้ำ: เหมาจ่าย/คน หรือ ตามหน่วยมิเตอร์
+      const flatPerson = room?.water_mode === "flat_person";
+      const waterUnits = flatPerson
+        ? 0
+        : m?.cur && m?.prev
+          ? Math.max(0, m.cur.w - m.prev.w)
+          : 0;
+      const waterAmount = flatPerson
+        ? Number(room?.water_flat_per_person ?? 0) * occupants
+        : waterUnits * Number(room?.water_rate ?? 0);
+
       const electricUnits =
         m?.cur && m?.prev ? Math.max(0, m.cur.e - m.prev.e) : 0;
-      const waterAmount = waterUnits * Number(room?.water_rate ?? 0);
       const electricAmount = electricUnits * Number(room?.electricity_rate ?? 0);
       const rent = Number(c.rent_amount);
       const total = rent + waterAmount + electricAmount;
@@ -74,9 +86,11 @@ export async function generateInvoices(period: string): Promise<FormState> {
         due_date: due,
         water_units: waterUnits,
         water_amount: waterAmount,
+        occupant_count: flatPerson ? occupants : 0,
         electric_units: electricUnits,
         electric_amount: electricAmount,
         rent_amount: rent,
+        late_fee: Number(c.late_fee ?? 0), // ค่าปรับตามสัญญา (บันทึกไว้—ไม่รวมในยอดจนกว่าจะชำระล่าช้า)
         other_amount: 0,
         discount: 0,
         total_amount: total,

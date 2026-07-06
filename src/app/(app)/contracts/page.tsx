@@ -10,6 +10,7 @@ import {
 import type { Contract, ContractStatus, Tenant } from "@/lib/types";
 import {
   AddContractButton,
+  EditContractButton,
   CloseContractButton,
   type RoomOption,
 } from "./contract-buttons";
@@ -103,6 +104,11 @@ export default async function ContractsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-3">
+                        <EditContractButton
+                          contract={c}
+                          roomLabel={`${c.rooms?.buildings?.name ?? "-"} · ${c.rooms?.room_number ?? "-"}`}
+                          tenantName={c.tenants?.full_name ?? "-"}
+                        />
                         {c.status === "active" && (
                           <CloseContractButton contractId={c.id} roomId={c.room_id} />
                         )}

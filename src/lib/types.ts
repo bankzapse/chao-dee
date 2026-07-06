@@ -1,5 +1,8 @@
 export type RoomStatus = "vacant" | "occupied" | "reserved" | "maintenance";
 export type ContractStatus = "active" | "ended" | "terminated";
+export type WaterMode = "unit" | "flat_person";
+export type LateFeeMode = "once" | "per_day";
+export type TenantDocType = "id_card" | "house_reg" | "contract" | "other";
 export type MemberRole = "owner" | "admin" | "staff";
 
 export type Organization = {
@@ -33,6 +36,8 @@ export type Room = {
   size_sqm: number;
   base_rent: number;
   water_rate: number;
+  water_mode: WaterMode;
+  water_flat_per_person: number;
   electricity_rate: number;
   status: RoomStatus;
   note: string;
@@ -61,7 +66,21 @@ export type Contract = {
   end_date: string | null;
   rent_amount: number;
   deposit_amount: number;
+  occupant_count: number;
+  late_fee: number;
+  late_fee_mode: LateFeeMode;
+  terms: string;
   status: ContractStatus;
+  note: string;
+  created_at: string;
+};
+
+export type TenantDocument = {
+  id: string;
+  org_id: string;
+  tenant_id: string;
+  doc_type: TenantDocType;
+  file_path: string;
   note: string;
   created_at: string;
 };
@@ -93,9 +112,11 @@ export type Invoice = {
   due_date: string;
   water_units: number;
   water_amount: number;
+  occupant_count: number;
   electric_units: number;
   electric_amount: number;
   rent_amount: number;
+  late_fee: number;
   other_amount: number;
   discount: number;
   total_amount: number;

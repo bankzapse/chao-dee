@@ -3,17 +3,22 @@ import { PageHeader, EmptyState } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import type { Tenant } from "@/lib/types";
 import { AddTenantButton, EditTenantButton } from "./tenant-buttons";
+import { TenantDocsButton } from "./tenant-docs";
 import { LineLinkCell } from "./line-link";
 import { deleteTenant } from "./actions";
 
 export default async function TenantsPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("tenants")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data }, { data: docs }] = await Promise.all([
+    supabase.from("tenants").select("*").order("created_at", { ascending: false }),
+    supabase.from("tenant_documents").select("tenant_id"),
+  ]);
 
   const list = (data ?? []) as Tenant[];
+  const docCount = new Map<string, number>();
+  (docs ?? []).forEach((d: { tenant_id: string }) => {
+    docCount.set(d.tenant_id, (docCount.get(d.tenant_id) ?? 0) + 1);
+  });
 
   return (
     <div>
@@ -61,6 +66,7 @@ export default async function TenantsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-3">
+                        <TenantDocsButton tenantId={t.id} count={docCount.get(t.id) ?? 0} />
                         <EditTenantButton tenant={t} />
                         <DeleteButton
                           action={deleteTenant.bind(null, t.id)}

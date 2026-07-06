@@ -60,7 +60,10 @@ export default async function InvoiceDetailPage({
     { label: `ค่าเช่าห้อง`, detail: "", amount: Number(inv.rent_amount) },
     {
       label: "ค่าน้ำ",
-      detail: `${formatNumber(inv.water_units)} หน่วย`,
+      detail:
+        Number(inv.occupant_count) > 0
+          ? `เหมาจ่าย ${formatNumber(inv.occupant_count)} คน`
+          : `${formatNumber(inv.water_units)} หน่วย`,
       amount: Number(inv.water_amount),
     },
     {

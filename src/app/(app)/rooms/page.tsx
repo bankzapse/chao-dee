@@ -25,6 +25,8 @@ export default async function RoomsPage({
   let query = supabase
     .from("rooms")
     .select("*, buildings(name)")
+    // เรียงตามชั้น → เลขห้อง เพื่อจัดกลุ่มตามชั้น
+    .order("floor")
     .order("room_number");
   if (building) query = query.eq("building_id", building);
 
@@ -32,11 +34,20 @@ export default async function RoomsPage({
   const list = (rooms ?? []) as unknown as RoomRow[];
   const buildingList = (buildings ?? []) as Building[];
 
+  // จัดกลุ่มห้องตามชั้น (คง order ที่ query มาแล้ว)
+  const byFloor = new Map<number, RoomRow[]>();
+  for (const r of list) {
+    const f = r.floor ?? 1;
+    if (!byFloor.has(f)) byFloor.set(f, []);
+    byFloor.get(f)!.push(r);
+  }
+  const floors = [...byFloor.keys()].sort((a, b) => a - b);
+
   return (
     <div>
       <PageHeader
         title="ห้องพัก"
-        subtitle="จัดการห้องพักได้ไม่จำกัด"
+        subtitle="จัดการห้องพักแยกตามชั้น · แก้ไขเลขห้อง/ชั้นได้"
         action={<AddRoomButton buildings={buildingList} defaultBuilding={building} />}
       />
 
@@ -47,7 +58,7 @@ export default async function RoomsPage({
         />
       ) : (
         <>
-          {/* filter */}
+          {/* filter อาคาร */}
           <div className="mb-4 flex flex-wrap gap-2">
             <FilterChip href="/rooms" label="ทั้งหมด" active={!building} />
             {buildingList.map((b) => (
@@ -66,51 +77,67 @@ export default async function RoomsPage({
               action={<AddRoomButton buildings={buildingList} defaultBuilding={building} />}
             />
           ) : (
-            <div className="card overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">ห้อง</th>
-                      <th className="px-4 py-3 font-medium">อาคาร</th>
-                      <th className="px-4 py-3 font-medium">ชั้น</th>
-                      <th className="px-4 py-3 font-medium">ค่าเช่า</th>
-                      <th className="px-4 py-3 font-medium">น้ำ/ไฟ</th>
-                      <th className="px-4 py-3 font-medium">สถานะ</th>
-                      <th className="px-4 py-3 text-right font-medium">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {list.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-semibold text-slate-900">
-                          {r.room_number}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">{r.buildings?.name ?? "-"}</td>
-                        <td className="px-4 py-3 text-slate-600">{r.floor}</td>
-                        <td className="px-4 py-3 text-slate-900">{formatBaht(r.base_rent)}</td>
-                        <td className="px-4 py-3 text-xs text-slate-500">
-                          {formatBaht(r.water_rate)} / {formatBaht(r.electricity_rate)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={ROOM_STATUS_STYLE[r.status as RoomStatus]}>
-                            {ROOM_STATUS_LABEL[r.status as RoomStatus]}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-3">
-                            <EditRoomButton room={r} buildings={buildingList} />
-                            <DeleteButton
-                              action={deleteRoom.bind(null, r.id)}
-                              confirmText={`ลบห้อง ${r.room_number}?`}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="space-y-6">
+              {floors.map((floor) => {
+                const roomsOnFloor = byFloor.get(floor)!;
+                return (
+                  <section key={floor} className="card overflow-hidden">
+                    {/* หัวชั้น */}
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+                      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100 text-xs font-bold text-indigo-700">
+                          {floor}
+                        </span>
+                        ชั้น {floor}
+                      </h2>
+                      <span className="text-xs text-slate-400">{roomsOnFloor.length} ห้อง</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-slate-100 text-left text-slate-400">
+                          <tr>
+                            <th className="px-4 py-2 font-medium">ห้อง</th>
+                            {!building && <th className="px-4 py-2 font-medium">อาคาร</th>}
+                            <th className="px-4 py-2 font-medium">ค่าเช่า</th>
+                            <th className="px-4 py-2 font-medium">น้ำ/ไฟ</th>
+                            <th className="px-4 py-2 font-medium">สถานะ</th>
+                            <th className="px-4 py-2 text-right font-medium">จัดการ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {roomsOnFloor.map((r) => (
+                            <tr key={r.id} className="hover:bg-slate-50">
+                              <td className="px-4 py-3 font-semibold text-slate-900">{r.room_number}</td>
+                              {!building && (
+                                <td className="px-4 py-3 text-slate-600">{r.buildings?.name ?? "-"}</td>
+                              )}
+                              <td className="px-4 py-3 text-slate-900">{formatBaht(r.base_rent)}</td>
+                              <td className="px-4 py-3 text-xs text-slate-500">
+                                {formatBaht(r.water_rate)} / {formatBaht(r.electricity_rate)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge className={ROOM_STATUS_STYLE[r.status as RoomStatus]}>
+                                  {ROOM_STATUS_LABEL[r.status as RoomStatus]}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-end gap-3">
+                                  <EditRoomButton room={r} buildings={buildingList} />
+                                  <DeleteButton
+                                    action={deleteRoom.bind(null, r.id)}
+                                    confirmText={`ลบห้อง ${r.room_number}?`}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           )}
         </>

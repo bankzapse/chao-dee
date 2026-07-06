@@ -49,6 +49,12 @@ export function OwnerLoginForm() {
         <p className="rounded-lg bg-rose-950/60 px-3 py-2 text-sm text-rose-300">{state.error}</p>
       )}
       <SubmitButton />
+      <a
+        href="/forgot-password"
+        className="block text-center text-sm text-slate-400 transition hover:text-slate-200"
+      >
+        ลืมรหัสผ่าน? รีเซ็ตด้วย OTP
+      </a>
     </form>
   );
 }

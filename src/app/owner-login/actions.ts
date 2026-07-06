@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
 import { toE164 } from "@/lib/phone";
 
@@ -26,12 +27,13 @@ export async function ownerLogin(
   const { data, error } = await supabase.auth.signInWithPassword({ phone, password });
   if (error || !data.user) return { error: "เบอร์หรือรหัสผ่านไม่ถูกต้อง" };
 
-  // อนุญาตเฉพาะผู้ดูแลแพลตฟอร์ม
-  const { data: profile } = await supabase
+  // อนุญาตเฉพาะผู้ดูแลแพลตฟอร์ม — เช็คผ่าน service-role เพื่อไม่ให้ติด RLS/จังหวะ session
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("is_platform_admin")
     .eq("id", data.user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.is_platform_admin) {
     await supabase.auth.signOut();

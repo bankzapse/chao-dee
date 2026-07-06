@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { isPlatformAdmin } from "@/lib/admin";
 import { OwnerLoginForm } from "./owner-login-form";
 
 export const metadata: Metadata = {
@@ -10,18 +10,7 @@ export const metadata: Metadata = {
 
 export default async function OwnerLoginPage() {
   // ถ้าเป็นแอดมินอยู่แล้ว ข้ามไป /owner
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("is_platform_admin")
-      .eq("id", user.id)
-      .single();
-    if (data?.is_platform_admin) redirect("/owner");
-  }
+  if (await isPlatformAdmin()) redirect("/owner");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4">

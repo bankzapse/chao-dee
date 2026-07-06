@@ -21,6 +21,7 @@ export async function createBuilding(
     org_id,
     name,
     address: String(formData.get("address") ?? "").trim(),
+    floors: Math.max(1, Number(formData.get("floors") ?? 1)),
     note: String(formData.get("note") ?? "").trim(),
   });
   if (error) return { error: error.message };
@@ -41,6 +42,7 @@ export async function updateBuilding(
     .update({
       name,
       address: String(formData.get("address") ?? "").trim(),
+      floors: Math.max(1, Number(formData.get("floors") ?? 1)),
       note: String(formData.get("note") ?? "").trim(),
     })
     .eq("id", id);

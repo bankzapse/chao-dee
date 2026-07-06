@@ -12,9 +12,15 @@ function Fields({ b }: { b?: Building }) {
         <label className="label">ชื่ออาคาร *</label>
         <input name="name" className="field" defaultValue={b?.name} placeholder="อาคาร A" required />
       </div>
-      <div>
-        <label className="label">ที่อยู่</label>
-        <input name="address" className="field" defaultValue={b?.address} placeholder="123 ถ.สุขุมวิท…" />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">ที่อยู่</label>
+          <input name="address" className="field" defaultValue={b?.address} placeholder="123 ถ.สุขุมวิท…" />
+        </div>
+        <div>
+          <label className="label">จำนวนชั้น</label>
+          <input name="floors" type="number" min={1} max={99} className="field" defaultValue={b?.floors ?? 1} />
+        </div>
       </div>
       <div>
         <label className="label">หมายเหตุ</label>

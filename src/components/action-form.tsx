@@ -1,10 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 
-export type FormState = { ok?: boolean; error?: string } | null;
+export type FormState = {
+  ok?: boolean;
+  error?: string;
+  /** ค่าที่กรอก ส่งกลับเมื่อ error เพื่อคงข้อมูลในฟอร์ม (แก้เฉพาะจุดที่ผิด) */
+  values?: Record<string, unknown>;
+} | null;
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -24,21 +29,31 @@ export function ActionForm({
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   onSuccess?: () => void;
   submitLabel?: string;
-  children: React.ReactNode;
+  /** children ปกติ หรือ ฟังก์ชันรับ state เพื่ออ่านค่าที่กรอก (values) มาคงไว้ในฟอร์ม */
+  children: React.ReactNode | ((state: FormState) => React.ReactNode);
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(action, null);
   const router = useRouter();
+  // นับรอบ submit — ใช้ remount ฟิลด์เพื่อคงค่าที่กรอก (React 19 รีเซ็ตฟอร์มหลัง action)
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (state?.ok) {
       onSuccess?.();
       router.refresh();
+    } else if (state) {
+      setNonce((n) => n + 1);
     }
-  }, [state, onSuccess, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  const content = typeof children === "function" ? children(state) : children;
 
   return (
     <form action={formAction} className="space-y-4">
-      {children}
+      <div key={nonce} className="space-y-4">
+        {content}
+      </div>
       {state?.error && (
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
           {state.error}

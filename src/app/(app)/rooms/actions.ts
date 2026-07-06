@@ -29,17 +29,17 @@ export async function createRoom(
   formData: FormData
 ): Promise<FormState> {
   const data = parseRoom(formData);
-  if (!data.building_id) return { error: "กรุณาเลือกอาคาร" };
-  if (!data.room_number) return { error: "กรุณาระบุเลขห้อง" };
+  if (!data.building_id) return { error: "กรุณาเลือกอาคาร", values: data };
+  if (!data.room_number) return { error: "กรุณาระบุเลขห้อง", values: data };
 
   const limit = await checkLimit("rooms");
-  if (limit) return limit;
+  if (limit) return { ...limit, values: data };
 
   const supabase = await createClient();
   const { error } = await supabase.from("rooms").insert(data);
   if (error) {
-    if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้" };
-    return { error: error.message };
+    if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้", values: data };
+    return { error: error.message, values: data };
   }
   return { ok: true };
 }
@@ -58,12 +58,13 @@ export async function createRoomsBulk(
   const water_rate = Number(formData.get("water_rate") ?? 0);
   const electricity_rate = Number(formData.get("electricity_rate") ?? 0);
 
-  if (!building_id) return { error: "กรุณาเลือกอาคาร" };
+  const values = { building_id, floor, prefix, start, count, base_rent, water_rate, electricity_rate };
+  if (!building_id) return { error: "กรุณาเลือกอาคาร", values };
   if (!Number.isFinite(count) || count < 1 || count > 200)
-    return { error: "จำนวนห้องต้องอยู่ระหว่าง 1–200" };
+    return { error: "จำนวนห้องต้องอยู่ระหว่าง 1–200", values };
 
   const limit = await checkLimit("rooms", count);
-  if (limit) return limit;
+  if (limit) return { ...limit, values };
 
   const rows = Array.from({ length: count }, (_, i) => ({
     building_id,
@@ -83,8 +84,8 @@ export async function createRoomsBulk(
   const { error } = await supabase.from("rooms").insert(rows);
   if (error) {
     if (error.code === "23505")
-      return { error: "มีเลขห้องซ้ำกับที่มีอยู่แล้วในอาคารนี้ — ลองเปลี่ยนเลขเริ่มต้น/prefix" };
-    return { error: error.message };
+      return { error: "มีเลขห้องซ้ำกับที่มีอยู่แล้วในอาคารนี้ — ลองเปลี่ยนเลขเริ่มต้น/prefix", values };
+    return { error: error.message, values };
   }
   return { ok: true };
 }
@@ -95,13 +96,13 @@ export async function updateRoom(
   formData: FormData
 ): Promise<FormState> {
   const data = parseRoom(formData);
-  if (!data.room_number) return { error: "กรุณาระบุเลขห้อง" };
+  if (!data.room_number) return { error: "กรุณาระบุเลขห้อง", values: data };
 
   const supabase = await createClient();
   const { error } = await supabase.from("rooms").update(data).eq("id", id);
   if (error) {
-    if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้" };
-    return { error: error.message };
+    if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้", values: data };
+    return { error: error.message, values: data };
   }
   return { ok: true };
 }

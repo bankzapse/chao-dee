@@ -50,7 +50,7 @@ export default async function BuildingsPage() {
                 </div>
               </div>
               <p className="mt-3 text-sm text-slate-600">
-                จำนวนห้อง:{" "}
+                <span className="font-semibold text-slate-900">{b.floors ?? 1}</span> ชั้น ·{" "}
                 <span className="font-semibold text-slate-900">
                   {formatNumber(roomCount.get(b.id) ?? 0)}
                 </span>{" "}

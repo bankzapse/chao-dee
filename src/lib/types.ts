@@ -25,6 +25,7 @@ export type Building = {
   name: string;
   address: string;
   note: string;
+  floors: number;
   created_at: string;
 };
 

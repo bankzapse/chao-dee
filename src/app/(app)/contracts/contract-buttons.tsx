@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
@@ -185,16 +185,20 @@ export function CloseContractButton({
   roomId: string;
 }) {
   const router = useRouter();
+  const [pending, start] = useTransition();
   return (
     <button
-      className="text-sm font-medium text-amber-600 hover:text-amber-700"
-      onClick={async () => {
+      className="text-sm font-medium text-amber-600 hover:text-amber-700 disabled:opacity-50"
+      disabled={pending}
+      onClick={() => {
         if (!confirm("สิ้นสุดสัญญานี้และคืนห้องเป็นว่าง?")) return;
-        await closeContract(contractId, roomId, "ended");
-        router.refresh();
+        start(async () => {
+          await closeContract(contractId, roomId, "ended");
+          router.refresh();
+        });
       }}
     >
-      สิ้นสุด
+      {pending ? "กำลังบันทึก…" : "สิ้นสุด"}
     </button>
   );
 }

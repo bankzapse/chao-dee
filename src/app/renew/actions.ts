@@ -80,6 +80,10 @@ export async function submitRenewal(data: {
   if (!pkg || pkg.priceMonthly === null) {
     return { error: "แพ็คเกจนี้กรุณาติดต่อทีมงานโดยตรง" };
   }
+  // ต้องแนบสลิปเสมอ
+  if (!data.slip_path?.trim()) {
+    return { error: "กรุณาแนบสลิปการโอนก่อนส่งคำขอ" };
+  }
   const base = data.cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly;
 
   // คำนวณส่วนลดใหม่ฝั่ง server (กันการปลอมยอด)

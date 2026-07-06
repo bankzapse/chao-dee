@@ -14,6 +14,16 @@ export default async function OwnerPayments() {
     .order("created_at", { ascending: false });
 
   const list = pays ?? [];
+
+  // signed URL ของสลิปแต่ละใบ เพื่อให้เจ้าของระบบเปิดดูก่อนยืนยัน
+  const slipUrls = new Map<string, string>();
+  for (const p of list) {
+    if (p.slip_path) {
+      const { data: signed } = await admin.storage.from("slips").createSignedUrl(p.slip_path, 60 * 60);
+      if (signed?.signedUrl) slipUrls.set(p.id, signed.signedUrl);
+    }
+  }
+
   const pending = list.filter((p) => p.status === "pending");
   const verified = list.filter((p) => p.status === "verified");
   const pendingAmount = pending.reduce((s, p) => s + Number(p.amount), 0);
@@ -80,6 +90,16 @@ export default async function OwnerPayments() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-3">
+                      {slipUrls.has(p.id) && (
+                        <a
+                          href={slipUrls.get(p.id)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          🧾 ดูสลิป
+                        </a>
+                      )}
                       {p.status === "pending" && (
                         <>
                           <VerifyPaymentButton paymentId={p.id} />

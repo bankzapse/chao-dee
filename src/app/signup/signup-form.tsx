@@ -31,6 +31,8 @@ export function SignupForm({ provinces }: { provinces: string[] }) {
   const [step, setStep] = useState(1);
   const [stepErr, setStepErr] = useState("");
   const [buildingType, setBuildingType] = useState("dorm");
+  // เก็บรหัสผ่านไว้ฝั่ง client (ไม่ส่งกลับจาก server) เพื่อคงค่าเมื่อ error โดยไม่กระทบความปลอดภัย
+  const [password, setPassword] = useState("");
 
   // ที่ตั้ง: จังหวัด → อำเภอ → ตำบล
   const [province, setProvince] = useState("");
@@ -65,6 +67,10 @@ export function SignupForm({ provinces }: { provinces: string[] }) {
 
   const otpStep = Boolean(reqState?.otpSent);
   const phone = reqState?.phone ?? "";
+  // ค่าที่กรอกไว้ (ส่งกลับจาก server เมื่อ error) เพื่อคงข้อมูลในฟอร์ม ไม่ต้องกรอกใหม่
+  const v = reqState?.values;
+  const errField = reqState?.field;
+  const ring = (name: string) => (errField === name ? " border-rose-400 ring-1 ring-rose-300" : "");
 
   // ---- ยืนยัน OTP ----
   if (otpStep) {
@@ -131,7 +137,7 @@ export function SignupForm({ provinces }: { provinces: string[] }) {
 
         <div>
           <label className="label">ชื่อหอพัก / กิจการ <span className="text-rose-500">*</span></label>
-          <input name="org_name" className="field" placeholder="เช่น หอพักสุขใจ" />
+          <input name="org_name" className={"field" + ring("org_name")} placeholder="เช่น หอพักสุขใจ" defaultValue={v?.org_name} />
         </div>
 
         <div>
@@ -213,34 +219,42 @@ export function SignupForm({ provinces }: { provinces: string[] }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">ชื่อจริง <span className="text-rose-500">*</span></label>
-            <input name="first_name" className="field" placeholder="สมชาย" />
+            <input name="first_name" className={"field" + ring("first_name")} placeholder="สมชาย" defaultValue={v?.first_name} />
           </div>
           <div>
             <label className="label">นามสกุล <span className="text-rose-500">*</span></label>
-            <input name="last_name" className="field" placeholder="ใจดี" />
+            <input name="last_name" className="field" placeholder="ใจดี" defaultValue={v?.last_name} />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">เบอร์โทรศัพท์ <span className="text-rose-500">*</span></label>
-            <input name="phone" type="tel" inputMode="numeric" className="field" placeholder="0812345678" />
+            <input name="phone" type="tel" inputMode="numeric" className={"field" + ring("phone")} placeholder="0812345678" defaultValue={v?.phone} />
           </div>
           <div>
             <label className="label">อีเมล <span className="text-rose-500">*</span></label>
-            <input name="email" type="email" className="field" placeholder="you@email.com" />
+            <input name="email" type="email" className={"field" + ring("email")} placeholder="you@email.com" defaultValue={v?.email} />
           </div>
         </div>
 
         <div>
           <label className="label">ตั้งรหัสผ่าน <span className="text-rose-500">*</span></label>
-          <input name="password" type="password" className="field" placeholder="อย่างน้อย 8 ตัวอักษร" minLength={8} />
+          <input
+            name="password"
+            type="password"
+            className={"field" + ring("password")}
+            placeholder="อย่างน้อย 8 ตัวอักษร"
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
           <p className="mt-1 text-xs text-slate-400">ใช้เบอร์โทร + รหัสผ่านนี้เข้าสู่ระบบได้</p>
         </div>
 
         <div>
           <label className="label">โค้ดแนะนำ / โปรโมชั่น (ถ้ามี)</label>
-          <input name="promo" className="field" placeholder="ใส่โค้ดที่นี่" />
+          <input name="promo" className="field" placeholder="ใส่โค้ดที่นี่" defaultValue={v?.promo} />
         </div>
 
         {reqState?.error && (

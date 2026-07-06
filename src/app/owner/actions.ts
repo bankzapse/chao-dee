@@ -127,6 +127,37 @@ export async function rejectPayment(paymentId: string): Promise<void> {
   });
 }
 
+/** ลบสมาชิก (กิจการ) — ลบข้อมูลทั้งหมดของกิจการ + บัญชีเข้าระบบของทีมงานกิจการนั้น */
+export async function deleteMember(orgId: string): Promise<void> {
+  const adminId = await requirePlatformAdmin();
+  const admin = createAdminClient();
+
+  const { data: org } = await admin.from("organizations").select("name").eq("id", orgId).maybeSingle();
+
+  // เก็บ user id ของบัญชีในกิจการนี้ (ไม่แตะแอดมินแพลตฟอร์ม)
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, is_platform_admin")
+    .eq("org_id", orgId);
+  const userIds = (profiles ?? []).filter((p) => !p.is_platform_admin).map((p) => p.id);
+
+  // ลบกิจการ → cascade ลบ อาคาร/ห้อง/ผู้เช่า/สัญญา/บิล/สิทธิ์/โปรไฟล์ ที่ผูก org_id
+  await admin.from("organizations").delete().eq("id", orgId);
+
+  // ลบบัญชีเข้าระบบ (auth.users) เพื่อไม่ให้ล็อกอินได้อีก
+  for (const uid of userIds) {
+    await admin.auth.admin.deleteUser(uid).catch(() => null);
+  }
+
+  await logAudit({
+    org_id: null,
+    actor_id: adminId,
+    action: "ลบสมาชิก",
+    target: org?.name ?? orgId,
+    meta: { org_id: orgId, removed_users: userIds.length },
+  });
+}
+
 /** เปิด/ระงับสิทธิ์เร็ว */
 export async function setOrgStatus(
   orgId: string,

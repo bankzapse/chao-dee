@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 
@@ -62,16 +62,20 @@ export function DeleteButton({
   label?: string;
 }) {
   const router = useRouter();
+  const [pending, start] = useTransition();
   return (
     <button
-      className="text-sm font-medium text-rose-600 hover:text-rose-700"
-      onClick={async () => {
+      className="text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+      disabled={pending}
+      onClick={() => {
         if (!confirm(confirmText)) return;
-        await action();
-        router.refresh();
+        start(async () => {
+          await action();
+          router.refresh();
+        });
       }}
     >
-      {label}
+      {pending ? "กำลังลบ…" : label}
     </button>
   );
 }

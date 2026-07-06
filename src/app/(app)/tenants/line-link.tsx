@@ -24,7 +24,8 @@ export function LineLinkCell({
           🟢 เชื่อมแล้ว
         </span>
         <button
-          className="text-xs text-slate-400 hover:text-rose-600"
+          className="text-xs text-slate-400 hover:text-rose-600 disabled:opacity-50"
+          disabled={pending}
           onClick={() =>
             startTransition(async () => {
               await unlinkLine(tenantId);
@@ -32,7 +33,7 @@ export function LineLinkCell({
             })
           }
         >
-          ยกเลิก
+          {pending ? "…" : "ยกเลิก"}
         </button>
       </div>
     );

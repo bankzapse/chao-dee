@@ -10,6 +10,7 @@ import {
   verifyPayment,
   rejectPayment,
   setOrgStatus,
+  deleteMember,
 } from "./actions";
 import { PACKAGES } from "@/lib/packages";
 import { SUBSCRIPTION_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/format";
@@ -163,6 +164,30 @@ function TxButton({
       }
     >
       {pending ? "…" : label}
+    </button>
+  );
+}
+
+/** ลบสมาชิก (กิจการ) ทั้งหมด — อันตราย ต้องยืนยัน 2 ชั้น */
+export function DeleteMemberButton({ orgId, orgName }: { orgId: string; orgName: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <button
+      className="text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+      disabled={pending}
+      onClick={() => {
+        if (!window.confirm(`ลบสมาชิก "${orgName}"?\nข้อมูลทั้งหมด (อาคาร/ห้อง/ผู้เช่า/สัญญา/บิล) และบัญชีเข้าระบบจะถูกลบถาวร`))
+          return;
+        if (!window.confirm("ยืนยันอีกครั้ง — การลบนี้กู้คืนไม่ได้")) return;
+        start(async () => {
+          await deleteMember(orgId);
+          router.push("/owner/members");
+          router.refresh();
+        });
+      }}
+    >
+      {pending ? "กำลังลบ…" : "🗑 ลบสมาชิก"}
     </button>
   );
 }

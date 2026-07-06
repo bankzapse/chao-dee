@@ -11,12 +11,14 @@ import {
   SUBSCRIPTION_STATUS_STYLE,
 } from "@/lib/format";
 import type { PaymentMethod } from "@/lib/types";
+import { buildingTypeLabel } from "@/lib/signup-options";
 import {
   RecordPaymentButton,
   ManageSubButton,
   VerifyPaymentButton,
   RejectPaymentButton,
   SetStatusButton,
+  DeleteMemberButton,
 } from "../../member-actions";
 
 export default async function MemberDetail({
@@ -27,20 +29,32 @@ export default async function MemberDetail({
   const { id } = await params;
   const admin = createAdminClient();
 
-  const [{ data: org }, { data: sub }, { data: owner }, { data: pays }, { data: buildings }, { data: tenants }] =
+  const [{ data: org }, { data: sub }, { data: owner }, { data: pays }, { data: buildings }, { data: tenants }, { data: rooms }] =
     await Promise.all([
       admin.from("organizations").select("*").eq("id", id).single(),
       admin.from("subscriptions").select("*").eq("org_id", id).maybeSingle(),
-      admin.from("profiles").select("full_name, phone").eq("org_id", id).eq("role", "owner").maybeSingle(),
+      admin.from("profiles").select("full_name, phone, email").eq("org_id", id).eq("role", "owner").maybeSingle(),
       admin.from("subscription_payments").select("*").eq("org_id", id).order("created_at", { ascending: false }),
       admin.from("buildings").select("id").eq("org_id", id),
       admin.from("tenants").select("id").eq("org_id", id),
+      admin.from("rooms").select("id, building_id, buildings!inner(org_id)").eq("buildings.org_id", id),
     ]);
 
   if (!org) notFound();
   const st = sub?.status ?? "expired";
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const paymentList = pays ?? [];
+
+  // signed URL ของสลิปแต่ละใบ (bucket 'slips') เพื่อให้เจ้าของระบบเปิดดูได้
+  const slipUrls = new Map<string, string>();
+  for (const p of paymentList) {
+    if (p.slip_path) {
+      const { data: signed } = await admin.storage.from("slips").createSignedUrl(p.slip_path, 60 * 60);
+      if (signed?.signedUrl) slipUrls.set(p.id, signed.signedUrl);
+    }
+  }
+
+  const location = [org.subdistrict, org.district, org.province].filter(Boolean).join(" · ");
 
   return (
     <div>
@@ -73,6 +87,7 @@ export default async function MemberDetail({
             }}
           />
           <RecordPaymentButton orgId={id} defaultSlug={sub?.package_slug} />
+          <DeleteMemberButton orgId={id} orgName={org.name} />
         </div>
       </div>
 
@@ -92,7 +107,26 @@ export default async function MemberDetail({
           <p className="text-sm text-slate-500">หมดอายุ</p>
           <p className="mt-1 text-lg font-bold text-slate-900">{sub?.expires_at ? formatDate(sub.expires_at) : "-"}</p>
         </div>
-        <StatCard label="การใช้งาน" value={`${(tenants ?? []).length} ผู้เช่า`} hint={`${(buildings ?? []).length} อาคาร`} accent="slate" />
+        <StatCard label="การใช้งาน" value={`${(tenants ?? []).length} ผู้เช่า`} hint={`${(buildings ?? []).length} อาคาร · ${(rooms ?? []).length} ห้อง`} accent="slate" />
+      </div>
+
+      {/* รายละเอียดเจ้าของหอ / กิจการ (owner ดูข้อมูลทั้งหมดได้) */}
+      <h2 className="mb-3 mt-8 text-lg font-semibold text-slate-900">ข้อมูลเจ้าของหอ / กิจการ</h2>
+      <div className="card grid gap-x-8 gap-y-4 p-6 sm:grid-cols-2">
+        <Detail label="เจ้าของ" value={owner?.full_name || "-"} />
+        <Detail label="เบอร์โทร" value={owner?.phone || "-"} />
+        <Detail label="อีเมล" value={owner?.email || "-"} />
+        <Detail label="ชื่อกิจการ" value={org.name} />
+        <Detail label="ประเภทที่พัก" value={org.building_type ? buildingTypeLabel(org.building_type) : "-"} />
+        <Detail label="จำนวนห้อง (แจ้งตอนสมัคร)" value={org.room_count || "-"} />
+        <Detail label="สถานะกิจการ" value={org.status || "-"} />
+        <Detail label="ที่ตั้ง" value={location || "-"} />
+        <Detail label="โค้ดโปรตอนสมัคร" value={org.signup_promo || "-"} />
+        <Detail label="เลขผู้เสียภาษี" value={org.tax_id || "-"} />
+        {org.tax_name && <Detail label="ชื่อผู้เสียภาษี" value={org.tax_name} />}
+        {org.tax_address && <Detail label="ที่อยู่ใบกำกับภาษี" value={org.tax_address} />}
+        {org.promptpay_id && <Detail label="PromptPay รับเงินผู้เช่า" value={`${org.promptpay_id}${org.promptpay_name ? ` (${org.promptpay_name})` : ""}`} />}
+        <Detail label="สมัครเมื่อ" value={formatDate(org.created_at)} />
       </div>
 
       {/* payment history */}
@@ -137,6 +171,16 @@ export default async function MemberDetail({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-3">
+                        {slipUrls.has(p.id) && (
+                          <a
+                            href={slipUrls.get(p.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                          >
+                            🧾 ดูสลิป
+                          </a>
+                        )}
                         {p.status === "pending" && (
                           <>
                             <VerifyPaymentButton paymentId={p.id} />
@@ -152,6 +196,15 @@ export default async function MemberDetail({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-slate-800">{value}</p>
     </div>
   );
 }

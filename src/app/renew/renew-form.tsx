@@ -53,6 +53,10 @@ export function RenewForm({
     }
   }
   async function submit() {
+    if (!file) {
+      setMsg({ text: "กรุณาแนบสลิปการโอนก่อนส่งคำขอ" });
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -254,10 +258,17 @@ export function RenewForm({
             )}
           </div>
 
-          {/* แนบสลิป */}
+          {/* แนบสลิป (บังคับ) */}
           <div className="mt-4">
-            <label className="label">แนบสลิปการโอน (แนะนำ)</label>
-            <input type="file" accept="image/*" className="field" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <label className="label">แนบสลิปการโอน <span className="text-rose-500">*</span></label>
+            <input
+              type="file"
+              accept="image/*"
+              className="field"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            {!file && <p className="mt-1 text-xs text-slate-400">ต้องแนบสลิปก่อนจึงจะส่งคำขอได้</p>}
+            {file && <p className="mt-1 text-xs text-emerald-600">✓ แนบแล้ว: {file.name}</p>}
           </div>
 
           {msg && (
@@ -266,7 +277,11 @@ export function RenewForm({
             </p>
           )}
 
-          <button className="btn-primary mt-4 w-full" onClick={submit} disabled={busy || Boolean(msg?.ok)}>
+          <button
+            className="btn-primary mt-4 w-full"
+            onClick={submit}
+            disabled={busy || Boolean(msg?.ok) || !file}
+          >
             {busy ? "กำลังส่ง…" : "ยืนยัน & ส่งคำขอต่ออายุ"}
           </button>
           <p className="mt-2 text-center text-[11px] text-slate-400">

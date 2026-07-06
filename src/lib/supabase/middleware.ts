@@ -45,6 +45,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/owner-login") || // ทางเข้าแผงเจ้าของ (ตรวจสิทธิ์ในหน้าเอง)
+    pathname.startsWith("/logout") || // ทางออกฉุกเฉิน — ล้าง cookie ได้เสมอ
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
     pathname.startsWith("/auth") ||

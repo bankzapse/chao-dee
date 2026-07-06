@@ -32,6 +32,11 @@ export default function GlobalError({
             >
               ลองใหม่
             </button>
+            <div className="mt-3 flex items-center justify-center gap-4 text-sm">
+              <a href="/" className="text-slate-500 hover:text-slate-700">หน้าแรก</a>
+              <span className="text-slate-300">·</span>
+              <a href="/logout" className="text-slate-500 hover:text-slate-700">ออกจากระบบ</a>
+            </div>
           </div>
         </div>
       </body>

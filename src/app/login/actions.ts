@@ -99,6 +99,11 @@ export async function confirmPasswordReset(
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // อย่าให้ error ตอน signOut มาบล็อกการออกจากระบบ — เด้งออกเสมอ
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    /* เพิกเฉย — ล้าง session ฝั่ง client ก็พอ */
+  }
   redirect("/login");
 }

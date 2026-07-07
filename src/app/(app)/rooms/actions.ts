@@ -5,6 +5,18 @@ import { checkLimit } from "@/lib/limits";
 import type { FormState } from "@/components/action-form";
 import type { RoomStatus } from "@/lib/types";
 
+/** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (ยังไม่ได้รัน migration 0020) */
+function isMissingColumn(msg?: string): boolean {
+  return Boolean(msg && /schema cache|could not find the .* column/i.test(msg));
+}
+/** ตัดคอลัมน์ของ migration 0020 ออก (เผื่อ prod ยังไม่ได้รัน) */
+function stripNewCols<T extends Record<string, unknown>>(row: T) {
+  const rest = { ...row };
+  delete rest.water_mode;
+  delete rest.water_flat_per_person;
+  return rest;
+}
+
 function parseRoom(formData: FormData) {
   const water_mode = String(formData.get("water_mode") ?? "unit") === "flat_person" ? "flat_person" : "unit";
   return {
@@ -36,7 +48,10 @@ export async function createRoom(
   if (limit) return { ...limit, values: data };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("rooms").insert(data);
+  let { error } = await supabase.from("rooms").insert(data);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("rooms").insert(stripNewCols(data)));
+  }
   if (error) {
     if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้", values: data };
     return { error: error.message, values: data };
@@ -81,7 +96,10 @@ export async function createRoomsBulk(
   }));
 
   const supabase = await createClient();
-  const { error } = await supabase.from("rooms").insert(rows);
+  let { error } = await supabase.from("rooms").insert(rows);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("rooms").insert(rows.map(stripNewCols)));
+  }
   if (error) {
     if (error.code === "23505")
       return { error: "มีเลขห้องซ้ำกับที่มีอยู่แล้วในอาคารนี้ — ลองเปลี่ยนเลขเริ่มต้น/prefix", values };
@@ -99,7 +117,10 @@ export async function updateRoom(
   if (!data.room_number) return { error: "กรุณาระบุเลขห้อง", values: data };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("rooms").update(data).eq("id", id);
+  let { error } = await supabase.from("rooms").update(data).eq("id", id);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("rooms").update(stripNewCols(data)).eq("id", id));
+  }
   if (error) {
     if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้", values: data };
     return { error: error.message, values: data };

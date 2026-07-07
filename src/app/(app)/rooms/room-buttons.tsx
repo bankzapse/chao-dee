@@ -112,13 +112,24 @@ function Fields({
         </div>
         <div>
           <label className="label">ชั้น</label>
-          <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
-            {floorOptions.map((f) => (
-              <option key={f} value={f}>
-                ชั้น {f}
-              </option>
-            ))}
-          </select>
+          {floorCount > 1 ? (
+            <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
+              {floorOptions.map((f) => (
+                <option key={f} value={f}>
+                  ชั้น {f}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              name="floor"
+              type="number"
+              min={0}
+              className="field"
+              value={floor}
+              onChange={(e) => setFloor(Number(e.target.value))}
+            />
+          )}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -206,11 +217,22 @@ function BulkBuildingFloor({ buildings, defaultBuilding, v }: { buildings: Build
       </div>
       <div>
         <label className="label">ชั้น</label>
-        <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
-          {floorOptions.map((f) => (
-            <option key={f} value={f}>ชั้น {f}</option>
-          ))}
-        </select>
+        {floorCount > 1 ? (
+          <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
+            {floorOptions.map((f) => (
+              <option key={f} value={f}>ชั้น {f}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            name="floor"
+            type="number"
+            min={0}
+            className="field"
+            value={floor}
+            onChange={(e) => setFloor(Number(e.target.value))}
+          />
+        )}
       </div>
     </>
   );

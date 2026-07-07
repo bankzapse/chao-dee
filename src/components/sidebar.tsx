@@ -39,7 +39,7 @@ export function Sidebar({
   const nav = NAV.filter((item) => !("manageTeam" in item) || canManageTeam);
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+    <aside className="no-print hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
         <BrandMark size={36} />
         <div className="min-w-0">

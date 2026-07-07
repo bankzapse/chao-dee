@@ -56,6 +56,21 @@ export default async function InvoiceDetailPage({
   const outstanding = Number(inv.total_amount) - Number(inv.paid_amount);
   const today = new Date().toISOString().slice(0, 10);
 
+  // เลขมิเตอร์ก่อน/หลัง (จากการจดมิเตอร์) เพื่อแสดงในบิล
+  const { data: readings } = await supabase
+    .from("meter_readings")
+    .select("period, water_value, electric_value")
+    .eq("room_id", inv.room_id)
+    .lte("period", inv.period)
+    .order("period", { ascending: false })
+    .limit(2);
+  const curR = readings?.[0];
+  const prevR = readings?.[1];
+  const meterDetail = (prev?: number, cur?: number, units?: number) =>
+    prev != null && cur != null
+      ? `เลขก่อน ${formatNumber(prev)} → เลขหลัง ${formatNumber(cur)} = ${formatNumber(units ?? 0)} หน่วย`
+      : `${formatNumber(units ?? 0)} หน่วย`;
+
   const rows = [
     { label: `ค่าเช่าห้อง`, detail: "", amount: Number(inv.rent_amount) },
     {
@@ -63,12 +78,12 @@ export default async function InvoiceDetailPage({
       detail:
         Number(inv.occupant_count) > 0
           ? `เหมาจ่าย ${formatNumber(inv.occupant_count)} คน`
-          : `${formatNumber(inv.water_units)} หน่วย`,
+          : meterDetail(prevR?.water_value, curR?.water_value, Number(inv.water_units)),
       amount: Number(inv.water_amount),
     },
     {
       label: "ค่าไฟฟ้า",
-      detail: `${formatNumber(inv.electric_units)} หน่วย`,
+      detail: meterDetail(prevR?.electric_value, curR?.electric_value, Number(inv.electric_units)),
       amount: Number(inv.electric_amount),
     },
   ];

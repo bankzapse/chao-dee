@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatBaht } from "@/lib/format";
 import { saveMeterReadings, type MeterRow } from "./actions";
 
 function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> {
@@ -178,10 +179,10 @@ export function MetersForm({
               <th className="px-4 py-3 font-medium">ห้อง</th>
               <th className="px-3 py-3 font-medium">น้ำ (ก่อน)</th>
               <th className="px-3 py-3 font-medium">น้ำ (ปัจจุบัน)</th>
-              <th className="px-3 py-3 font-medium">หน่วยน้ำ</th>
+              <th className="px-3 py-3 font-medium">หน่วยน้ำ / ค่าน้ำ</th>
               <th className="px-3 py-3 font-medium">ไฟ (ก่อน)</th>
               <th className="px-3 py-3 font-medium">ไฟ (ปัจจุบัน)</th>
-              <th className="px-3 py-3 font-medium">หน่วยไฟ</th>
+              <th className="px-3 py-3 font-medium">หน่วยไฟ / ค่าไฟ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -217,7 +218,16 @@ export function MetersForm({
                       />
                     </div>
                   </td>
-                  <td className="px-3 py-2 font-medium text-sky-600">{wu ?? "-"}</td>
+                  <td className="px-3 py-2 text-sky-600">
+                    {wu != null ? (
+                      <span>
+                        <span className="font-medium">{wu}</span>{" "}
+                        <span className="text-xs text-slate-400">หน่วย · {formatBaht(wu * r.water_rate)}</span>
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-slate-400">{r.prev_electric ?? "-"}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1">
@@ -236,7 +246,16 @@ export function MetersForm({
                       />
                     </div>
                   </td>
-                  <td className="px-3 py-2 font-medium text-amber-600">{eu ?? "-"}</td>
+                  <td className="px-3 py-2 text-amber-600">
+                    {eu != null ? (
+                      <span>
+                        <span className="font-medium">{eu}</span>{" "}
+                        <span className="text-xs text-slate-400">หน่วย · {formatBaht(eu * r.electricity_rate)}</span>
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                 </tr>
               );
             })}

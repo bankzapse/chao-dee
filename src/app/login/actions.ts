@@ -7,6 +7,16 @@ import { toE164, toE164Digits } from "@/lib/phone";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
 
+/** แยกข้อความ error ของ OTP: หมดอายุ vs ผิด */
+function otpErrorMessage(err: { code?: string; message?: string } | null): string {
+  const code = err?.code ?? "";
+  const msg = err?.message ?? "";
+  if (code === "otp_expired" || /expired/i.test(msg)) {
+    return "รหัส OTP หมดอายุแล้ว — กรุณากด “ขอรหัสใหม่”";
+  }
+  return "รหัส OTP ไม่ถูกต้อง — กรุณาตรวจสอบตัวเลขอีกครั้ง";
+}
+
 /** เช็คว่ามีบัญชีที่ใช้เบอร์นี้แล้วหรือยัง (กันการยิง OTP ใส่เบอร์มั่ว) */
 async function phoneRegistered(input: string): Promise<boolean> {
   const digits = toE164Digits(input);
@@ -29,7 +39,7 @@ export async function verifyOtp(
   const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
 
   if (error) {
-    return { error: "รหัส OTP ไม่ถูกต้องหรือหมดอายุ", otpSent: true, phone };
+    return { error: otpErrorMessage(error), otpSent: true, phone };
   }
   redirect("/dashboard");
 }
@@ -88,7 +98,7 @@ export async function confirmPasswordReset(
   const supabase = await createClient();
   // ยืนยัน OTP → ได้ session
   const { error: vErr } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
-  if (vErr) return { error: "รหัส OTP ไม่ถูกต้องหรือหมดอายุ", otpSent: true, phone };
+  if (vErr) return { error: otpErrorMessage(vErr), otpSent: true, phone };
 
   // ตั้งรหัสผ่านใหม่
   const { error: uErr } = await supabase.auth.updateUser({ password });

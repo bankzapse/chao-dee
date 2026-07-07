@@ -18,9 +18,19 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
+function ResendButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50" disabled={pending}>
+      {pending ? "กำลังส่ง…" : "ขอรหัสใหม่"}
+    </button>
+  );
+}
+
 export function ForgotForm() {
   const [reqState, reqAction] = useActionState<AuthState, FormData>(requestPasswordReset, null);
   const [confState, confAction] = useActionState<AuthState, FormData>(confirmPasswordReset, null);
+  const [resendState, resendAction] = useActionState<AuthState, FormData>(requestPasswordReset, null);
 
   const step2 = Boolean(reqState?.otpSent);
   const phone = reqState?.phone ?? "";
@@ -46,32 +56,49 @@ export function ForgotForm() {
           <SubmitButton label="ส่งรหัส OTP" />
         </form>
       ) : (
-        <form action={confAction} className="space-y-4">
-          <p className="text-sm text-slate-500">
-            ส่งรหัสไปที่ <span className="font-medium text-slate-800">{phone}</span> แล้ว
-          </p>
-          <input type="hidden" name="phone" value={phone} />
-          <div>
-            <label className="label">รหัส OTP</label>
-            <input
-              name="code"
-              inputMode="numeric"
-              className="field text-center text-lg tracking-[0.5em]"
-              placeholder="______"
-              maxLength={6}
-              required
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="label">รหัสผ่านใหม่</label>
-            <input name="password" type="password" className="field" placeholder="อย่างน้อย 8 ตัวอักษร" minLength={8} required />
-          </div>
-          {confState?.error && (
-            <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{confState.error}</p>
-          )}
-          <SubmitButton label="ตั้งรหัสผ่านใหม่ & เข้าสู่ระบบ" />
-        </form>
+        <>
+          <form action={confAction} className="space-y-4">
+            <p className="text-sm text-slate-500">
+              ส่งรหัสไปที่ <span className="font-medium text-slate-800">{phone}</span> แล้ว
+            </p>
+            <input type="hidden" name="phone" value={phone} />
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="label">รหัส OTP</label>
+              </div>
+              <input
+                name="code"
+                inputMode="numeric"
+                className="field text-center text-lg tracking-[0.5em]"
+                placeholder="______"
+                maxLength={6}
+                required
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="label">รหัสผ่านใหม่</label>
+              <input name="password" type="password" className="field" placeholder="อย่างน้อย 8 ตัวอักษร" minLength={8} required />
+            </div>
+            {confState?.error && (
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{confState.error}</p>
+            )}
+            <SubmitButton label="ตั้งรหัสผ่านใหม่ & เข้าสู่ระบบ" />
+          </form>
+
+          {/* ขอรหัสใหม่ — ฟอร์มแยก (ห้าม nest form) */}
+          <form action={resendAction} className="mt-3 flex flex-col items-center gap-1">
+            <input type="hidden" name="phone" value={phone} />
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <span>ไม่ได้รับรหัส?</span>
+              <ResendButton />
+            </div>
+            {resendState?.otpSent && !resendState?.error && (
+              <p className="text-xs font-medium text-emerald-600">✓ ส่งรหัสใหม่ให้แล้ว — ใช้รหัสล่าสุดเท่านั้น</p>
+            )}
+            {resendState?.error && <p className="text-xs text-rose-600">{resendState.error}</p>}
+          </form>
+        </>
       )}
 
       <p className="mt-6 text-center text-sm text-slate-500">

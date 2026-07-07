@@ -31,7 +31,11 @@ export async function sendSms(
   // .trim() กันช่องว่าง/newline ที่ติดมาตอน paste ใน env (ทำให้ auth 401)
   const url = process.env.SMS_API_URL?.trim();
   const key = process.env.SMS_API_KEY?.trim();
-  const sender = (process.env.SMS_SENDER ?? "Chao-Dee").trim();
+  // ผู้ส่งที่อนุมัติแล้ว (ถาวร) — ฝังในโค้ด ไม่พึ่ง env เพื่อเลี่ยงปัญหาตั้งค่า
+  // ถ้าต้องเปลี่ยน sender ในอนาคต ตั้ง env SMS_SENDER ทับได้
+  const sender = (process.env.SMS_SENDER?.trim() && process.env.SMS_SENDER.trim() !== "MindFull")
+    ? process.env.SMS_SENDER.trim()
+    : "Chao-Dee";
   if (!url || !key) return { ok: false, error: "SMS ยังไม่ได้ตั้งค่า (SMS_API_URL/SMS_API_KEY)" };
 
   const to = toLocalThai(phone);

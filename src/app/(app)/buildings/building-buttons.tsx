@@ -18,10 +18,13 @@ function Fields({ b }: { b?: Building }) {
           <input name="address" className="field" defaultValue={b?.address} placeholder="123 ถ.สุขุมวิท…" />
         </div>
         <div>
-          <label className="label">จำนวนชั้น</label>
-          <input name="floors" type="number" min={1} max={99} className="field" defaultValue={b?.floors ?? 1} />
+          <label className="label">จำนวนชั้น <span className="text-rose-500">*</span></label>
+          <input name="floors" type="number" min={1} max={99} className="field" defaultValue={b?.floors ?? 1} required />
         </div>
       </div>
+      <p className="-mt-1 text-xs text-slate-400">
+        จำนวนชั้นนี้จะใช้เป็นตัวเลือก “ชั้น” ตอนเพิ่มห้องพัก
+      </p>
       <div>
         <label className="label">หมายเหตุ</label>
         <textarea name="note" className="field" defaultValue={b?.note} rows={2} />

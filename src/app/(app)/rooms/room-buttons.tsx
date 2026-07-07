@@ -77,12 +77,11 @@ function Fields({
   );
   const [floor, setFloor] = useState(Number(v?.floor ?? r?.floor ?? 1));
   const selected = buildings.find((b) => b.id === buildingId);
-  // จำนวนชั้นของอาคาร (ถ้ารัน migration แล้ว) → จำกัด dropdown; ถ้ายังไม่รู้ → ให้เลือกได้ถึง 20
-  const declaredFloors = selected && (selected.floors ?? 0) >= 1 ? Number(selected.floors) : 0;
-  const floorMax = declaredFloors > 0 ? declaredFloors : 20;
+  // จำนวนชั้นของ dropdown = จำนวนชั้นของอาคารที่เลือก (สัมพันกับอาคาร)
+  const floorMax = Math.max(1, Number(selected?.floors ?? 1));
   const floorSet = new Set<number>();
   for (let i = 1; i <= floorMax; i++) floorSet.add(i);
-  floorSet.add(floor); // เผื่อชั้นเดิมเกิน max
+  floorSet.add(floor); // เผื่อชั้นเดิมเกิน max (ตอนแก้ไขห้อง)
   const floorOptions = [...floorSet].sort((a, b) => a - b);
 
   return (
@@ -181,8 +180,7 @@ function BulkBuildingFloor({ buildings, defaultBuilding, v }: { buildings: Build
   const [buildingId, setBuildingId] = useState((v?.building_id as string) ?? defaultBuilding ?? "");
   const [floor, setFloor] = useState(Number(v?.floor ?? 1));
   const selected = buildings.find((b) => b.id === buildingId);
-  const declaredFloors = selected && (selected.floors ?? 0) >= 1 ? Number(selected.floors) : 0;
-  const floorMax = declaredFloors > 0 ? declaredFloors : 20;
+  const floorMax = Math.max(1, Number(selected?.floors ?? 1));
   const floorOptions = Array.from({ length: floorMax }, (_, i) => i + 1);
   return (
     <>

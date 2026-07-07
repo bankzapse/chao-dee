@@ -8,17 +8,13 @@ export async function seedDemoData(): Promise<void> {
   const supabase = await createClient();
   const org_id = await getOrgId();
 
-  // 1) อาคาร
-  const { data: building } = await supabase
-    .from("buildings")
-    .insert({
-      org_id,
-      name: "อาคารตัวอย่าง A",
-      address: "123 ถ.สุขุมวิท กรุงเทพฯ",
-      note: "ข้อมูลตัวอย่างสำหรับทดลองใช้งาน",
-    })
-    .select("id")
-    .single();
+  // 1) อาคาร (floors อาจยังไม่มีคอลัมน์ถ้ายังไม่ได้รัน migration → fallback)
+  const buildingBase = { org_id, name: "อาคารตัวอย่าง A", address: "123 ถ.สุขุมวิท กรุงเทพฯ", note: "" };
+  let ins = await supabase.from("buildings").insert({ ...buildingBase, floors: 2 }).select("id").single();
+  if (ins.error && /schema cache|could not find/i.test(ins.error.message)) {
+    ins = await supabase.from("buildings").insert(buildingBase).select("id").single();
+  }
+  const building = ins.data;
   if (!building) return;
 
   // 2) ห้องพัก 8 ห้อง

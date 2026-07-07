@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164 } from "@/lib/phone";
+import { thaiAuthError } from "@/lib/auth-errors";
 
 export type SignupValues = {
   org_name?: string;
@@ -95,7 +96,7 @@ export async function signUpRequest(_prev: SignupState, formData: FormData): Pro
       // resent === "unknown": ตรวจสถานะไม่ได้ (เช่น ยังไม่ได้อัปเดต DB) → ข้อความกลาง
       return fail("เบอร์นี้มีบัญชีอยู่แล้ว — หากยังไม่ได้รับ OTP กรุณาเข้าสู่ระบบหรือกดลืมรหัสผ่าน", "phone");
     }
-    return fail(error.message);
+    return fail(thaiAuthError(error));
   }
   return { otpSent: true, phone };
 }

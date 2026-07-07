@@ -4,18 +4,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164, toE164Digits } from "@/lib/phone";
+import { thaiAuthError } from "@/lib/auth-errors";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
-
-/** แยกข้อความ error ของ OTP: หมดอายุ vs ผิด */
-function otpErrorMessage(err: { code?: string; message?: string } | null): string {
-  const code = err?.code ?? "";
-  const msg = err?.message ?? "";
-  if (code === "otp_expired" || /expired/i.test(msg)) {
-    return "รหัส OTP หมดอายุแล้ว — กรุณากด “ขอรหัสใหม่”";
-  }
-  return "รหัส OTP ไม่ถูกต้อง — กรุณาตรวจสอบตัวเลขอีกครั้ง";
-}
 
 /** เช็คว่ามีบัญชีที่ใช้เบอร์นี้แล้วหรือยัง (กันการยิง OTP ใส่เบอร์มั่ว) */
 async function phoneRegistered(input: string): Promise<boolean> {
@@ -39,7 +30,7 @@ export async function verifyOtp(
   const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
 
   if (error) {
-    return { error: otpErrorMessage(error), otpSent: true, phone };
+    return { error: thaiAuthError(error), otpSent: true, phone };
   }
   redirect("/dashboard");
 }
@@ -96,13 +87,19 @@ export async function confirmPasswordReset(
   if (password.length < 8) return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร", otpSent: true, phone };
 
   const supabase = await createClient();
-  // ยืนยัน OTP → ได้ session
+  // ยืนยัน OTP → ได้ session (OTP ใช้ได้ครั้งเดียว)
   const { error: vErr } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
-  if (vErr) return { error: otpErrorMessage(vErr), otpSent: true, phone };
+  if (vErr) return { error: thaiAuthError(vErr), otpSent: true, phone };
 
-  // ตั้งรหัสผ่านใหม่
+  // ตั้งรหัสผ่านใหม่ — ถ้าเป็นรหัสซ้ำเดิม ผู้ใช้ยืนยันตัวตนผ่านแล้ว (มี session) → ให้เข้าระบบเลย
   const { error: uErr } = await supabase.auth.updateUser({ password });
-  if (uErr) return { error: uErr.message, otpSent: true, phone };
+  if (uErr) {
+    if ((uErr as { code?: string }).code === "same_password" || /different from the old|should be different|same password/i.test(uErr.message)) {
+      redirect("/dashboard"); // เข้าสู่ระบบสำเร็จแล้ว (รหัสไม่เปลี่ยนเพราะซ้ำเดิม)
+    }
+    // OTP ถูกใช้ไปแล้ว — ต้องขอใหม่หากจะลองอีกครั้ง
+    return { error: thaiAuthError(uErr) + " (หากลองใหม่ กรุณากด “ขอรหัสใหม่”)", otpSent: true, phone };
+  }
 
   redirect("/dashboard");
 }

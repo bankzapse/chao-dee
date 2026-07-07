@@ -7,7 +7,6 @@ import { Spinner } from "@/components/spinner";
 import { createClient } from "@/lib/supabase/client";
 import {
   listContractDocuments,
-  addContractDocument,
   deleteContractDocument,
   type ContractDocView,
 } from "./actions";
@@ -18,9 +17,9 @@ const DOC_TYPES: { value: string; label: string }[] = [
 ];
 const typeLabel = (v: string) => DOC_TYPES.find((d) => d.value === v)?.label ?? "อื่น ๆ";
 
-export function ContractDocsButton({ contractId, count }: { contractId: string; count: number }) {
+export function ContractDocsButton({ contractId }: { contractId: string }) {
   return (
-    <ModalButton label={`📎 เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารสัญญาเช่า" variant="secondary">
+    <ModalButton label="📎 เอกสาร" title="เอกสารสัญญาเช่า" variant="secondary">
       {() => <DocsPanel contractId={contractId} />}
     </ModalButton>
   );
@@ -49,15 +48,11 @@ function DocsPanel({ contractId }: { contractId: string }) {
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `contracts/${contractId}/${crypto.randomUUID()}.${ext}`;
+      // encode doc_type ไว้ในชื่อไฟล์ (ไม่ต้องมีตาราง)
+      const path = `contracts/${contractId}/${docType}__${crypto.randomUUID()}.${ext}`;
       const up = await supabase.storage.from("documents").upload(path, file);
       if (up.error) {
         setErr("อัปโหลดไม่สำเร็จ: " + up.error.message);
-        return;
-      }
-      const res = await addContractDocument(contractId, docType, path, "");
-      if (res.error) {
-        setErr(res.error);
         return;
       }
       setFile(null);
@@ -109,7 +104,7 @@ function DocsPanel({ contractId }: { contractId: string }) {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {docs.map((d) => (
-            <div key={d.id} className="overflow-hidden rounded-xl border border-slate-200">
+            <div key={d.path} className="overflow-hidden rounded-xl border border-slate-200">
               <a href={d.url} target="_blank" rel="noreferrer" className="block bg-slate-50">
                 {isImage(d.url) ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -120,7 +115,7 @@ function DocsPanel({ contractId }: { contractId: string }) {
               </a>
               <div className="flex items-center justify-between px-2 py-1.5">
                 <span className="text-xs font-medium text-slate-600">{typeLabel(d.doc_type)}</span>
-                <button onClick={() => remove(d.id)} className="text-xs font-medium text-rose-600 hover:text-rose-700">
+                <button onClick={() => remove(d.path)} className="text-xs font-medium text-rose-600 hover:text-rose-700">
                   ลบ
                 </button>
               </div>

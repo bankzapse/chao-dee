@@ -77,13 +77,12 @@ function Fields({
   );
   const [floor, setFloor] = useState(Number(v?.floor ?? r?.floor ?? 1));
   const selected = buildings.find((b) => b.id === buildingId);
-  // มีข้อมูลจำนวนชั้น (รัน migration แล้ว) → ใช้ dropdown จำกัดตามอาคาร
-  const buildingHasFloors = Boolean(selected && (selected.floors ?? 0) >= 1);
-  const floorCount = Math.max(1, selected?.floors ?? 1);
-  // รวมชั้นที่ห้องนี้อยู่ (กรณีแก้ไขห้องที่ชั้นเกินจำนวนชั้นปัจจุบัน)
+  // จำนวนชั้นของอาคาร (ถ้ารัน migration แล้ว) → จำกัด dropdown; ถ้ายังไม่รู้ → ให้เลือกได้ถึง 20
+  const declaredFloors = selected && (selected.floors ?? 0) >= 1 ? Number(selected.floors) : 0;
+  const floorMax = declaredFloors > 0 ? declaredFloors : 20;
   const floorSet = new Set<number>();
-  for (let i = 1; i <= floorCount; i++) floorSet.add(i);
-  floorSet.add(floor);
+  for (let i = 1; i <= floorMax; i++) floorSet.add(i);
+  floorSet.add(floor); // เผื่อชั้นเดิมเกิน max
   const floorOptions = [...floorSet].sort((a, b) => a - b);
 
   return (
@@ -114,24 +113,13 @@ function Fields({
         </div>
         <div>
           <label className="label">ชั้น</label>
-          {buildingHasFloors ? (
-            <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
-              {floorOptions.map((f) => (
-                <option key={f} value={f}>
-                  ชั้น {f}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              name="floor"
-              type="number"
-              min={0}
-              className="field"
-              value={floor}
-              onChange={(e) => setFloor(Number(e.target.value))}
-            />
-          )}
+          <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
+            {floorOptions.map((f) => (
+              <option key={f} value={f}>
+                ชั้น {f}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -193,9 +181,9 @@ function BulkBuildingFloor({ buildings, defaultBuilding, v }: { buildings: Build
   const [buildingId, setBuildingId] = useState((v?.building_id as string) ?? defaultBuilding ?? "");
   const [floor, setFloor] = useState(Number(v?.floor ?? 1));
   const selected = buildings.find((b) => b.id === buildingId);
-  const buildingHasFloors = Boolean(selected && (selected.floors ?? 0) >= 1);
-  const floorCount = Math.max(1, selected?.floors ?? 1);
-  const floorOptions = Array.from({ length: floorCount }, (_, i) => i + 1);
+  const declaredFloors = selected && (selected.floors ?? 0) >= 1 ? Number(selected.floors) : 0;
+  const floorMax = declaredFloors > 0 ? declaredFloors : 20;
+  const floorOptions = Array.from({ length: floorMax }, (_, i) => i + 1);
   return (
     <>
       <div>
@@ -220,22 +208,11 @@ function BulkBuildingFloor({ buildings, defaultBuilding, v }: { buildings: Build
       </div>
       <div>
         <label className="label">ชั้น</label>
-        {buildingHasFloors ? (
-          <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
-            {floorOptions.map((f) => (
-              <option key={f} value={f}>ชั้น {f}</option>
-            ))}
-          </select>
-        ) : (
-          <input
-            name="floor"
-            type="number"
-            min={0}
-            className="field"
-            value={floor}
-            onChange={(e) => setFloor(Number(e.target.value))}
-          />
-        )}
+        <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
+          {floorOptions.map((f) => (
+            <option key={f} value={f}>ชั้น {f}</option>
+          ))}
+        </select>
       </div>
     </>
   );

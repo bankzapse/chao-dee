@@ -4,6 +4,20 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import type { FormState } from "@/components/action-form";
 
+/** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (ยังไม่ได้รัน migration 0020) */
+function isMissingColumn(msg?: string): boolean {
+  return Boolean(msg && /schema cache|could not find the .* column/i.test(msg));
+}
+/** ตัดคอลัมน์ของ migration 0020 ออก (เผื่อ prod ยังไม่ได้รัน) */
+function stripNewCols<T extends Record<string, unknown>>(row: T) {
+  const rest = { ...row };
+  delete rest.occupant_count;
+  delete rest.late_fee;
+  delete rest.late_fee_mode;
+  delete rest.terms;
+  return rest;
+}
+
 export async function createContract(
   _prev: FormState,
   formData: FormData
@@ -20,15 +34,11 @@ export async function createContract(
   const supabase = await createClient();
   const org_id = await getOrgId();
 
-  const { error } = await supabase.from("contracts").insert({
-    org_id,
-    room_id,
-    tenant_id,
-    start_date,
-    end_date,
-    ...extraFields(formData),
-    status: "active",
-  });
+  const row = { org_id, room_id, tenant_id, start_date, end_date, ...extraFields(formData), status: "active" };
+  let { error } = await supabase.from("contracts").insert(row);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("contracts").insert(stripNewCols(row)));
+  }
   if (error) return { error: error.message };
 
   // ห้องที่มีสัญญา active → สถานะ "มีผู้เช่า"
@@ -61,10 +71,11 @@ export async function updateContract(
   if (!start_date) return { error: "กรุณาระบุวันเริ่มสัญญา" };
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("contracts")
-    .update({ start_date, end_date, ...extraFields(formData) })
-    .eq("id", id);
+  const row = { start_date, end_date, ...extraFields(formData) };
+  let { error } = await supabase.from("contracts").update(row).eq("id", id);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("contracts").update(stripNewCols(row)).eq("id", id));
+  }
   if (error) return { error: error.message };
   return { ok: true };
 }

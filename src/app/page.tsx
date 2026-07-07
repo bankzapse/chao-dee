@@ -3,6 +3,7 @@ import { Pricing } from "@/components/landing/pricing";
 import { HeaderCta } from "@/components/landing/header-cta";
 import { COMPANY } from "@/lib/company";
 import { BrandMark } from "@/components/brand-mark";
+import { getEffectivePackages } from "@/lib/packages-db";
 
 const FEATURES = [
   { icon: "📊", title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
@@ -44,7 +45,8 @@ const GALLERY = [
   { src: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=75", label: "คอนโด" },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const packages = await getEffectivePackages();
   return (
     <div className="bg-white text-slate-800">
       {/* ===== NAV ===== */}
@@ -231,7 +233,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== PRICING ===== */}
-      <Pricing />
+      <Pricing packages={packages} />
 
       {/* ===== TESTIMONIALS ===== */}
       <section className="bg-slate-50/50">

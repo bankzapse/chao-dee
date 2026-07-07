@@ -1,3 +1,4 @@
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard } from "@/components/ui";
 import { BarChart, type BarDatum } from "@/components/bar-chart";
@@ -5,6 +6,7 @@ import { PACKAGES } from "@/lib/packages";
 import { formatBaht, formatPeriod, recentPeriods } from "@/lib/format";
 
 export default async function OwnerReports() {
+  await requirePerm("reports");
   const admin = createAdminClient();
   const [{ data: subs }, { data: pays }] = await Promise.all([
     admin.from("subscriptions").select("package_slug, status, price, cycle"),

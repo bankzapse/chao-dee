@@ -1,4 +1,4 @@
-import { requirePlatformAdmin } from "@/lib/admin";
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTime } from "@/lib/format";
 
@@ -15,7 +15,7 @@ type Log = {
 };
 
 export default async function AuditPage() {
-  await requirePlatformAdmin();
+  await requirePerm("audit");
   const admin = createAdminClient();
 
   const { data: logs } = await admin

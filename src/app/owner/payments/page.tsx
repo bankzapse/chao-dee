@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard, Badge } from "@/components/ui";
 import { packageBySlug } from "@/lib/packages";
@@ -7,6 +8,7 @@ import type { PaymentMethod } from "@/lib/types";
 import { VerifyPaymentButton, RejectPaymentButton } from "../member-actions";
 
 export default async function OwnerPayments() {
+  await requirePerm("payments");
   const admin = createAdminClient();
   const { data: pays } = await admin
     .from("subscription_payments")

@@ -1,4 +1,4 @@
-import { requirePlatformAdmin } from "@/lib/admin";
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui";
 import { ActionForm } from "@/components/action-form";
@@ -21,7 +21,7 @@ type Promo = {
 };
 
 export default async function PromosPage() {
-  await requirePlatformAdmin();
+  await requirePerm("promos");
   const admin = createAdminClient();
   const { data } = await admin
     .from("promo_codes")

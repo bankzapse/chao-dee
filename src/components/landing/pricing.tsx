@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PACKAGES, COMMON_FEATURES } from "@/lib/packages";
+import { PACKAGES, COMMON_FEATURES, type Package } from "@/lib/packages";
 
-export function Pricing() {
+export function Pricing({ packages = PACKAGES }: { packages?: Package[] }) {
   const [yearly, setYearly] = useState(true);
 
   return (
@@ -45,7 +45,7 @@ export function Pricing() {
       </div>
 
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
-        {PACKAGES.map((p) => {
+        {packages.map((p) => {
           const isCustom = p.priceMonthly === null;
           const perMonth = yearly ? p.priceYearlyPerMonth : p.priceMonthly;
           return (

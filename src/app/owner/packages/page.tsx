@@ -1,12 +1,17 @@
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PACKAGES, COMMON_FEATURES } from "@/lib/packages";
+import { COMMON_FEATURES } from "@/lib/packages";
+import { getEffectivePackages } from "@/lib/packages-db";
 import { formatBaht } from "@/lib/format";
+import { EditPriceButton } from "./package-buttons";
 
 export default async function OwnerPackages() {
+  await requirePerm("packages");
   const admin = createAdminClient();
-  const { data: subs } = await admin
-    .from("subscriptions")
-    .select("package_slug, status, price, cycle");
+  const [{ data: subs }, PACKAGES] = await Promise.all([
+    admin.from("subscriptions").select("package_slug, status, price, cycle"),
+    getEffectivePackages(),
+  ]);
 
   const countBySlug = new Map<string, number>();
   const revBySlug = new Map<string, number>();
@@ -31,6 +36,17 @@ export default async function OwnerPackages() {
               {p.highlight && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">แนะนำ</span>}
             </div>
             <p className="mt-1 text-sm text-slate-500">{p.tagline}</p>
+            {p.priceMonthly !== null && (
+              <div className="mt-2">
+                <EditPriceButton
+                  slug={p.slug}
+                  name={p.name}
+                  priceMonthly={p.priceMonthly}
+                  priceYearlyPerMonth={p.priceYearlyPerMonth}
+                  priceYearlyTotal={p.priceYearlyTotal}
+                />
+              </div>
+            )}
 
             <div className="mt-4">
               {p.priceMonthly === null ? (

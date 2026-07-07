@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui";
 import { RenewForm } from "./renew-form";
 import { BrandMark } from "@/components/brand-mark";
+import { getEffectivePackages } from "@/lib/packages-db";
 import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
@@ -66,7 +67,7 @@ export default async function RenewPage() {
         </div>
 
         <div className="mt-6">
-          <RenewForm platformPromptPay={platformPromptPay} defaultSlug={sub?.package_slug} />
+          <RenewForm platformPromptPay={platformPromptPay} defaultSlug={sub?.package_slug} packages={await getEffectivePackages()} />
         </div>
 
         {/* คำขอล่าสุด */}

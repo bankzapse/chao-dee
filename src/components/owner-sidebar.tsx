@@ -5,17 +5,31 @@ import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 
 const NAV = [
-  { href: "/owner", label: "ภาพรวม", icon: "📈", exact: true },
-  { href: "/owner/members", label: "สมาชิก", icon: "👥" },
-  { href: "/owner/payments", label: "การชำระเงิน", icon: "💳", badgeKey: "payments" },
-  { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦" },
-  { href: "/owner/promos", label: "คูปองส่วนลด", icon: "🎟️" },
-  { href: "/owner/reports", label: "รายงาน", icon: "📊" },
-  { href: "/owner/audit", label: "บันทึกกิจกรรม", icon: "📝" },
+  { href: "/owner", label: "ภาพรวม", icon: "📈", exact: true, perm: null },
+  { href: "/owner/members", label: "สมาชิก", icon: "👥", perm: "members" },
+  { href: "/owner/payments", label: "การชำระเงิน", icon: "💳", badgeKey: "payments", perm: "payments" },
+  { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦", perm: "packages" },
+  { href: "/owner/promos", label: "คูปองส่วนลด", icon: "🎟️", perm: "promos" },
+  { href: "/owner/reports", label: "รายงาน", icon: "📊", perm: "reports" },
+  { href: "/owner/audit", label: "บันทึกกิจกรรม", icon: "📝", perm: "audit" },
+  { href: "/owner/admins", label: "จัดการแอดมิน", icon: "🛡️", ownerOnly: true },
 ];
 
-export function OwnerSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
+export function OwnerSidebar({
+  pendingCount = 0,
+  role = "owner",
+  perms = [],
+}: {
+  pendingCount?: number;
+  role?: "owner" | "admin";
+  perms?: string[];
+}) {
   const pathname = usePathname();
+  const nav = NAV.filter((item) => {
+    if (item.ownerOnly) return role === "owner";
+    if (role === "owner" || !item.perm) return true;
+    return perms.includes(item.perm);
+  });
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">
       <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-4">
@@ -27,7 +41,7 @@ export function OwnerSidebar({ pendingCount = 0 }: { pendingCount?: number }) {
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
-        {NAV.map((item) => {
+        {nav.map((item) => {
           const active = item.exact
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(item.href + "/");

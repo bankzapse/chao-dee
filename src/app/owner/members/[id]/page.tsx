@@ -11,6 +11,7 @@ import {
   SUBSCRIPTION_STATUS_STYLE,
 } from "@/lib/format";
 import type { PaymentMethod } from "@/lib/types";
+import { requirePerm } from "@/lib/admin";
 import { buildingTypeLabel } from "@/lib/signup-options";
 import {
   RecordPaymentButton,
@@ -27,6 +28,7 @@ export default async function MemberDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requirePerm("members");
   const admin = createAdminClient();
 
   const [{ data: org }, { data: sub }, { data: owner }, { data: pays }, { data: buildings }, { data: tenants }, { data: rooms }] =

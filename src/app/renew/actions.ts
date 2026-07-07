@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
-import { packageBySlug } from "@/lib/packages";
+import { effectivePackageBySlug } from "@/lib/packages-db";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
 import { applyPromo } from "@/lib/promo";
 import { isSlipVerifyConfigured, verifySlipImage } from "@/lib/slip";
@@ -27,9 +27,9 @@ async function autoCheckSlip(paymentId: string, slipPath: string, expected: numb
   }
 }
 
-/** ราคาตั้งต้นของแพ็คเกจตามรอบ */
-function baseAmount(slug: string, cycle: "monthly" | "yearly"): number | null {
-  const pkg = packageBySlug(slug);
+/** ราคาตั้งต้นของแพ็คเกจตามรอบ (ใช้ราคาที่ owner แก้ไว้) */
+async function baseAmount(slug: string, cycle: "monthly" | "yearly"): Promise<number | null> {
+  const pkg = await effectivePackageBySlug(slug);
   if (!pkg || pkg.priceMonthly === null) return null;
   return cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly;
 }
@@ -40,7 +40,7 @@ export async function checkPromo(
   package_slug: string,
   cycle: "monthly" | "yearly"
 ): Promise<{ ok?: boolean; error?: string; discount?: number; final?: number }> {
-  const base = baseAmount(package_slug, cycle);
+  const base = await baseAmount(package_slug, cycle);
   if (base === null) return { error: "แพ็คเกจนี้กรุณาติดต่อทีมงาน" };
   const res = await applyPromo(code, base);
   if (!res.ok) return { error: res.error };
@@ -76,7 +76,7 @@ export async function submitRenewal(data: {
   slip_path: string;
   promo_code?: string;
 }): Promise<{ ok?: boolean; error?: string }> {
-  const pkg = packageBySlug(data.package_slug);
+  const pkg = await effectivePackageBySlug(data.package_slug);
   if (!pkg || pkg.priceMonthly === null) {
     return { error: "แพ็คเกจนี้กรุณาติดต่อทีมงานโดยตรง" };
   }

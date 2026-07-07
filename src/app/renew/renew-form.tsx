@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PromptPayQR } from "@/components/promptpay-qr";
 import { Spinner } from "@/components/spinner";
-import { PACKAGES, COMMON_FEATURES, yearlyDiscount } from "@/lib/packages";
+import { PACKAGES, COMMON_FEATURES, yearlyDiscount, type Package } from "@/lib/packages";
 import { COMPANY, splitVat } from "@/lib/company";
 import { formatBaht } from "@/lib/format";
 import { submitRenewal, checkPromo } from "./actions";
@@ -13,12 +13,14 @@ import { submitRenewal, checkPromo } from "./actions";
 export function RenewForm({
   platformPromptPay,
   defaultSlug,
+  packages = PACKAGES,
 }: {
   platformPromptPay: string;
   defaultSlug?: string;
+  packages?: Package[];
 }) {
   const router = useRouter();
-  const buyable = PACKAGES.filter((p) => p.priceMonthly !== null);
+  const buyable = packages.filter((p) => p.priceMonthly !== null);
   const [slug, setSlug] = useState(buyable.find((p) => p.slug === defaultSlug)?.slug ?? "pro");
   const [cycle, setCycle] = useState<"monthly" | "yearly">("yearly");
   const [file, setFile] = useState<File | null>(null);
@@ -29,7 +31,7 @@ export function RenewForm({
   const [promoMsg, setPromoMsg] = useState<{ ok?: boolean; text: string } | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
 
-  const pkg = PACKAGES.find((p) => p.slug === slug)!;
+  const pkg = packages.find((p) => p.slug === slug)!;
   const baseAmount = cycle === "yearly" ? pkg.priceYearlyTotal! : pkg.priceMonthly!;
   const amount = promo ? promo.final : baseAmount;
   const vat = COMPANY.vatRegistered ? splitVat(amount) : null;

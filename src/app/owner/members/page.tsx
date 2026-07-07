@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui";
 import { packageBySlug } from "@/lib/packages";
@@ -13,6 +14,7 @@ export default async function OwnerMembers({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
+  await requirePerm("members");
   const { q, status } = await searchParams;
   const admin = createAdminClient();
 

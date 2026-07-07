@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { isPlatformAdmin } from "@/lib/admin";
+import { BrandMark } from "@/components/brand-mark";
 import { OwnerLoginForm } from "./owner-login-form";
 
 export const metadata: Metadata = {
@@ -16,8 +17,8 @@ export default async function OwnerLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-2xl font-bold text-white">
-            CD
+          <div className="mx-auto mb-3 flex w-fit items-center justify-center">
+            <BrandMark size={52} />
           </div>
           <h1 className="text-xl font-bold text-white">แผงเจ้าของระบบ</h1>
           <p className="mt-1 text-sm text-slate-400">สำหรับทีมงาน Chao-Dee เท่านั้น</p>

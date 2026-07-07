@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateLinkCode, unlinkLine } from "./actions";
+import { Spinner } from "@/components/spinner";
 
 export function LineLinkCell({
   tenantId,
@@ -52,7 +53,7 @@ export function LineLinkCell({
 
   return (
     <button
-      className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
@@ -62,7 +63,8 @@ export function LineLinkCell({
         })
       }
     >
-      {pending ? "…" : "สร้างรหัสเชื่อม LINE"}
+      {pending && <Spinner className="!h-3.5 !w-3.5" />}
+      {pending ? "กำลังสร้าง…" : "สร้างรหัสเชื่อม LINE"}
     </button>
   );
 }

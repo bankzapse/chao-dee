@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ModalButton } from "@/components/modal";
+import { Spinner } from "@/components/spinner";
 import { createClient } from "@/lib/supabase/client";
 import {
   listTenantDocuments,
@@ -97,7 +98,8 @@ function DocsPanel({ tenantId }: { tenantId: string }) {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
           {err && <p className="text-sm text-rose-600">{err}</p>}
-          <button className="btn-primary" onClick={upload} disabled={busy || !file}>
+          <button className="btn-primary inline-flex items-center justify-center gap-2" onClick={upload} disabled={busy || !file}>
+            {busy && <Spinner />}
             {busy ? "กำลังอัปโหลด…" : "อัปโหลด"}
           </button>
         </div>

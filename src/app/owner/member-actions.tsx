@@ -14,6 +14,7 @@ import {
 } from "./actions";
 import { PACKAGES } from "@/lib/packages";
 import { SUBSCRIPTION_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/format";
+import { Spinner } from "@/components/spinner";
 import type { PaymentMethod } from "@/lib/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -153,7 +154,7 @@ function TxButton({
   const [pending, start] = useTransition();
   return (
     <button
-      className={className}
+      className={`inline-flex items-center gap-1.5 ${className}`}
       disabled={pending}
       onClick={() =>
         start(async () => {
@@ -163,7 +164,8 @@ function TxButton({
         })
       }
     >
-      {pending ? "…" : label}
+      {pending && <Spinner className="!h-3.5 !w-3.5" />}
+      {pending ? "กำลังทำรายการ…" : label}
     </button>
   );
 }
@@ -174,7 +176,7 @@ export function DeleteMemberButton({ orgId, orgName }: { orgId: string; orgName:
   const [pending, start] = useTransition();
   return (
     <button
-      className="text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
       disabled={pending}
       onClick={() => {
         if (!window.confirm(`ลบสมาชิก "${orgName}"?\nข้อมูลทั้งหมด (อาคาร/ห้อง/ผู้เช่า/สัญญา/บิล) และบัญชีเข้าระบบจะถูกลบถาวร`))
@@ -187,6 +189,7 @@ export function DeleteMemberButton({ orgId, orgName }: { orgId: string; orgName:
         });
       }}
     >
+      {pending && <Spinner className="!h-3.5 !w-3.5" />}
       {pending ? "กำลังลบ…" : "🗑 ลบสมาชิก"}
     </button>
   );

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
+import { Spinner } from "@/components/spinner";
 
 export type FormState = {
   ok?: boolean;
@@ -14,7 +15,8 @@ export type FormState = {
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn-primary" disabled={pending}>
+    <button type="submit" className="btn-primary inline-flex items-center gap-2" disabled={pending}>
+      {pending && <Spinner />}
       {pending ? "กำลังบันทึก…" : label}
     </button>
   );
@@ -80,7 +82,7 @@ export function DeleteButton({
   const [pending, start] = useTransition();
   return (
     <button
-      className="text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
       disabled={pending}
       onClick={() => {
         if (!confirm(confirmText)) return;
@@ -90,6 +92,7 @@ export function DeleteButton({
         });
       }}
     >
+      {pending && <Spinner className="!h-3.5 !w-3.5" />}
       {pending ? "กำลังลบ…" : label}
     </button>
   );

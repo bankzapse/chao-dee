@@ -77,6 +77,8 @@ function Fields({
   );
   const [floor, setFloor] = useState(Number(v?.floor ?? r?.floor ?? 1));
   const selected = buildings.find((b) => b.id === buildingId);
+  // มีข้อมูลจำนวนชั้น (รัน migration แล้ว) → ใช้ dropdown จำกัดตามอาคาร
+  const buildingHasFloors = Boolean(selected && (selected.floors ?? 0) >= 1);
   const floorCount = Math.max(1, selected?.floors ?? 1);
   // รวมชั้นที่ห้องนี้อยู่ (กรณีแก้ไขห้องที่ชั้นเกินจำนวนชั้นปัจจุบัน)
   const floorSet = new Set<number>();
@@ -100,7 +102,7 @@ function Fields({
           </option>
           {buildings.map((b) => (
             <option key={b.id} value={b.id}>
-              {b.name} {b.floors > 1 ? `(${b.floors} ชั้น)` : ""}
+              {b.name} {(b.floors ?? 0) > 1 ? `(${b.floors} ชั้น)` : ""}
             </option>
           ))}
         </select>
@@ -112,7 +114,7 @@ function Fields({
         </div>
         <div>
           <label className="label">ชั้น</label>
-          {floorCount > 1 ? (
+          {buildingHasFloors ? (
             <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
               {floorOptions.map((f) => (
                 <option key={f} value={f}>
@@ -191,6 +193,7 @@ function BulkBuildingFloor({ buildings, defaultBuilding, v }: { buildings: Build
   const [buildingId, setBuildingId] = useState((v?.building_id as string) ?? defaultBuilding ?? "");
   const [floor, setFloor] = useState(Number(v?.floor ?? 1));
   const selected = buildings.find((b) => b.id === buildingId);
+  const buildingHasFloors = Boolean(selected && (selected.floors ?? 0) >= 1);
   const floorCount = Math.max(1, selected?.floors ?? 1);
   const floorOptions = Array.from({ length: floorCount }, (_, i) => i + 1);
   return (
@@ -210,14 +213,14 @@ function BulkBuildingFloor({ buildings, defaultBuilding, v }: { buildings: Build
           <option value="" disabled>— เลือกอาคาร —</option>
           {buildings.map((b) => (
             <option key={b.id} value={b.id}>
-              {b.name} {b.floors > 1 ? `(${b.floors} ชั้น)` : ""}
+              {b.name} {(b.floors ?? 0) > 1 ? `(${b.floors} ชั้น)` : ""}
             </option>
           ))}
         </select>
       </div>
       <div>
         <label className="label">ชั้น</label>
-        {floorCount > 1 ? (
+        {buildingHasFloors ? (
           <select name="floor" className="field" value={floor} onChange={(e) => setFloor(Number(e.target.value))}>
             {floorOptions.map((f) => (
               <option key={f} value={f}>ชั้น {f}</option>

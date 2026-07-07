@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PromptPayQR } from "@/components/promptpay-qr";
+import { Spinner } from "@/components/spinner";
 import { PACKAGES, COMMON_FEATURES, yearlyDiscount } from "@/lib/packages";
 import { COMPANY, splitVat } from "@/lib/company";
 import { formatBaht } from "@/lib/format";
@@ -278,10 +279,11 @@ export function RenewForm({
           )}
 
           <button
-            className="btn-primary mt-4 w-full"
+            className="btn-primary mt-4 inline-flex w-full items-center justify-center gap-2"
             onClick={submit}
             disabled={busy || Boolean(msg?.ok) || !file}
           >
+            {busy && <Spinner />}
             {busy ? "กำลังส่ง…" : "ยืนยัน & ส่งคำขอต่ออายุ"}
           </button>
           <p className="mt-2 text-center text-[11px] text-slate-400">

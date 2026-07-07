@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
 import { createContract, updateContract, closeContract } from "./actions";
+import { Spinner } from "@/components/spinner";
 import type { Tenant, Contract } from "@/lib/types";
 
 export type RoomOption = {
@@ -188,7 +189,7 @@ export function CloseContractButton({
   const [pending, start] = useTransition();
   return (
     <button
-      className="text-sm font-medium text-amber-600 hover:text-amber-700 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 disabled:opacity-50"
       disabled={pending}
       onClick={() => {
         if (!confirm("สิ้นสุดสัญญานี้และคืนห้องเป็นว่าง?")) return;
@@ -198,6 +199,7 @@ export function CloseContractButton({
         });
       }}
     >
+      {pending && <Spinner className="!h-3.5 !w-3.5" />}
       {pending ? "กำลังบันทึก…" : "สิ้นสุด"}
     </button>
   );

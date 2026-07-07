@@ -6,58 +6,56 @@ import { ModalButton } from "@/components/modal";
 import { Spinner } from "@/components/spinner";
 import { createClient } from "@/lib/supabase/client";
 import {
-  listTenantDocuments,
-  addTenantDocument,
-  deleteTenantDocument,
-  type TenantDocView,
+  listContractDocuments,
+  addContractDocument,
+  deleteContractDocument,
+  type ContractDocView,
 } from "./actions";
 
 const DOC_TYPES: { value: string; label: string }[] = [
-  { value: "id_card", label: "บัตรประชาชน" },
-  { value: "house_reg", label: "สำเนาทะเบียนบ้าน" },
+  { value: "contract", label: "สัญญาเช่า" },
   { value: "other", label: "อื่น ๆ" },
 ];
 const typeLabel = (v: string) => DOC_TYPES.find((d) => d.value === v)?.label ?? "อื่น ๆ";
 
-export function TenantDocsButton({ tenantId, count }: { tenantId: string; count: number }) {
+export function ContractDocsButton({ contractId, count }: { contractId: string; count: number }) {
   return (
-    <ModalButton label={`📎 เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารผู้เช่า" variant="secondary">
-      {() => <DocsPanel tenantId={tenantId} />}
+    <ModalButton label={`📎 เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารสัญญาเช่า" variant="secondary">
+      {() => <DocsPanel contractId={contractId} />}
     </ModalButton>
   );
 }
 
-function DocsPanel({ tenantId }: { tenantId: string }) {
+function DocsPanel({ contractId }: { contractId: string }) {
   const router = useRouter();
-  const [docs, setDocs] = useState<TenantDocView[] | null>(null);
-  const [docType, setDocType] = useState("id_card");
+  const [docs, setDocs] = useState<ContractDocView[] | null>(null);
+  const [docType, setDocType] = useState("contract");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   async function load() {
-    setDocs(await listTenantDocuments(tenantId));
+    setDocs(await listContractDocuments(contractId));
   }
-  // โหลดครั้งแรกเมื่อเปิด modal
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function upload() {
-    if (!file) return setErr("กรุณาเลือกไฟล์รูป");
+    if (!file) return setErr("กรุณาเลือกไฟล์");
     setBusy(true);
     setErr("");
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `tenants/${tenantId}/${crypto.randomUUID()}.${ext}`;
+      const path = `contracts/${contractId}/${crypto.randomUUID()}.${ext}`;
       const up = await supabase.storage.from("documents").upload(path, file);
       if (up.error) {
         setErr("อัปโหลดไม่สำเร็จ: " + up.error.message);
         return;
       }
-      const res = await addTenantDocument(tenantId, docType, path, "");
+      const res = await addContractDocument(contractId, docType, path, "");
       if (res.error) {
         setErr(res.error);
         return;
@@ -72,14 +70,15 @@ function DocsPanel({ tenantId }: { tenantId: string }) {
 
   async function remove(id: string) {
     if (!confirm("ลบเอกสารนี้?")) return;
-    await deleteTenantDocument(id);
+    await deleteContractDocument(id);
     await load();
     router.refresh();
   }
 
+  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
+
   return (
     <div className="space-y-4">
-      {/* อัปโหลดใหม่ */}
       <div className="rounded-xl border border-slate-200 p-3">
         <p className="mb-2 text-sm font-medium text-slate-700">เพิ่มเอกสาร / ถ่ายรูป</p>
         <div className="flex flex-col gap-2">
@@ -88,10 +87,9 @@ function DocsPanel({ tenantId }: { tenantId: string }) {
               <option key={d.value} value={d.value}>{d.label}</option>
             ))}
           </select>
-          {/* capture=environment → เปิดกล้องหลังบนมือถือ */}
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             capture="environment"
             className="field"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
@@ -104,25 +102,25 @@ function DocsPanel({ tenantId }: { tenantId: string }) {
         </div>
       </div>
 
-      {/* รายการเอกสาร */}
       {docs === null ? (
         <p className="text-sm text-slate-400">กำลังโหลด…</p>
       ) : docs.length === 0 ? (
-        <p className="text-sm text-slate-400">ยังไม่มีเอกสาร — เก็บรูปบัตรประชาชน/ทะเบียนบ้านไว้เป็นหลักฐานได้</p>
+        <p className="text-sm text-slate-400">ยังไม่มีเอกสาร — แนบไฟล์สัญญาเช่าหรือเอกสารอื่นๆ ได้</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {docs.map((d) => (
             <div key={d.id} className="overflow-hidden rounded-xl border border-slate-200">
               <a href={d.url} target="_blank" rel="noreferrer" className="block bg-slate-50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={d.url} alt={typeLabel(d.doc_type)} className="h-32 w-full object-cover" />
+                {isImage(d.url) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={d.url} alt={typeLabel(d.doc_type)} className="h-32 w-full object-cover" />
+                ) : (
+                  <div className="flex h-32 w-full items-center justify-center text-4xl">📄</div>
+                )}
               </a>
               <div className="flex items-center justify-between px-2 py-1.5">
                 <span className="text-xs font-medium text-slate-600">{typeLabel(d.doc_type)}</span>
-                <button
-                  onClick={() => remove(d.id)}
-                  className="text-xs font-medium text-rose-600 hover:text-rose-700"
-                >
+                <button onClick={() => remove(d.id)} className="text-xs font-medium text-rose-600 hover:text-rose-700">
                   ลบ
                 </button>
               </div>

@@ -14,6 +14,7 @@ import {
   CloseContractButton,
   type RoomOption,
 } from "./contract-buttons";
+import { ContractDocsButton } from "./contract-docs";
 import { deleteContract } from "./actions";
 
 type ContractRow = Contract & {
@@ -24,7 +25,7 @@ type ContractRow = Contract & {
 export default async function ContractsPage() {
   const supabase = await createClient();
 
-  const [{ data: contracts }, { data: rooms }, { data: tenants }] =
+  const [{ data: contracts }, { data: rooms }, { data: tenants }, { data: docs }] =
     await Promise.all([
       supabase
         .from("contracts")
@@ -34,9 +35,14 @@ export default async function ContractsPage() {
         .order("created_at", { ascending: false }),
       supabase.from("rooms").select("id, room_number, base_rent, buildings(name)"),
       supabase.from("tenants").select("*").order("full_name"),
+      supabase.from("contract_documents").select("contract_id"),
     ]);
 
   const list = (contracts ?? []) as unknown as ContractRow[];
+  const docCount = new Map<string, number>();
+  (docs ?? []).forEach((d: { contract_id: string }) => {
+    docCount.set(d.contract_id, (docCount.get(d.contract_id) ?? 0) + 1);
+  });
   const roomOptions: RoomOption[] = (rooms ?? []).map((r) => {
     const b = r.buildings as unknown as { name: string } | null;
     return {
@@ -104,6 +110,7 @@ export default async function ContractsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-3">
+                        <ContractDocsButton contractId={c.id} count={docCount.get(c.id) ?? 0} />
                         <EditContractButton
                           contract={c}
                           roomLabel={`${c.rooms?.buildings?.name ?? "-"} · ${c.rooms?.room_number ?? "-"}`}

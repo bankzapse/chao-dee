@@ -95,3 +95,54 @@ export async function deleteContract(id: string): Promise<void> {
   const supabase = await createClient();
   await supabase.from("contracts").delete().eq("id", id);
 }
+
+// ───────── เอกสารสัญญา (สัญญาเช่า/อื่นๆ) ─────────
+
+export type ContractDocView = {
+  id: string;
+  doc_type: string;
+  note: string;
+  url: string;
+  created_at: string;
+};
+
+/** ดึงเอกสารของสัญญา พร้อม signed URL */
+export async function listContractDocuments(contractId: string): Promise<ContractDocView[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contract_documents")
+    .select("id, doc_type, note, file_path, created_at")
+    .eq("contract_id", contractId)
+    .order("created_at", { ascending: false });
+
+  const out: ContractDocView[] = [];
+  for (const d of data ?? []) {
+    const { data: signed } = await supabase.storage.from("documents").createSignedUrl(d.file_path, 60 * 60);
+    out.push({ id: d.id, doc_type: d.doc_type, note: d.note, url: signed?.signedUrl ?? "", created_at: d.created_at });
+  }
+  return out;
+}
+
+/** บันทึกเอกสารสัญญาที่อัปโหลดแล้ว */
+export async function addContractDocument(
+  contractId: string,
+  doc_type: string,
+  file_path: string,
+  note: string
+): Promise<{ ok?: boolean; error?: string }> {
+  if (!file_path) return { error: "ไม่พบไฟล์ที่อัปโหลด" };
+  const supabase = await createClient();
+  const org_id = await getOrgId();
+  const { error } = await supabase
+    .from("contract_documents")
+    .insert({ org_id, contract_id: contractId, doc_type, file_path, note: note.trim() });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+export async function deleteContractDocument(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("contract_documents").select("file_path").eq("id", id).single();
+  await supabase.from("contract_documents").delete().eq("id", id);
+  if (data?.file_path) await supabase.storage.from("documents").remove([data.file_path]);
+}

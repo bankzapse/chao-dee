@@ -38,6 +38,16 @@ export default async function ContractsPage() {
     ]);
 
   const list = (contracts ?? []) as unknown as ContractRow[];
+
+  // นับจำนวนไฟล์เอกสารของแต่ละสัญญาจาก storage (folder: contracts/{id})
+  const docCount = new Map<string, number>();
+  await Promise.all(
+    list.map(async (c) => {
+      const { data: files } = await supabase.storage.from("documents").list(`contracts/${c.id}`, { limit: 100 });
+      const n = (files ?? []).filter((f) => !f.name.startsWith(".")).length;
+      if (n > 0) docCount.set(c.id, n);
+    })
+  );
   const roomOptions: RoomOption[] = (rooms ?? []).map((r) => {
     const b = r.buildings as unknown as { name: string } | null;
     return {
@@ -105,7 +115,7 @@ export default async function ContractsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-3">
-                        <ContractDocsButton contractId={c.id} />
+                        <ContractDocsButton contractId={c.id} count={docCount.get(c.id) ?? 0} />
                         <EditContractButton
                           contract={c}
                           roomLabel={`${c.rooms?.buildings?.name ?? "-"} · ${c.rooms?.room_number ?? "-"}`}

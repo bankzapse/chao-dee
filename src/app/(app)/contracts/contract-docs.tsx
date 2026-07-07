@@ -17,9 +17,9 @@ const DOC_TYPES: { value: string; label: string }[] = [
 ];
 const typeLabel = (v: string) => DOC_TYPES.find((d) => d.value === v)?.label ?? "อื่น ๆ";
 
-export function ContractDocsButton({ contractId }: { contractId: string }) {
+export function ContractDocsButton({ contractId, count = 0 }: { contractId: string; count?: number }) {
   return (
-    <ModalButton label="📎 เอกสาร" title="เอกสารสัญญาเช่า" variant="secondary">
+    <ModalButton label={`📎 เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารสัญญาเช่า" variant="secondary">
       {() => <DocsPanel contractId={contractId} />}
     </ModalButton>
   );

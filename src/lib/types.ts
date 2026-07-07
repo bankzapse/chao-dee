@@ -40,6 +40,7 @@ export type Room = {
   water_mode: WaterMode;
   water_flat_per_person: number;
   electricity_rate: number;
+  parking_fee: number;
   status: RoomStatus;
   note: string;
   created_at: string;
@@ -118,6 +119,7 @@ export type Invoice = {
   electric_amount: number;
   rent_amount: number;
   late_fee: number;
+  parking_amount: number;
   other_amount: number;
   discount: number;
   total_amount: number;

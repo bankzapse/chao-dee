@@ -40,6 +40,17 @@ export default async function TenantsPage() {
     if (!byBuilding.has(b)) byBuilding.set(b, []);
     byBuilding.get(b)!.push(t);
   }
+  // เรียงผู้เช่าในแต่ละอาคารตามเลขห้อง (รับรู้ตัวเลข: 2 < 10)
+  for (const arr of byBuilding.values()) {
+    arr.sort((a, b) => {
+      const ra = placement.get(a.id)?.room ?? "";
+      const rb = placement.get(b.id)?.room ?? "";
+      if (ra && rb) return ra.localeCompare(rb, undefined, { numeric: true });
+      if (ra) return -1; // มีห้องมาก่อนไม่มีห้อง
+      if (rb) return 1;
+      return a.full_name.localeCompare(b.full_name, "th");
+    });
+  }
   // เรียงอาคารตามชื่อ, กลุ่ม "ยังไม่ได้เข้าพัก" ไว้ท้ายสุด
   const buildings = [...byBuilding.keys()].sort((a, b) => {
     if (a === NO_ROOM) return 1;

@@ -14,6 +14,7 @@ function stripNewCols<T extends Record<string, unknown>>(row: T) {
   const rest = { ...row };
   delete rest.water_mode;
   delete rest.water_flat_per_person;
+  delete rest.parking_fee;
   return rest;
 }
 
@@ -31,6 +32,7 @@ function parseRoom(formData: FormData) {
     water_flat_per_person:
       water_mode === "flat_person" ? Number(formData.get("water_flat_per_person") ?? 0) : 0,
     electricity_rate: Number(formData.get("electricity_rate") ?? 0),
+    parking_fee: Number(formData.get("parking_fee") ?? 0),
     status: (String(formData.get("status") ?? "vacant") as RoomStatus),
     note: String(formData.get("note") ?? "").trim(),
   };

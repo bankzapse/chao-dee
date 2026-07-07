@@ -35,7 +35,17 @@ export default async function InvoicesPage({
     .eq("period", period)
     .order("created_at", { ascending: true });
 
-  const list = (data ?? []) as unknown as InvoiceRow[];
+  const list = ((data ?? []) as unknown as InvoiceRow[]).sort((a, b) => {
+    // เรียงตามอาคาร แล้วตามเลขห้อง (รับรู้ตัวเลข: 2 < 10)
+    const ba = a.rooms?.buildings?.name ?? "";
+    const bb = b.rooms?.buildings?.name ?? "";
+    if (ba !== bb) return ba.localeCompare(bb, "th");
+    return (a.rooms?.room_number ?? "").localeCompare(
+      b.rooms?.room_number ?? "",
+      undefined,
+      { numeric: true }
+    );
+  });
   const totalBilled = list
     .filter((i) => i.status !== "void")
     .reduce((s, i) => s + Number(i.total_amount), 0);

@@ -139,6 +139,11 @@ function Fields({
         </div>
       </div>
       <div>
+        <label className="label">ค่าจอดรถ/เดือน (บาท)</label>
+        <input name="parking_fee" type="number" step="0.01" className="field" defaultValue={Number(v?.parking_fee ?? r?.parking_fee ?? 0)} placeholder="0 = ไม่มีค่าจอดรถ" />
+        <p className="mt-1 text-xs text-slate-400">ถ้ามากกว่า 0 จะรวมเข้าบิลของห้องนี้อัตโนมัติทุกเดือน</p>
+      </div>
+      <div>
         <label className="label">สถานะ</label>
         <select name="status" className="field" defaultValue={(v?.status as string) ?? r?.status ?? "vacant"}>
           {(Object.keys(ROOM_STATUS_LABEL) as RoomStatus[]).map((s) => (

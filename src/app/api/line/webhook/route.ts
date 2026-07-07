@@ -5,6 +5,8 @@ import {
   replyMessage,
   pushMessage,
   textMessage,
+  imageMessage,
+  getLineContent,
   isLineConfigured,
 } from "@/lib/line";
 import { formatBaht, formatPeriod } from "@/lib/format";
@@ -16,7 +18,7 @@ type LineEvent = {
   type: string;
   replyToken?: string;
   source?: { userId?: string };
-  message?: { type: string; text?: string };
+  message?: { type: string; text?: string; id?: string };
 };
 
 const HELP =
@@ -35,6 +37,87 @@ async function notifyOwner(
     .maybeSingle();
   if (org?.owner_line_user_id) {
     await pushMessage(org.owner_line_user_id, [textMessage(message)]);
+  }
+}
+
+/** ผู้เช่าส่งรูปสลิปเข้ามาใน LINE OA → เก็บไฟล์ + แจ้งเจ้าของหอ */
+async function handleSlipImage(
+  supabase: ReturnType<typeof createAdminClient>,
+  replyToken: string,
+  lineUserId: string,
+  messageId: string
+) {
+  // ต้องเป็นผู้เช่าที่ผูกบัญชีแล้วเท่านั้น
+  const { data: tenant } = await supabase
+    .from("tenants")
+    .select("id, full_name, org_id")
+    .eq("line_user_id", lineUserId)
+    .maybeSingle();
+  if (!tenant) {
+    await replyMessage(replyToken, [
+      textMessage(
+        "กรุณาผูกบัญชีก่อนส่งสลิปครับ\nพิมพ์เบอร์โทรที่ลงทะเบียนไว้ (เช่น 0812345678) หรือรหัสเชื่อมบัญชีจากผู้ดูแล"
+      ),
+    ]);
+    return;
+  }
+
+  // ห้องจากสัญญา active (ใช้ในข้อความแจ้งเจ้าของ)
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("rooms(room_number)")
+    .eq("tenant_id", tenant.id)
+    .eq("status", "active")
+    .maybeSingle();
+  const room =
+    (contract?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "-";
+
+  // ตอบผู้เช่าว่าได้รับแล้ว
+  await replyMessage(replyToken, [
+    textMessage(
+      "ได้รับสลิปของคุณแล้ว ✅\nผู้ดูแลจะตรวจสอบและอัปเดตยอดชำระให้เร็วที่สุดครับ 🙏"
+    ),
+  ]);
+
+  // ดาวน์โหลดรูป + เก็บใน storage แล้วทำลิงก์ให้เจ้าของเปิดดู (best-effort)
+  let slipLink = "";
+  try {
+    const content = await getLineContent(messageId);
+    if (content) {
+      const ext = content.contentType.includes("png") ? "png" : "jpg";
+      const path = `line/${tenant.org_id}/${tenant.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("slips")
+        .upload(path, content.buffer, { contentType: content.contentType, upsert: false });
+      if (!upErr) {
+        const { data: signed } = await supabase.storage
+          .from("slips")
+          .createSignedUrl(path, 60 * 60 * 24 * 30); // 30 วัน
+        slipLink = signed?.signedUrl ?? "";
+      }
+    }
+  } catch {
+    // เงียบไว้ — ยังแจ้งเจ้าของด้วยข้อความได้แม้เก็บไฟล์ไม่สำเร็จ
+  }
+
+  // แจ้งเจ้าของหอ
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("owner_line_user_id")
+    .eq("id", tenant.org_id)
+    .maybeSingle();
+  if (org?.owner_line_user_id) {
+    await pushMessage(org.owner_line_user_id, [
+      textMessage(
+        `💸 ผู้เช่าส่งสลิปการโอนเข้ามา\nห้อง ${room} · ${tenant.full_name}${
+          slipLink ? `\n\nดูสลิป: ${slipLink}` : ""
+        }\n\nตรวจสอบและบันทึกการชำระในแอป Chao-Dee`
+      ),
+    ]);
+    // ส่งรูปสลิปให้เจ้าของดูในแชทด้วย (ถ้าเก็บไฟล์สำเร็จ)
+    if (slipLink) {
+      await pushMessage(org.owner_line_user_id, [imageMessage(slipLink)]);
+    }
   }
 }
 
@@ -63,6 +146,12 @@ export async function POST(req: Request) {
           "ยินดีต้อนรับสู่ Chao-Dee 🏠\nกรุณาพิมพ์ “เบอร์โทรของคุณ” (เช่น 0812345678) หรือ “รหัสเชื่อมบัญชี” ที่ได้รับจากผู้ดูแล เพื่อผูกบัญชี"
         ),
       ]);
+      continue;
+    }
+
+    // ผู้เช่าส่งรูป (สลิปการโอน) → เก็บไว้ + แจ้งเจ้าของหอทันที
+    if (event.type === "message" && event.message?.type === "image" && userId) {
+      await handleSlipImage(supabase, replyToken, userId, event.message.id ?? "");
       continue;
     }
 

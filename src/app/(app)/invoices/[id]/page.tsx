@@ -87,6 +87,8 @@ export default async function InvoiceDetailPage({
       amount: Number(inv.electric_amount),
     },
   ];
+  if (Number(inv.parking_amount) > 0)
+    rows.push({ label: "ค่าจอดรถ", detail: "", amount: Number(inv.parking_amount) });
   if (Number(inv.other_amount) > 0)
     rows.push({ label: "ค่าใช้จ่ายอื่นๆ", detail: "", amount: Number(inv.other_amount) });
 

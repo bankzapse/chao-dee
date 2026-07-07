@@ -26,10 +26,31 @@ export function verifyLineSignature(rawBody: string, signature: string | null): 
   }
 }
 
-export type LineMessage = { type: "text"; text: string };
+export type LineMessage =
+  | { type: "text"; text: string }
+  | { type: "image"; originalContentUrl: string; previewImageUrl: string };
 
 export function textMessage(text: string): LineMessage {
   return { type: "text", text };
+}
+
+export function imageMessage(url: string, previewUrl?: string): LineMessage {
+  return { type: "image", originalContentUrl: url, previewImageUrl: previewUrl ?? url };
+}
+
+/** ดาวน์โหลดไฟล์แนบจากข้อความ LINE (เช่น รูปสลิป) — คืน Buffer + content-type */
+export async function getLineContent(
+  messageId: string
+): Promise<{ buffer: Buffer; contentType: string } | null> {
+  if (!lineToken()) return null;
+  const res = await fetch(
+    `https://api-data.line.me/v2/bot/message/${messageId}/content`,
+    { headers: { Authorization: `Bearer ${lineToken()}` } }
+  );
+  if (!res.ok) return null;
+  const contentType = res.headers.get("content-type") || "image/jpeg";
+  const buffer = Buffer.from(await res.arrayBuffer());
+  return { buffer, contentType };
 }
 
 async function lineFetch(path: string, body: unknown): Promise<{ ok: boolean; status: number; error?: string }> {

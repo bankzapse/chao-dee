@@ -2,7 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, StatCard, Badge } from "@/components/ui";
 import { PeriodSelect } from "@/components/period-select";
+import { DeleteButton } from "@/components/action-form";
 import { GenerateButton } from "./generate-button";
+import { deleteInvoice } from "./actions";
 import {
   formatBaht,
   formatPeriod,
@@ -113,13 +115,21 @@ export default async function InvoicesPage({
                         {INVOICE_STATUS_LABEL[i.status as InvoiceStatus]}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/invoices/${i.id}`}
-                        className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                      >
-                        เปิดบิล →
-                      </Link>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-3">
+                        <Link
+                          href={`/invoices/${i.id}`}
+                          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          เปิดบิล →
+                        </Link>
+                        <DeleteButton
+                          action={deleteInvoice.bind(null, i.id)}
+                          confirmText={`ลบบิลห้อง ${i.rooms?.room_number ?? "-"} รอบ ${formatPeriod(
+                            i.period
+                          )}? (ลบรายการชำระที่ผูกกับบิลนี้ด้วย)`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}

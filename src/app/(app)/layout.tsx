@@ -5,8 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { signOut } from "@/app/login/actions";
 
 const MOBILE_NAV = [
-  { href: "/dashboard", label: "แดชบอร์ด" },
-  { href: "/reports", label: "รายงาน" },
+  { href: "/reports", label: "แดชบอร์ด/รายงาน" },
   { href: "/buildings", label: "อาคาร" },
   { href: "/rooms", label: "ห้อง" },
   { href: "/floorplan", label: "ผังห้อง" },

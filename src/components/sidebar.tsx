@@ -5,8 +5,7 @@ import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 
 const NAV = [
-  { href: "/dashboard", label: "แดชบอร์ด", icon: "📊" },
-  { href: "/reports", label: "รายงาน", icon: "📈" },
+  { href: "/reports", label: "แดชบอร์ด / รายงาน", icon: "📊" },
   { href: "/buildings", label: "อาคาร", icon: "🏢" },
   { href: "/rooms", label: "ห้องพัก", icon: "🚪" },
   { href: "/floorplan", label: "ผังห้อง", icon: "🗺️" },

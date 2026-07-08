@@ -210,5 +210,7 @@ export async function voidInvoice(id: string): Promise<void> {
 
 export async function deleteInvoice(id: string): Promise<void> {
   const supabase = await createClient();
+  // ลบรายการชำระที่ผูกกับบิลก่อน แล้วจึงลบบิล (กัน FK ค้าง)
+  await supabase.from("payments").delete().eq("invoice_id", id);
   await supabase.from("invoices").delete().eq("id", id);
 }

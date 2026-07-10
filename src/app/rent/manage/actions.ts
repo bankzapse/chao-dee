@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { makeSlug } from "@/lib/listings";
+import { checkListingLimit } from "@/lib/listing-limits";
 import type { FormState } from "@/components/action-form";
 import type { DiscountType, PropertyType } from "@/lib/types";
 
@@ -42,7 +43,11 @@ export async function saveStandaloneListing(
   formData: FormData
 ): Promise<FormState> {
   const data = parse(formData);
+  // บังคับกรอกครบ (ยกเว้นรายละเอียด/จุดเด่น)
   if (!data.title) return { error: "กรุณาระบุชื่อที่พัก", values: { ...data } };
+  if (!data.province || !data.district) return { error: "กรุณาเลือกจังหวัดและอำเภอ/เขต", values: { ...data } };
+  if (!(data.price_min > 0)) return { error: "กรุณาระบุราคาต่ำสุด/เดือน", values: { ...data } };
+  if (!data.contact_phone) return { error: "กรุณาระบุเบอร์ติดต่อ", values: { ...data } };
 
   const supabase = await createClient();
   const org_id = await getOrgId();
@@ -56,6 +61,10 @@ export async function saveStandaloneListing(
     if (error) return { error: tableMissing(error.message) ? NOT_READY : error.message, values: { ...data } };
     return { ok: true };
   }
+
+  // จำกัดจำนวนประกาศ: บัญชี rent (ใช้ฟรี) = 1 · ลูกค้า Chao-Dee = 10
+  const limitErr = await checkListingLimit(org_id);
+  if (limitErr) return { error: limitErr, values: { ...data } };
 
   const id = crypto.randomUUID();
   const slug = makeSlug(data.title, id);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ModalButton } from "@/components/modal";
 import { ActionForm, type FormState } from "@/components/action-form";
 import { createClient } from "@/lib/supabase/client";
+import { GeoSelect } from "@/components/geo-select";
 import { AMENITIES, PROPERTY_TYPE_LABEL } from "@/lib/listings";
 import type { PropertyListing, PropertyType } from "@/lib/types";
 import { saveStandaloneListing } from "./actions";
@@ -73,56 +74,50 @@ function Fields({ listing, v }: { listing?: PropertyListing; v?: Vals }) {
         <input name="title" className="field" defaultValue={(v?.title as string) ?? listing?.title ?? ""} placeholder="เช่น บ้านสวน เรสซิเดนซ์" required />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">ประเภท</label>
-          <select name="property_type" className="field" defaultValue={(v?.property_type as string) ?? listing?.property_type ?? "dorm"}>
-            {(Object.keys(PROPERTY_TYPE_LABEL) as PropertyType[]).map((t) => (
-              <option key={t} value={t}>{PROPERTY_TYPE_LABEL[t]}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="label">จังหวัด</label>
-          <input name="province" className="field" defaultValue={(v?.province as string) ?? listing?.province ?? ""} placeholder="กรุงเทพฯ" />
-        </div>
+      <div>
+        <label className="label">ประเภท *</label>
+        <select name="property_type" className="field" defaultValue={(v?.property_type as string) ?? listing?.property_type ?? "dorm"} required>
+          {(Object.keys(PROPERTY_TYPE_LABEL) as PropertyType[]).map((t) => (
+            <option key={t} value={t}>{PROPERTY_TYPE_LABEL[t]}</option>
+          ))}
+        </select>
+      </div>
+
+      <GeoSelect
+        province={(v?.province as string) ?? listing?.province}
+        district={(v?.district as string) ?? listing?.district}
+        required
+      />
+
+      <div>
+        <label className="label">ทำเล / จุดสังเกต (ย่อ)</label>
+        <input name="address" className="field" defaultValue={(v?.address as string) ?? listing?.address ?? ""} placeholder="ใกล้ MRT ศูนย์วัฒนธรรม" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label">เขต/อำเภอ</label>
-          <input name="district" className="field" defaultValue={(v?.district as string) ?? listing?.district ?? ""} placeholder="ห้วยขวาง" />
-        </div>
-        <div>
-          <label className="label">ทำเล (ย่อ)</label>
-          <input name="address" className="field" defaultValue={(v?.address as string) ?? listing?.address ?? ""} placeholder="ใกล้ MRT" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">ราคาต่ำสุด/เดือน (บาท)</label>
-          <input name="price_min" type="number" step="1" min={0} className="field" defaultValue={num("price_min")} placeholder="3000" />
+          <label className="label">ราคาต่ำสุด/เดือน (บาท) *</label>
+          <input name="price_min" type="number" step="1" min={1} className="field" defaultValue={num("price_min") || ""} placeholder="3000" required />
         </div>
         <div>
           <label className="label">ราคาสูงสุด/เดือน (บาท)</label>
-          <input name="price_max" type="number" step="1" min={0} className="field" defaultValue={num("price_max")} placeholder="5000" />
+          <input name="price_max" type="number" step="1" min={0} className="field" defaultValue={num("price_max") || ""} placeholder="5000" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">จำนวนห้องทั้งหมด</label>
-          <input name="total_rooms" type="number" step="1" min={0} className="field" defaultValue={num("total_rooms")} />
+          <input name="total_rooms" type="number" step="1" min={0} className="field" defaultValue={num("total_rooms") || ""} />
         </div>
         <div>
-          <label className="label">ห้องว่างตอนนี้</label>
-          <input name="vacant_rooms" type="number" step="1" min={0} className="field" defaultValue={num("vacant_rooms")} />
+          <label className="label">ห้องว่างตอนนี้ *</label>
+          <input name="vacant_rooms" type="number" step="1" min={0} className="field" defaultValue={num("vacant_rooms") || ""} placeholder="แก้ไขจำนวนเองได้" required />
         </div>
       </div>
 
       <div>
-        <label className="label">รายละเอียด / จุดเด่น</label>
+        <label className="label">รายละเอียด / จุดเด่น <span className="text-slate-400">(ไม่บังคับ)</span></label>
         <textarea name="description" className="field" rows={3} defaultValue={(v?.description as string) ?? listing?.description ?? ""} placeholder="ห้องใหม่ พร้อมเฟอร์ ใกล้รถไฟฟ้า" />
       </div>
 
@@ -151,8 +146,8 @@ function Fields({ listing, v }: { listing?: PropertyListing; v?: Vals }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label">เบอร์ติดต่อ</label>
-          <input name="contact_phone" className="field" defaultValue={(v?.contact_phone as string) ?? listing?.contact_phone ?? ""} placeholder="08x-xxx-xxxx" />
+          <label className="label">เบอร์ติดต่อ *</label>
+          <input name="contact_phone" className="field" defaultValue={(v?.contact_phone as string) ?? listing?.contact_phone ?? ""} placeholder="08x-xxx-xxxx" required />
         </div>
         <div>
           <label className="label">LINE ID</label>

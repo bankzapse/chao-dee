@@ -4,9 +4,9 @@ export type PromoPlan = { days: number; price: number; label: string; popular?: 
 
 /** แพ็คเกจโปรโมท (ดันประกาศขึ้นบนสุด + ป้ายโปรโมท) — ราคาเริ่มต้น (owner แก้ได้ผ่าน promo_prices) */
 export const PROMO_PLANS: PromoPlan[] = [
-  { days: 7, price: 99, label: "7 วัน" },
-  { days: 30, price: 299, label: "30 วัน", popular: true },
-  { days: 90, price: 799, label: "90 วัน" },
+  { days: 15, price: 69, label: "15 วัน" },
+  { days: 30, price: 109, label: "30 วัน", popular: true },
+  { days: 90, price: 149, label: "90 วัน" },
 ];
 
 export function promoPlan(days: number, plans: PromoPlan[] = PROMO_PLANS): PromoPlan {

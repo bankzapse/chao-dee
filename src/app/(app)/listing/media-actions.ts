@@ -40,6 +40,13 @@ export async function addListingPhoto(
   const supabase = await createClient();
   const org_id = await getOrgId();
 
+  // จำกัดสูงสุด 10 รูปต่อประกาศ
+  const { count } = await supabase
+    .from("listing_photos")
+    .select("id", { count: "exact", head: true })
+    .eq("listing_id", listingId);
+  if ((count ?? 0) >= 10) return { error: "อัปโหลดได้สูงสุด 10 รูปต่อประกาศ" };
+
   const { data: existing } = await supabase
     .from("listing_photos")
     .select("sort")

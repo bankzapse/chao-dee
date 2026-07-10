@@ -65,12 +65,24 @@ function MediaPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const MAX_PHOTOS = 10;
+
   async function onFiles(files: FileList) {
+    const current = photos?.length ?? 0;
+    const remaining = MAX_PHOTOS - current;
+    if (remaining <= 0) {
+      setErr(`อัปโหลดได้สูงสุด ${MAX_PHOTOS} รูปต่อประกาศ`);
+      return;
+    }
+    const picked = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) {
+      setErr(`เพิ่มได้อีก ${remaining} รูป (สูงสุด ${MAX_PHOTOS} รูป) — อัปโหลดให้ ${remaining} รูปแรก`);
+    }
     setBusy(true);
-    setErr("");
+    if (files.length <= remaining) setErr("");
     try {
       const supabase = createClient();
-      for (const file of Array.from(files)) {
+      for (const file of picked) {
         const ext = file.name.split(".").pop() || "jpg";
         const path = `gallery/${listingId}/${crypto.randomUUID()}.${ext}`;
         const up = await supabase.storage.from("listings").upload(path, file);
@@ -107,15 +119,17 @@ function MediaPanel({
       {/* ===== รูปภาพ ===== */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-medium text-slate-700">รูปภาพที่พัก</p>
-          <label className="btn-secondary cursor-pointer text-sm">
+          <p className="text-sm font-medium text-slate-700">
+            รูปภาพที่พัก <span className="text-xs font-normal text-slate-400">({photos?.length ?? 0}/{MAX_PHOTOS})</span>
+          </p>
+          <label className={`btn-secondary cursor-pointer text-sm ${(photos?.length ?? 0) >= MAX_PHOTOS ? "pointer-events-none opacity-50" : ""}`}>
             {busy ? "กำลังอัปโหลด…" : "+ เพิ่มรูป (เลือกได้หลายรูป)"}
             <input
               type="file"
               accept="image/*"
               multiple
               className="hidden"
-              disabled={busy}
+              disabled={busy || (photos?.length ?? 0) >= MAX_PHOTOS}
               onChange={(e) => {
                 if (e.target.files?.length) onFiles(e.target.files);
                 e.target.value = "";

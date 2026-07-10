@@ -6,6 +6,7 @@ import { ModalButton } from "@/components/modal";
 import { ActionForm, type FormState } from "@/components/action-form";
 import { Spinner } from "@/components/spinner";
 import { createClient } from "@/lib/supabase/client";
+import { GeoSelect } from "@/components/geo-select";
 import { AMENITIES, PROPERTY_TYPE_LABEL } from "@/lib/listings";
 import type { Building, PropertyListing, PropertyType } from "@/lib/types";
 import { saveListing, togglePublish } from "./actions";
@@ -96,55 +97,40 @@ function Fields({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">ประเภท</label>
-          <select
-            name="property_type"
-            className="field"
-            defaultValue={(v?.property_type as string) ?? listing?.property_type ?? "dorm"}
-          >
-            {(Object.keys(PROPERTY_TYPE_LABEL) as PropertyType[]).map((t) => (
-              <option key={t} value={t}>
-                {PROPERTY_TYPE_LABEL[t]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="label">จังหวัด</label>
-          <input
-            name="province"
-            className="field"
-            defaultValue={(v?.province as string) ?? listing?.province ?? ""}
-            placeholder="กรุงเทพฯ"
-          />
-        </div>
+      <div>
+        <label className="label">ประเภท *</label>
+        <select
+          name="property_type"
+          className="field"
+          defaultValue={(v?.property_type as string) ?? listing?.property_type ?? "dorm"}
+          required
+        >
+          {(Object.keys(PROPERTY_TYPE_LABEL) as PropertyType[]).map((t) => (
+            <option key={t} value={t}>
+              {PROPERTY_TYPE_LABEL[t]}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">เขต/อำเภอ</label>
-          <input
-            name="district"
-            className="field"
-            defaultValue={(v?.district as string) ?? listing?.district ?? ""}
-            placeholder="ห้วยขวาง"
-          />
-        </div>
-        <div>
-          <label className="label">ที่อยู่ / ทำเล (ย่อ)</label>
-          <input
-            name="address"
-            className="field"
-            defaultValue={(v?.address as string) ?? listing?.address ?? ""}
-            placeholder="ใกล้ MRT ศูนย์วัฒนธรรม"
-          />
-        </div>
+      <GeoSelect
+        province={(v?.province as string) ?? listing?.province}
+        district={(v?.district as string) ?? listing?.district}
+        required
+      />
+
+      <div>
+        <label className="label">ที่อยู่ / ทำเล (ย่อ)</label>
+        <input
+          name="address"
+          className="field"
+          defaultValue={(v?.address as string) ?? listing?.address ?? ""}
+          placeholder="ใกล้ MRT ศูนย์วัฒนธรรม"
+        />
       </div>
 
       <div>
-        <label className="label">รายละเอียด / จุดเด่น</label>
+        <label className="label">รายละเอียด / จุดเด่น <span className="text-slate-400">(ไม่บังคับ)</span></label>
         <textarea
           name="description"
           className="field"
@@ -208,12 +194,13 @@ function Fields({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label">เบอร์ติดต่อ</label>
+          <label className="label">เบอร์ติดต่อ *</label>
           <input
             name="contact_phone"
             className="field"
             defaultValue={(v?.contact_phone as string) ?? listing?.contact_phone ?? ""}
             placeholder="08x-xxx-xxxx"
+            required
           />
         </div>
         <div>

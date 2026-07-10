@@ -104,8 +104,9 @@ export function displayStat(
   const manMax = Number(l.price_max) || 0;
   if (l.building_id) {
     const r = byBuilding.get(l.building_id) ?? { vacant: 0, minRent: 0, maxRent: 0 };
+    const manVacant = Number(l.vacant_rooms) || 0;
     return {
-      vacant: r.vacant,
+      vacant: manVacant > 0 ? manVacant : r.vacant,
       minRent: manMin > 0 ? manMin : r.minRent,
       maxRent: manMax > 0 ? manMax : r.maxRent,
     };

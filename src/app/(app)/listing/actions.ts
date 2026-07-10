@@ -54,6 +54,8 @@ function parse(formData: FormData) {
     first_month_discount_value: Math.max(0, Number(formData.get("first_month_discount_value") ?? 0)),
     price_min: Math.max(0, Number(formData.get("price_min") ?? 0)),
     price_max: Math.max(0, Number(formData.get("price_max") ?? 0)),
+    vacant_rooms: Math.max(0, Number(formData.get("vacant_rooms") ?? 0)),
+    total_rooms: Math.max(0, Number(formData.get("total_rooms") ?? 0)),
     ...parseExtraFields(formData),
   };
 }

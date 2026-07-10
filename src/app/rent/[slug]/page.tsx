@@ -94,7 +94,12 @@ export default async function RentDetail({
         ? Math.max(...rentsFromRooms)
         : 0
     : manMax;
-  const vacantCount = l.building_id ? vacantRooms.length : Number(l.vacant_rooms) || 0;
+  const manVacant = Number(l.vacant_rooms) || 0;
+  const vacantCount = l.building_id
+    ? manVacant > 0
+      ? manVacant
+      : vacantRooms.length
+    : manVacant;
 
   const disc = discountLabel(l.first_month_discount_type, l.first_month_discount_value);
   const gallery = [l.cover_image, ...((photos ?? []) as { url: string }[]).map((p) => p.url)].filter(Boolean);

@@ -13,6 +13,7 @@ const MOBILE_NAV = [
   { href: "/contracts", label: "สัญญา" },
   { href: "/meters", label: "มิเตอร์" },
   { href: "/invoices", label: "บิล" },
+  { href: "/listing", label: "ลงประกาศ" },
   { href: "/announcements", label: "ประกาศ" },
   { href: "/maintenance", label: "แจ้งซ่อม" },
   { href: "/parcels", label: "พัสดุ" },

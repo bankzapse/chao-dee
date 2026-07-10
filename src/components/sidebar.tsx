@@ -13,6 +13,7 @@ const NAV = [
   { href: "/contracts", label: "สัญญาเช่า", icon: "📄" },
   { href: "/meters", label: "จดมิเตอร์", icon: "🔢" },
   { href: "/invoices", label: "บิล/ใบแจ้งหนี้", icon: "🧾" },
+  { href: "/listing", label: "ลงประกาศหาผู้เช่า", icon: "📣" },
   { href: "/announcements", label: "ประกาศ LINE", icon: "📢" },
   { href: "/maintenance", label: "แจ้งซ่อม", icon: "🔧" },
   { href: "/parcels", label: "พัสดุ", icon: "📦" },

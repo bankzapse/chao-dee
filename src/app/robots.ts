@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // ไม่ให้ index ส่วนที่ต้องล็อกอิน/ภายใน
-      disallow: ["/dashboard", "/owner", "/owner-login", "/renew", "/subscription-required", "/api/"],
+      disallow: ["/dashboard", "/listing", "/owner", "/owner-login", "/renew", "/subscription-required", "/api/", "/bill"],
     },
     sitemap: "https://www.chao-dee.com/sitemap.xml",
   };

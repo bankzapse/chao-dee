@@ -46,6 +46,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/owner-login") || // ทางเข้าแผงเจ้าของ (ตรวจสิทธิ์ในหน้าเอง)
     pathname.startsWith("/bill") || // หน้าบิลสาธารณะสำหรับผู้เช่า (เข้าผ่านลิงก์ใน LINE)
+    pathname.startsWith("/property") || // marketplace ประกาศหาผู้เช่า (สาธารณะ/SEO)
     pathname.startsWith("/logout") || // ทางออกฉุกเฉิน — ล้าง cookie ได้เสมอ
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||

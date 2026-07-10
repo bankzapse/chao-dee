@@ -162,6 +162,49 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ===== MARKETPLACE (หาห้อง / ลงประกาศ) ===== */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="flex flex-col justify-between rounded-3xl border border-indigo-100 bg-indigo-50/50 p-8">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-indigo-700">
+                🔎 สำหรับผู้เช่า
+              </span>
+              <h3 className="mt-4 text-2xl font-bold text-slate-900">หาหอพัก คอนโด อพาร์ตเมนต์</h3>
+              <p className="mt-2 text-slate-600">
+                ห้องว่างพร้อมเข้าอยู่ อัปเดตเรียลไทม์จากระบบเจ้าของหอ —
+                ติดต่อผ่าน Chao-Dee รับ<span className="font-semibold text-emerald-600">ส่วนลดเดือนแรก</span> 🎁
+              </p>
+            </div>
+            <Link
+              href="/property"
+              className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              ดูประกาศห้องว่าง →
+            </Link>
+          </div>
+
+          <div className="flex flex-col justify-between rounded-3xl border border-emerald-100 bg-emerald-50/50 p-8">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-700">
+                🏠 สำหรับเจ้าของหอ
+              </span>
+              <h3 className="mt-4 text-2xl font-bold text-slate-900">ลงประกาศหาผู้เช่า “ฟรี”</h3>
+              <p className="mt-2 text-slate-600">
+                สมาชิก Chao-Dee ลงประกาศโปรโมทที่พักได้ฟรี ระบบดึงห้องว่าง+ราคาให้อัตโนมัติ
+                รับ lead ผู้สนใจตรงถึงคุณ — <span className="font-semibold">เฉพาะผู้ใช้ระบบ Chao-Dee</span>
+              </p>
+            </div>
+            <Link
+              href="/signup"
+              className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              เริ่มใช้ฟรี แล้วลงประกาศ →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ===== PROPERTY TYPES (gallery) ===== */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="text-center">

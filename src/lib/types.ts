@@ -171,6 +171,55 @@ export type Subscription = {
   updated_at: string;
 };
 
+export type PropertyType = "dorm" | "condo" | "apartment";
+export type DiscountType = "percent" | "baht";
+export type LeadStatus = "new" | "contacted" | "moved_in" | "lost";
+
+export type PropertyListing = {
+  id: string;
+  org_id: string;
+  building_id: string | null;
+  slug: string;
+  title: string;
+  property_type: PropertyType;
+  description: string;
+  province: string;
+  district: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  cover_image: string;
+  amenities: string[];
+  contact_phone: string;
+  contact_line: string;
+  first_month_discount_type: DiscountType;
+  first_month_discount_value: number;
+  is_published: boolean;
+  is_featured: boolean;
+  featured_until: string | null;
+  created_at: string;
+};
+
+export type ListingPhoto = {
+  id: string;
+  listing_id: string;
+  url: string;
+  sort: number;
+  created_at: string;
+};
+
+export type ListingLead = {
+  id: string;
+  listing_id: string;
+  org_id: string;
+  name: string;
+  phone: string;
+  message: string;
+  source: string;
+  status: LeadStatus;
+  created_at: string;
+};
+
 export type MaintenanceStatus = "open" | "in_progress" | "done" | "cancelled";
 export type ParcelStatus = "pending" | "picked_up";
 export type VehicleType = "car" | "motorcycle" | "other";

@@ -25,19 +25,40 @@ export const LEAD_STATUS_STYLE: Record<LeadStatus, string> = {
 export const AMENITIES = [
   "แอร์",
   "เฟอร์นิเจอร์",
-  "ที่จอดรถ",
+  "เตียง",
+  "ตู้เสื้อผ้า",
+  "โต๊ะ-เก้าอี้",
+  "โซฟา",
+  "ตู้เย็น",
+  "ทีวี",
+  "เคเบิลทีวี",
+  "เครื่องทำน้ำอุ่น",
   "Wi-Fi",
   "เครื่องซักผ้า",
+  "ที่จอดรถยนต์",
+  "ที่จอดมอเตอร์ไซค์",
   "ลิฟต์",
+  "คีย์การ์ด",
   "กล้องวงจรปิด",
   "รปภ. 24 ชม.",
+  "ร้านสะดวกซื้อ",
+  "ร้านซัก-รีด",
   "สระว่ายน้ำ",
   "ฟิตเนส",
-  "ตู้เย็น",
-  "เครื่องทำน้ำอุ่น",
-  "สัตว์เลี้ยงได้",
   "ใกล้รถไฟฟ้า",
 ];
+
+export const GENDER_LABEL: Record<"any" | "male" | "female", string> = {
+  any: "รับทุกเพศ",
+  male: "ชายเท่านั้น",
+  female: "หญิงเท่านั้น",
+};
+
+/** ป้ายค่าน้ำ เช่น "18 บาท/หน่วย" หรือ "50 บาท/คน/เดือน" */
+export function waterLabel(rate: number, mode: "unit" | "person"): string {
+  if (!rate || rate <= 0) return "";
+  return mode === "person" ? `${formatBaht(rate)}/คน/เดือน` : `${formatBaht(rate)}/หน่วย`;
+}
 
 /** ป้ายส่วนลดเดือนแรก เช่น "50%" หรือ "฿1,000" (คืน "" ถ้าไม่มีส่วนลด) */
 export function discountLabel(type: DiscountType, value: number): string {

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { makeSlug } from "@/lib/listings";
 import { checkListingLimit } from "@/lib/listing-limits";
+import { parseExtraFields } from "@/lib/listing-parse";
 import type { FormState } from "@/components/action-form";
 import type { DiscountType, PropertyType } from "@/lib/types";
 
@@ -33,6 +34,7 @@ function parse(formData: FormData) {
     price_max: n("price_max"),
     total_rooms: n("total_rooms"),
     vacant_rooms: n("vacant_rooms"),
+    ...parseExtraFields(formData),
   };
 }
 

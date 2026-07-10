@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { makeSlug } from "@/lib/listings";
 import { checkListingLimit } from "@/lib/listing-limits";
+import { parseExtraFields } from "@/lib/listing-parse";
 import { promoPlan } from "@/lib/promotions";
 import { effectivePromoPrice } from "@/lib/promotions-db";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
@@ -35,6 +36,7 @@ function parse(formData: FormData) {
     amenities: formData.getAll("amenities").map(String),
     first_month_discount_type: (dtype === "baht" ? "baht" : "percent") as DiscountType,
     first_month_discount_value: Math.max(0, Number(formData.get("first_month_discount_value") ?? 0)),
+    ...parseExtraFields(formData),
   };
 }
 

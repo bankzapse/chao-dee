@@ -6,6 +6,7 @@ import { ActionForm, type FormState } from "@/components/action-form";
 import { createClient } from "@/lib/supabase/client";
 import { GeoSelect } from "@/components/geo-select";
 import { AMENITIES, PROPERTY_TYPE_LABEL } from "@/lib/listings";
+import { ListingExtraFields } from "@/app/(app)/listing/extra-fields";
 import type { PropertyListing, PropertyType } from "@/lib/types";
 import { saveStandaloneListing } from "./actions";
 
@@ -120,6 +121,8 @@ function Fields({ listing, v }: { listing?: PropertyListing; v?: Vals }) {
         <label className="label">รายละเอียด / จุดเด่น <span className="text-slate-400">(ไม่บังคับ)</span></label>
         <textarea name="description" className="field" rows={3} defaultValue={(v?.description as string) ?? listing?.description ?? ""} placeholder="ห้องใหม่ พร้อมเฟอร์ ใกล้รถไฟฟ้า" />
       </div>
+
+      <ListingExtraFields listing={listing} v={v} />
 
       <div>
         <label className="label">สิ่งอำนวยความสะดวก</label>

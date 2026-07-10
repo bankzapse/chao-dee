@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BrandMark } from "@/components/brand-mark";
 import { formatBaht } from "@/lib/format";
-import { PROPERTY_TYPE_LABEL, discountLabel } from "@/lib/listings";
+import { PROPERTY_TYPE_LABEL, GENDER_LABEL, discountLabel, waterLabel } from "@/lib/listings";
 import type { PropertyListing } from "@/lib/types";
 import { LeadForm } from "./lead-form";
 
@@ -90,6 +90,25 @@ export default async function RentDetail({
   const disc = discountLabel(l.first_month_discount_type, l.first_month_discount_value);
   const gallery = [l.cover_image, ...((photos ?? []) as { url: string }[]).map((p) => p.url)].filter(Boolean);
 
+  // ตารางค่าใช้จ่าย & ข้อมูล (แสดงเฉพาะที่ระบุไว้)
+  const water = waterLabel(Number(l.water_rate), l.water_mode);
+  const info: { label: string; value: string }[] = [
+    {
+      label: "ค่าเช่า/เดือน",
+      value: minRent > 0 ? (maxRent > minRent ? `${formatBaht(minRent)}–${formatBaht(maxRent)}` : formatBaht(minRent)) : "สอบถาม",
+    },
+  ];
+  if (Number(l.deposit) > 0) info.push({ label: "เงินประกัน", value: formatBaht(l.deposit) });
+  if (Number(l.advance_payment) > 0) info.push({ label: "จ่ายล่วงหน้า", value: formatBaht(l.advance_payment) });
+  if (water) info.push({ label: "ค่าน้ำ", value: water });
+  if (Number(l.electric_rate) > 0) info.push({ label: "ค่าไฟ", value: `${formatBaht(l.electric_rate)}/หน่วย` });
+  if (Number(l.common_fee) > 0) info.push({ label: "ค่าส่วนกลาง", value: `${formatBaht(l.common_fee)}/เดือน` });
+  if (Number(l.internet_fee) > 0) info.push({ label: "อินเทอร์เน็ต", value: `${formatBaht(l.internet_fee)}/เดือน` });
+  if (Number(l.size_sqm) > 0) info.push({ label: "ขนาดห้อง", value: `${l.size_sqm} ตร.ม.` });
+  info.push({ label: "ประเภท", value: PROPERTY_TYPE_LABEL[l.property_type] });
+  info.push({ label: "รับผู้เช่า", value: GENDER_LABEL[l.tenant_gender] ?? "รับทุกเพศ" });
+  info.push({ label: "สัตว์เลี้ยง", value: l.pets_allowed ? "เลี้ยงได้" : "ไม่อนุญาต" });
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -166,6 +185,26 @@ export default async function RentDetail({
                 <p className="text-lg font-bold text-emerald-600">{vacantCount} ห้อง</p>
               </div>
             </div>
+
+            {/* ค่าใช้จ่าย & ข้อมูล */}
+            <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+              <h2 className="mb-3 font-semibold text-slate-900">ค่าใช้จ่าย & ข้อมูลห้อง</h2>
+              <dl className="grid grid-cols-1 gap-x-8 gap-y-2.5 text-sm sm:grid-cols-2">
+                {info.map((r) => (
+                  <div key={r.label} className="flex items-center justify-between border-b border-slate-50 pb-1.5">
+                    <dt className="text-slate-500">{r.label}</dt>
+                    <dd className="font-medium text-slate-900">{r.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {l.nearby && (
+              <div className="mt-6">
+                <h2 className="mb-2 font-semibold text-slate-900">สถานที่ใกล้เคียง</h2>
+                <p className="whitespace-pre-line text-slate-600">📍 {l.nearby}</p>
+              </div>
+            )}
 
             {l.description && (
               <div className="mt-6">

@@ -7,6 +7,7 @@ import { ActionForm, type FormState } from "@/components/action-form";
 import { Spinner } from "@/components/spinner";
 import { createClient } from "@/lib/supabase/client";
 import { GeoSelect } from "@/components/geo-select";
+import { ListingExtraFields } from "./extra-fields";
 import { AMENITIES, PROPERTY_TYPE_LABEL } from "@/lib/listings";
 import type { Building, PropertyListing, PropertyType } from "@/lib/types";
 import { saveListing, togglePublish } from "./actions";
@@ -139,6 +140,8 @@ function Fields({
           placeholder="เช่น ห้องใหม่ พร้อมเฟอร์ ใกล้รถไฟฟ้า เดินทางสะดวก"
         />
       </div>
+
+      <ListingExtraFields listing={listing} v={v} />
 
       {/* สิ่งอำนวยความสะดวก */}
       <div>

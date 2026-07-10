@@ -201,6 +201,17 @@ export type PropertyListing = {
   price_max: number;
   total_rooms: number;
   vacant_rooms: number;
+  deposit: number;
+  advance_payment: number;
+  water_rate: number;
+  water_mode: "unit" | "person";
+  electric_rate: number;
+  common_fee: number;
+  internet_fee: number;
+  size_sqm: number;
+  tenant_gender: "any" | "male" | "female";
+  pets_allowed: boolean;
+  nearby: string;
   created_at: string;
 };
 

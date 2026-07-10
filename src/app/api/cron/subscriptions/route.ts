@@ -27,6 +27,17 @@ export async function GET(req: Request) {
     .lt("expires_at", now.toISOString())
     .select("id");
 
+  // 1b) หมดอายุโปรโมทประกาศ (featured_until เลยวันนี้) — best-effort, ข้ามถ้ายังไม่มีตาราง
+  try {
+    await admin
+      .from("property_listings")
+      .update({ is_featured: false })
+      .eq("is_featured", true)
+      .lt("featured_until", now.toISOString().slice(0, 10));
+  } catch {
+    // ยังไม่ได้ migrate — ข้าม
+  }
+
   // 2) reminders (ใกล้หมดใน 2–3 วัน)
   let reminded = 0;
   if (isSmsConfigured()) {

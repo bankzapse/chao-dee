@@ -8,6 +8,7 @@ const NAV = [
   { href: "/owner", label: "ภาพรวม", icon: "📈", exact: true, perm: null },
   { href: "/owner/members", label: "สมาชิก", icon: "👥", perm: "members" },
   { href: "/owner/payments", label: "การชำระเงิน", icon: "💳", badgeKey: "payments", perm: "payments" },
+  { href: "/owner/listings", label: "โปรโมทประกาศ", icon: "⭐", perm: "promotions" },
   { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦", perm: "packages" },
   { href: "/owner/promos", label: "คูปองส่วนลด", icon: "🎟️", perm: "promos" },
   { href: "/owner/reports", label: "รายงาน", icon: "📊", perm: "reports" },

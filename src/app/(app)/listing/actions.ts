@@ -1,8 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { makeSlug } from "@/lib/listings";
+import { promoPlan } from "@/lib/promotions";
+import { sendSms, isSmsConfigured } from "@/lib/sms";
 import type { FormState } from "@/components/action-form";
 import type { DiscountType, LeadStatus, PropertyType } from "@/lib/types";
 
@@ -101,4 +104,69 @@ export async function deleteLead(leadId: string): Promise<void> {
   const supabase = await createClient();
   const org_id = await getOrgId();
   await supabase.from("listing_leads").delete().eq("id", leadId).eq("org_id", org_id);
+}
+
+/** แจ้งผู้ดูแลแพลตฟอร์มว่ามีคำขอโปรโมทใหม่ (best-effort) */
+async function notifyAdminsNewPromotion(orgId: string, listingTitle: string, amount: number) {
+  if (!isSmsConfigured()) return;
+  try {
+    const admin = createAdminClient();
+    const [{ data: org }, { data: admins }] = await Promise.all([
+      admin.from("organizations").select("name").eq("id", orgId).maybeSingle(),
+      admin.from("profiles").select("phone").eq("is_platform_admin", true),
+    ]);
+    const orgName = org?.name ?? "กิจการ";
+    const msg = `Chao-Dee: คำขอโปรโมทประกาศใหม่จาก "${orgName}" (${listingTitle}) ฿${amount.toLocaleString()} — อนุมัติที่ chao-dee.com/owner/listings`;
+    await Promise.all(
+      (admins ?? [])
+        .map((a) => a.phone)
+        .filter((p): p is string => Boolean(p))
+        .map((phone) => sendSms(phone, msg).catch(() => null))
+    );
+  } catch {
+    // เงียบไว้
+  }
+}
+
+/** สมาชิกส่งคำขอซื้อโปรโมท (แนบสลิป) → เจ้าของระบบอนุมัติภายหลัง */
+export async function submitPromotion(data: {
+  listing_id: string;
+  days: number;
+  slip_path: string;
+}): Promise<{ ok?: boolean; error?: string }> {
+  const plan = promoPlan(data.days);
+  if (!data.slip_path?.trim()) return { error: "กรุณาแนบสลิปการโอนก่อนส่งคำขอ" };
+
+  const supabase = await createClient();
+  const org_id = await getOrgId();
+
+  // ยืนยันว่าประกาศเป็นของ org นี้จริง
+  const { data: listing } = await supabase
+    .from("property_listings")
+    .select("id, title")
+    .eq("id", data.listing_id)
+    .eq("org_id", org_id)
+    .maybeSingle();
+  if (!listing) return { error: "ไม่พบประกาศนี้" };
+
+  const { error } = await supabase.from("listing_promotions").insert({
+    org_id,
+    listing_id: data.listing_id,
+    days: plan.days,
+    amount: plan.price,
+    method: "promptpay",
+    status: "pending",
+    slip_path: data.slip_path,
+    note: `ขอโปรโมท ${plan.label}`,
+  });
+  if (error) {
+    return {
+      error: tableMissing(error.message)
+        ? "ระบบโปรโมทยังไม่พร้อม (ผู้ดูแลต้องรัน migration 0025)"
+        : error.message,
+    };
+  }
+
+  await notifyAdminsNewPromotion(org_id, listing.title, plan.price);
+  return { ok: true };
 }

@@ -220,6 +220,23 @@ export type ListingLead = {
   created_at: string;
 };
 
+export type PromoStatus = "pending" | "active" | "rejected";
+
+export type ListingPromotion = {
+  id: string;
+  org_id: string;
+  listing_id: string;
+  days: number;
+  amount: number;
+  method: string;
+  slip_path: string;
+  status: PromoStatus;
+  starts_at: string | null;
+  expires_at: string | null;
+  note: string;
+  created_at: string;
+};
+
 export type MaintenanceStatus = "open" | "in_progress" | "done" | "cancelled";
 export type ParcelStatus = "pending" | "picked_up";
 export type VehicleType = "car" | "motorcycle" | "other";

@@ -210,3 +210,71 @@ export async function updateSubscription(
   });
   return { ok: true };
 }
+
+/** อนุมัติคำขอโปรโมทประกาศ → ตั้ง featured + วันหมดอายุ (ต่อจากของเดิมถ้ายังโปรโมทอยู่) */
+export async function approvePromotion(promoId: string): Promise<void> {
+  const adminId = await requirePlatformAdmin();
+  const admin = createAdminClient();
+
+  const { data: promo } = await admin
+    .from("listing_promotions")
+    .select("*")
+    .eq("id", promoId)
+    .single();
+  if (!promo || promo.status !== "pending") return;
+
+  const { data: listing } = await admin
+    .from("property_listings")
+    .select("featured_until, title")
+    .eq("id", promo.listing_id)
+    .single();
+
+  const start = new Date();
+  // ต่ออายุจากวันหมดโปรโมทเดิม (ถ้ายังไม่หมด) ไม่งั้นเริ่มวันนี้
+  const base =
+    listing?.featured_until && new Date(listing.featured_until) > start
+      ? new Date(listing.featured_until)
+      : start;
+  const expires = new Date(base.getTime() + Number(promo.days) * 86400000);
+  const startStr = start.toISOString().slice(0, 10);
+  const expiresStr = expires.toISOString().slice(0, 10);
+
+  await admin
+    .from("listing_promotions")
+    .update({ status: "active", starts_at: startStr, expires_at: expiresStr })
+    .eq("id", promoId);
+
+  await admin
+    .from("property_listings")
+    .update({ is_featured: true, featured_until: expiresStr })
+    .eq("id", promo.listing_id);
+
+  await logAudit({
+    org_id: promo.org_id,
+    actor_id: adminId,
+    action: "อนุมัติโปรโมทประกาศ",
+    target: listing?.title ?? promo.listing_id,
+    meta: { promo_id: promoId, days: Number(promo.days), amount: Number(promo.amount), until: expiresStr },
+  });
+}
+
+/** ปฏิเสธคำขอโปรโมท */
+export async function rejectPromotion(promoId: string): Promise<void> {
+  const adminId = await requirePlatformAdmin();
+  const admin = createAdminClient();
+  const { data: promo } = await admin
+    .from("listing_promotions")
+    .select("org_id, listing_id")
+    .eq("id", promoId)
+    .single();
+  await admin.from("listing_promotions").update({ status: "rejected" }).eq("id", promoId);
+  if (promo) {
+    await logAudit({
+      org_id: promo.org_id,
+      actor_id: adminId,
+      action: "ปฏิเสธคำขอโปรโมท",
+      target: promo.listing_id,
+      meta: { promo_id: promoId },
+    });
+  }
+}

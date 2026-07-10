@@ -4,19 +4,32 @@ import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatBaht } from "@/lib/format";
 import { PROPERTY_TYPE_LABEL, discountLabel } from "@/lib/listings";
+import { isFeaturedActive } from "@/lib/promotions";
+import { formatDate } from "@/lib/format";
 import type { Building, PropertyListing } from "@/lib/types";
 import { ListingButton, PublishToggle } from "./listing-form";
+import { PromoteButton } from "./promote-form";
 import { deleteListing } from "./actions";
 
 export default async function ListingPage() {
   const supabase = await createClient();
 
-  const [{ data: buildings }, { data: rooms }, listingRes, leadRes] = await Promise.all([
+  const platformPromptPay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY ?? "";
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [{ data: buildings }, { data: rooms }, listingRes, leadRes, promoRes] = await Promise.all([
     supabase.from("buildings").select("id, name, org_id, address, note, floors, created_at").order("name"),
     supabase.from("rooms").select("building_id, status, base_rent"),
     supabase.from("property_listings").select("*"),
     supabase.from("listing_leads").select("listing_id, status"),
+    supabase.from("listing_promotions").select("listing_id, status, expires_at"),
   ]);
+
+  // สถานะโปรโมทต่อประกาศ (pending = รออนุมัติ)
+  const pendingPromo = new Set<string>();
+  (promoRes.data ?? []).forEach((p: { listing_id: string; status: string }) => {
+    if (p.status === "pending") pendingPromo.add(p.listing_id);
+  });
 
   const notReady = Boolean(
     listingRes.error && /does not exist|schema cache|could not find the table/i.test(listingRes.error.message)
@@ -127,6 +140,14 @@ export default async function ListingPage() {
                         📥 มีผู้ติดต่อใหม่ {newLeads.get(listing.id)} ราย
                       </p>
                     )}
+                    {listing && isFeaturedActive(listing, today) && (
+                      <p className="mt-1 text-xs font-medium text-amber-600">
+                        ⭐ กำลังโปรโมท{listing.featured_until ? ` — ถึง ${formatDate(listing.featured_until)}` : ""}
+                      </p>
+                    )}
+                    {listing && pendingPromo.has(listing.id) && (
+                      <p className="mt-1 text-xs font-medium text-slate-500">⏳ รอทีมงานอนุมัติโปรโมท</p>
+                    )}
                   </div>
                 </div>
 
@@ -135,6 +156,13 @@ export default async function ListingPage() {
                   {listing && (
                     <>
                       <PublishToggle listingId={listing.id} published={listing.is_published} />
+                      {listing.is_published && (
+                        <PromoteButton
+                          listingId={listing.id}
+                          platformPromptPay={platformPromptPay}
+                          active={isFeaturedActive(listing, today)}
+                        />
+                      )}
                       {listing.is_published && (
                         <Link
                           href={`/property/${listing.slug}`}

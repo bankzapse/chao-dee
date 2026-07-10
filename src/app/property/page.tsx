@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { BrandMark } from "@/components/brand-mark";
 import { formatBaht } from "@/lib/format";
 import { PROPERTY_TYPE_LABEL, discountLabel } from "@/lib/listings";
+import { isFeaturedActive } from "@/lib/promotions";
 import type { PropertyListing, PropertyType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -34,14 +35,19 @@ export default async function PropertyMarketplace({
   const { q = "", province = "", type = "" } = await searchParams;
   const supabase = createAdminClient();
 
+  const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("property_listings")
     .select("*")
     .eq("is_published", true)
-    .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 
-  let listings = (data ?? []) as unknown as PropertyListing[];
+  // โปรโมทที่ยัง active ขึ้นก่อน (หมดอายุแล้วถือว่าไม่โปรโมท)
+  let listings = ((data ?? []) as unknown as PropertyListing[]).sort((a, b) => {
+    const fa = isFeaturedActive(a, today) ? 1 : 0;
+    const fb = isFeaturedActive(b, today) ? 1 : 0;
+    return fb - fa;
+  });
 
   const provinces = [...new Set(listings.map((l) => l.province).filter(Boolean))].sort();
 
@@ -132,12 +138,13 @@ export default async function PropertyMarketplace({
             {listings.map((l) => {
               const s = stat.get(l.building_id ?? "") ?? { vacant: 0, minRent: 0 };
               const disc = discountLabel(l.first_month_discount_type, l.first_month_discount_value);
+              const featured = isFeaturedActive(l, today);
               return (
                 <Link
                   key={l.id}
                   href={`/property/${l.slug}`}
                   className={`group overflow-hidden rounded-2xl bg-white ring-1 transition hover:shadow-lg ${
-                    l.is_featured ? "ring-2 ring-indigo-400" : "ring-slate-200"
+                    featured ? "ring-2 ring-indigo-400" : "ring-slate-200"
                   }`}
                 >
                   <div className="relative h-44 bg-slate-100">
@@ -153,7 +160,7 @@ export default async function PropertyMarketplace({
                         🏢
                       </div>
                     )}
-                    {l.is_featured && (
+                    {featured && (
                       <span className="absolute left-3 top-3 rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white">
                         ⭐ โปรโมท
                       </span>

@@ -1,3 +1,13 @@
+/** แยก URL รูปทั้งหมด (JSON array) จาก FormData — สูงสุด 10 รูป */
+export function parsePhotoUrls(fd: FormData): string[] {
+  try {
+    const a = JSON.parse(String(fd.get("photo_urls") ?? "[]"));
+    return Array.isArray(a) ? a.filter((x) => typeof x === "string" && x).slice(0, 10) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** แยกฟิลด์รายละเอียด (renthub-style) จาก FormData — ใช้ร่วมทั้ง 2 ฟอร์ม */
 export function parseExtraFields(fd: FormData) {
   const num = (k: string) => Math.max(0, Number(fd.get(k) ?? 0));

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ModalButton } from "@/components/modal";
 import { ActionForm, type FormState } from "@/components/action-form";
 import { Spinner } from "@/components/spinner";
-import { createClient } from "@/lib/supabase/client";
 import { GeoSelect } from "@/components/geo-select";
 import { ListingExtraFields } from "./extra-fields";
+import { ListingPhotosInput } from "./listing-photos-input";
 import { AMENITIES, PROPERTY_TYPE_LABEL } from "@/lib/listings";
 import type { Building, PropertyListing, PropertyType } from "@/lib/types";
 import { saveListing, togglePublish } from "./actions";
@@ -23,69 +23,13 @@ function Fields({
   listing?: PropertyListing;
   v?: Vals;
 }) {
-  const [cover, setCover] = useState<string>(
-    (v?.cover_image as string) ?? listing?.cover_image ?? ""
-  );
-  const [uploading, setUploading] = useState(false);
-  const [err, setErr] = useState("");
   const selected = new Set<string>(
     (v?.amenities as string[]) ?? listing?.amenities ?? []
   );
 
-  async function onFile(file: File) {
-    setUploading(true);
-    setErr("");
-    try {
-      const supabase = createClient();
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${building.id}/${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("listings").upload(path, file);
-      if (up.error) {
-        setErr("อัปโหลดรูปไม่สำเร็จ: " + up.error.message);
-        return;
-      }
-      const url = supabase.storage.from("listings").getPublicUrl(path).data.publicUrl;
-      setCover(url);
-    } finally {
-      setUploading(false);
-    }
-  }
-
   return (
     <>
-      <input type="hidden" name="cover_image" value={cover} />
-
-      {/* รูปหน้าปก */}
-      <div>
-        <label className="label">รูปหน้าปก</label>
-        <div className="flex items-center gap-3">
-          <div className="h-20 w-28 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-            {cover ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={cover} alt="ปก" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
-                ไม่มีรูป
-              </div>
-            )}
-          </div>
-          <label className="btn-secondary cursor-pointer">
-            {uploading ? "กำลังอัปโหลด…" : "เลือกรูป"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onFile(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
-        </div>
-        {err && <p className="mt-1 text-sm text-rose-600">{err}</p>}
-      </div>
+      <ListingPhotosInput listingId={listing?.id} initialCover={listing?.cover_image} />
 
       <div>
         <label className="label">ชื่อที่พัก *</label>

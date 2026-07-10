@@ -20,19 +20,13 @@ export default async function ListingPage() {
   const today = new Date().toISOString().slice(0, 10);
   const promoPlans = await getEffectivePromoPlans();
 
-  const [{ data: buildings }, { data: rooms }, listingRes, leadRes, promoRes, photoRes] = await Promise.all([
+  const [{ data: buildings }, { data: rooms }, listingRes, leadRes, promoRes] = await Promise.all([
     supabase.from("buildings").select("id, name, org_id, address, note, floors, created_at").order("name"),
     supabase.from("rooms").select("building_id, status, base_rent"),
     supabase.from("property_listings").select("*"),
     supabase.from("listing_leads").select("listing_id, status"),
     supabase.from("listing_promotions").select("listing_id, status, expires_at"),
-    supabase.from("listing_photos").select("listing_id"),
   ]);
-
-  const photoCount = new Map<string, number>();
-  (photoRes.data ?? []).forEach((p: { listing_id: string }) => {
-    photoCount.set(p.listing_id, (photoCount.get(p.listing_id) ?? 0) + 1);
-  });
 
   // สถานะโปรโมทต่อประกาศ (pending = รออนุมัติ)
   const pendingPromo = new Set<string>();
@@ -164,13 +158,7 @@ export default async function ListingPage() {
                   <ListingButton building={b} listing={listing} />
                   {listing && (
                     <>
-                      <ListingMediaButton
-                        listingId={listing.id}
-                        count={photoCount.get(listing.id) ?? 0}
-                        cover={listing.cover_image}
-                        lat={listing.lat}
-                        lng={listing.lng}
-                      />
+                      <ListingMediaButton listingId={listing.id} lat={listing.lat} lng={listing.lng} />
                       <PublishToggle listingId={listing.id} published={listing.is_published} />
                       {listing.is_published && (
                         <PromoteButton

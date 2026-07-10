@@ -48,17 +48,13 @@ export default async function RentManage() {
     (rooms ?? []) as { building_id: string; status: string; base_rent: number }[]
   );
 
-  const [{ data: promos }, { data: photoRows }] = await Promise.all([
-    supabase.from("listing_promotions").select("listing_id, status").eq("org_id", org_id),
-    supabase.from("listing_photos").select("listing_id"),
-  ]);
+  const { data: promos } = await supabase
+    .from("listing_promotions")
+    .select("listing_id, status")
+    .eq("org_id", org_id);
   const pendingPromo = new Set<string>();
   (promos ?? []).forEach((p: { listing_id: string; status: string }) => {
     if (p.status === "pending") pendingPromo.add(p.listing_id);
-  });
-  const photoCount = new Map<string, number>();
-  (photoRows ?? []).forEach((p: { listing_id: string }) => {
-    photoCount.set(p.listing_id, (photoCount.get(p.listing_id) ?? 0) + 1);
   });
 
   return (
@@ -150,13 +146,7 @@ export default async function RentManage() {
                     ) : (
                       <StandaloneListingButton listing={l} label="แก้ไข" variant="secondary" />
                     )}
-                    <ListingMediaButton
-                      listingId={l.id}
-                      count={photoCount.get(l.id) ?? 0}
-                      cover={l.cover_image}
-                      lat={l.lat}
-                      lng={l.lng}
-                    />
+                    <ListingMediaButton listingId={l.id} lat={l.lat} lng={l.lng} />
                     <PublishToggle listingId={l.id} published={l.is_published} />
                     {l.is_published && (
                       <PromoteButton

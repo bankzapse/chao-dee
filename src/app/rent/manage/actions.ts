@@ -4,9 +4,25 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { makeSlug } from "@/lib/listings";
 import { checkListingLimit } from "@/lib/listing-limits";
-import { parseExtraFields } from "@/lib/listing-parse";
+import { parseExtraFields, parsePhotoUrls } from "@/lib/listing-parse";
 import type { FormState } from "@/components/action-form";
 import type { DiscountType, PropertyType } from "@/lib/types";
+
+/** ซิงก์รูปทั้งหมดของประกาศให้ตรงกับที่ฟอร์มส่งมา (ลบเดิม + ใส่ใหม่ตามลำดับ) */
+async function syncPhotos(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  listingId: string,
+  formData: FormData
+) {
+  if (formData.get("photos_ready") !== "1") return; // ยังโหลดรูปเดิมไม่เสร็จ — ข้าม กันรูปหาย
+  const urls = parsePhotoUrls(formData);
+  await supabase.from("listing_photos").delete().eq("listing_id", listingId);
+  if (urls.length) {
+    await supabase
+      .from("listing_photos")
+      .insert(urls.map((url, i) => ({ listing_id: listingId, url, sort: i })));
+  }
+}
 
 function tableMissing(msg?: string): boolean {
   return Boolean(msg && /does not exist|schema cache|could not find the table|could not find the .* column/i.test(msg));
@@ -61,6 +77,7 @@ export async function saveStandaloneListing(
       .eq("id", listingId)
       .eq("org_id", org_id);
     if (error) return { error: tableMissing(error.message) ? NOT_READY : error.message, values: { ...data } };
+    await syncPhotos(supabase, listingId, formData);
     return { ok: true };
   }
 
@@ -79,5 +96,6 @@ export async function saveStandaloneListing(
     ...data,
   });
   if (error) return { error: tableMissing(error.message) ? NOT_READY : error.message, values: { ...data } };
+  await syncPhotos(supabase, id, formData);
   return { ok: true };
 }

@@ -36,6 +36,8 @@ function parse(formData: FormData) {
     amenities: formData.getAll("amenities").map(String),
     first_month_discount_type: (dtype === "baht" ? "baht" : "percent") as DiscountType,
     first_month_discount_value: Math.max(0, Number(formData.get("first_month_discount_value") ?? 0)),
+    price_min: Math.max(0, Number(formData.get("price_min") ?? 0)),
+    price_max: Math.max(0, Number(formData.get("price_max") ?? 0)),
     ...parseExtraFields(formData),
   };
 }

@@ -131,6 +131,31 @@ function Fields({
       </div>
 
       <div>
+        <label className="label">ราคาเช่า/เดือน (ช่วงราคา)</label>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            name="price_min"
+            type="number"
+            step="1"
+            min={0}
+            className="field"
+            defaultValue={Number(v?.price_min ?? listing?.price_min ?? 0) || ""}
+            placeholder="ต่ำสุด"
+          />
+          <input
+            name="price_max"
+            type="number"
+            step="1"
+            min={0}
+            className="field"
+            defaultValue={Number(v?.price_max ?? listing?.price_max ?? 0) || ""}
+            placeholder="สูงสุด"
+          />
+        </div>
+        <p className="mt-1 text-xs text-slate-400">เว้นว่าง = ดึงราคาจากห้องในอาคารอัตโนมัติ</p>
+      </div>
+
+      <div>
         <label className="label">รายละเอียด / จุดเด่น <span className="text-slate-400">(ไม่บังคับ)</span></label>
         <textarea
           name="description"

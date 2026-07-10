@@ -75,16 +75,23 @@ export default async function RentDetail({
 
   // ผูกอาคาร → ดึงจาก rooms · standalone → ใช้ค่ากรอกเอง
   const rentsFromRooms = vacantRooms.map((r) => Number(r.base_rent)).filter((n) => n > 0);
+  const manMin = Number(l.price_min) || 0;
+  const manMax = Number(l.price_max) || 0;
+  // ผูกอาคาร: ใช้ราคาที่กรอกเอง (ช่วง) ก่อน ถ้าไม่มีค่อยดึงจากห้อง
   const minRent = l.building_id
-    ? rentsFromRooms.length
-      ? Math.min(...rentsFromRooms)
-      : 0
-    : Number(l.price_min) || 0;
+    ? manMin > 0
+      ? manMin
+      : rentsFromRooms.length
+        ? Math.min(...rentsFromRooms)
+        : 0
+    : manMin;
   const maxRent = l.building_id
-    ? rentsFromRooms.length
-      ? Math.max(...rentsFromRooms)
-      : 0
-    : Number(l.price_max) || 0;
+    ? manMax > 0
+      ? manMax
+      : rentsFromRooms.length
+        ? Math.max(...rentsFromRooms)
+        : 0
+    : manMax;
   const vacantCount = l.building_id ? vacantRooms.length : Number(l.vacant_rooms) || 0;
 
   const disc = discountLabel(l.first_month_discount_type, l.first_month_discount_value);

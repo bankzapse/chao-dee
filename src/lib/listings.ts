@@ -86,7 +86,11 @@ export function roomStatByBuilding(
   return map;
 }
 
-/** ห้องว่าง/ราคาที่จะแสดง: ผูกอาคาร→ดึงจาก rooms · standalone→ใช้ค่ากรอกเอง */
+/**
+ * ห้องว่าง/ราคาที่จะแสดง:
+ *  - ผูกอาคาร → ห้องว่างดึงจาก rooms · ราคาใช้ค่ากรอกเอง (ช่วง) ถ้ามี ไม่งั้นดึงจาก rooms
+ *  - standalone → ใช้ค่ากรอกเองทั้งหมด
+ */
 export function displayStat(
   l: {
     building_id: string | null;
@@ -96,14 +100,17 @@ export function displayStat(
   },
   byBuilding: Map<string, ListingStat>
 ): ListingStat {
+  const manMin = Number(l.price_min) || 0;
+  const manMax = Number(l.price_max) || 0;
   if (l.building_id) {
-    return byBuilding.get(l.building_id) ?? { vacant: 0, minRent: 0, maxRent: 0 };
+    const r = byBuilding.get(l.building_id) ?? { vacant: 0, minRent: 0, maxRent: 0 };
+    return {
+      vacant: r.vacant,
+      minRent: manMin > 0 ? manMin : r.minRent,
+      maxRent: manMax > 0 ? manMax : r.maxRent,
+    };
   }
-  return {
-    vacant: Number(l.vacant_rooms) || 0,
-    minRent: Number(l.price_min) || 0,
-    maxRent: Number(l.price_max) || 0,
-  };
+  return { vacant: Number(l.vacant_rooms) || 0, minRent: manMin, maxRent: manMax };
 }
 
 /** สร้าง slug จากชื่อ + ท้าย id กันชนกัน */

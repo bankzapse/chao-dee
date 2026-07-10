@@ -9,6 +9,8 @@ import type { PropertyListing } from "@/lib/types";
 import { LeadForm } from "./lead-form";
 
 export const runtime = "nodejs";
+// อ่านสดจากฐานข้อมูลทุกครั้ง (กัน Next Data Cache ค้างค่าประกาศเก่า)
+export const dynamic = "force-dynamic";
 
 /** slug อาจมาแบบ percent-encoded (เช่น slug ภาษาไทย) — decode ก่อนค้นให้ตรงกับ DB */
 function decodeSlug(slug: string): string {

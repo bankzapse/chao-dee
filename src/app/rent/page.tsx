@@ -12,6 +12,8 @@ import { isFeaturedActive } from "@/lib/promotions";
 import type { PropertyListing, PropertyType } from "@/lib/types";
 
 export const runtime = "nodejs";
+// อ่านสดจากฐานข้อมูลทุกครั้ง (กัน Next Data Cache ค้างรายการประกาศเก่า)
+export const dynamic = "force-dynamic";
 
 const PRICE_RANGES = [
   { v: "", label: "ทุกช่วงราคา", lo: 0, hi: Infinity },

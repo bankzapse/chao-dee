@@ -100,7 +100,7 @@ export function Pricing({ packages = PACKAGES }: { packages?: Package[] }) {
               </div>
 
               <ul className="mt-5 flex-1 space-y-2 text-sm text-slate-600">
-                {COMMON_FEATURES.slice(0, 6).map((f) => (
+                {COMMON_FEATURES.slice(0, 7).map((f) => (
                   <li key={f} className="flex gap-2">
                     <span className="text-emerald-500">✓</span>
                     {f}

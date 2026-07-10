@@ -13,6 +13,15 @@ import type { PropertyListing, PropertyType } from "@/lib/types";
 
 export const runtime = "nodejs";
 
+const PRICE_RANGES = [
+  { v: "", label: "ทุกช่วงราคา", lo: 0, hi: Infinity },
+  { v: "0-3000", label: "ต่ำกว่า ฿3,000", lo: 0, hi: 3000 },
+  { v: "3000-5000", label: "฿3,000 – 5,000", lo: 3000, hi: 5000 },
+  { v: "5000-8000", label: "฿5,000 – 8,000", lo: 5000, hi: 8000 },
+  { v: "8000-12000", label: "฿8,000 – 12,000", lo: 8000, hi: 12000 },
+  { v: "12000-", label: "฿12,000 ขึ้นไป", lo: 12000, hi: Infinity },
+];
+
 export const metadata = {
   title: "Chao-Dee Rent — หาหอพัก คอนโด อพาร์ตเมนต์ ห้องว่างพร้อมเข้าอยู่",
   description:
@@ -95,9 +104,9 @@ function LuxeCard({
 export default async function RentHome({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; province?: string; type?: string }>;
+  searchParams: Promise<{ q?: string; province?: string; type?: string; price?: string }>;
 }) {
-  const { q = "", province = "", type = "" } = await searchParams;
+  const { q = "", province = "", type = "", price = "" } = await searchParams;
   const supabase = createAdminClient();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -107,21 +116,11 @@ export default async function RentHome({
     .eq("is_published", true)
     .order("created_at", { ascending: false });
 
-  let listings = (data ?? []) as unknown as PropertyListing[];
-  const provinces = [...new Set(listings.map((l) => l.province).filter(Boolean))].sort();
+  const all = (data ?? []) as unknown as PropertyListing[];
+  const provinces = [...new Set(all.map((l) => l.province).filter(Boolean))].sort();
 
-  const kw = q.trim().toLowerCase();
-  listings = listings.filter((l) => {
-    if (province && l.province !== province) return false;
-    if (type && l.property_type !== type) return false;
-    if (kw) {
-      const hay = `${l.title} ${l.district} ${l.province} ${l.address}`.toLowerCase();
-      if (!hay.includes(kw)) return false;
-    }
-    return true;
-  });
-
-  const buildingIds = listings.map((l) => l.building_id).filter(Boolean) as string[];
+  // คำนวณห้องว่าง/ราคาของทุกประกาศก่อน แล้วค่อยกรอง (เพื่อกรองตามช่วงราคาได้)
+  const buildingIds = all.map((l) => l.building_id).filter(Boolean) as string[];
   const { data: rooms } = buildingIds.length
     ? await supabase.from("rooms").select("building_id, status, base_rent").in("building_id", buildingIds)
     : { data: [] };
@@ -129,11 +128,24 @@ export default async function RentHome({
     (rooms ?? []) as { building_id: string; status: string; base_rent: number }[]
   );
 
-  const withStat = listings.map((l) => ({
-    l,
-    stat: displayStat(l, byBuilding),
-    featured: isFeaturedActive(l, today),
-  }));
+  const range = PRICE_RANGES.find((r) => r.v === price) ?? PRICE_RANGES[0];
+  const kw = q.trim().toLowerCase();
+
+  const withStat = all
+    .map((l) => ({ l, stat: displayStat(l, byBuilding), featured: isFeaturedActive(l, today) }))
+    .filter(({ l, stat }) => {
+      if (province && l.province !== province) return false;
+      if (type && l.property_type !== type) return false;
+      if (kw) {
+        const hay = `${l.title} ${l.district} ${l.province} ${l.address}`.toLowerCase();
+        if (!hay.includes(kw)) return false;
+      }
+      if (range.v) {
+        // ต้องมีราคา และราคาเริ่มต้นอยู่ในช่วง
+        if (!(stat.minRent > 0 && stat.minRent >= range.lo && stat.minRent <= range.hi)) return false;
+      }
+      return true;
+    });
   withStat.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
   const featured = withStat.filter((x) => x.featured);
 
@@ -192,6 +204,11 @@ export default async function RentHome({
               <option value="">ทุกประเภท</option>
               {(Object.keys(PROPERTY_TYPE_LABEL) as PropertyType[]).map((t) => (
                 <option key={t} value={t}>{PROPERTY_TYPE_LABEL[t]}</option>
+              ))}
+            </select>
+            <select name="price" defaultValue={price} className="rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700">
+              {PRICE_RANGES.map((r) => (
+                <option key={r.v} value={r.v}>{r.label}</option>
               ))}
             </select>
             <button className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800">

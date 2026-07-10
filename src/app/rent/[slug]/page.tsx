@@ -178,6 +178,31 @@ export default async function RentDetail({
               </div>
             )}
 
+            {l.lat != null && l.lng != null && (
+              <div className="mt-6">
+                <h2 className="mb-2 font-semibold text-slate-900">ตำแหน่งบนแผนที่</h2>
+                <div className="overflow-hidden rounded-xl ring-1 ring-slate-200">
+                  <iframe
+                    title="แผนที่ที่พัก"
+                    className="h-64 w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${l.lng - 0.008}%2C${
+                      l.lat - 0.005
+                    }%2C${l.lng + 0.008}%2C${l.lat + 0.005}&layer=mapnik&marker=${l.lat}%2C${l.lng}`}
+                  />
+                </div>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${l.lat}%2C${l.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 inline-block text-sm text-indigo-600 hover:text-indigo-700"
+                >
+                  เปิดใน Google Maps →
+                </a>
+              </div>
+            )}
+
             {l.building_id && vacantRooms.length > 0 && (
               <div className="mt-6">
                 <h2 className="mb-2 font-semibold text-slate-900">ห้องว่างพร้อมเข้าอยู่</h2>

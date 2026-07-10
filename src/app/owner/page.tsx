@@ -13,10 +13,11 @@ import {
 
 export default async function OwnerDashboard() {
   const admin = createAdminClient();
-  const [{ data: orgs }, { data: subs }, { data: pays }] = await Promise.all([
-    admin.from("organizations").select("id, name, created_at"),
+  const [{ data: orgs }, { data: subs }, { data: pays }, { data: promos }] = await Promise.all([
+    admin.from("organizations").select("id, name, created_at, account_type"),
     admin.from("subscriptions").select("*, organizations(name)"),
     admin.from("subscription_payments").select("amount, status, paid_at, cycle"),
+    admin.from("listing_promotions").select("amount, status, created_at"),
   ]);
 
   const subList = subs ?? [];
@@ -61,6 +62,19 @@ export default async function OwnerDashboard() {
   const pendingAmount = pendingPays.reduce((s, p) => s + Number(p.amount), 0);
   const statusTotal = Math.max(1, active + trialing + inactive);
 
+  // ===== แยกตามธุรกิจ =====
+  const chaodeeOrgs = (orgs ?? []).filter((o) => (o.account_type ?? "chaodee") !== "rent").length;
+  const rentOrgs = (orgs ?? []).filter((o) => o.account_type === "rent").length;
+
+  const promoList = promos ?? [];
+  const rentRevenueTotal = promoList
+    .filter((p) => p.status === "active")
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const rentRevenueThisMonth = promoList
+    .filter((p) => p.status === "active" && new Date(p.created_at) >= monthStart)
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const rentPending = promoList.filter((p) => p.status === "pending").length;
+
   const kpis = [
     { icon: "👥", label: "สมาชิกทั้งหมด", value: String(totalMembers), hint: `+${newThisMonth} เดือนนี้`, grad: "from-indigo-500 to-violet-500" },
     { icon: "💰", label: "รายได้/เดือน (MRR)", value: formatBaht(mrr), hint: `ARR ${formatBaht(mrr * 12)}`, grad: "from-emerald-500 to-teal-500" },
@@ -94,6 +108,49 @@ export default async function OwnerDashboard() {
             <p className="mt-0.5 text-xs text-slate-400">{k.hint}</p>
           </div>
         ))}
+      </div>
+
+      {/* แยกตามธุรกิจ: Chao-Dee (จัดการหอ) vs Rent (marketplace) */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="card p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold text-slate-900">🏢 ธุรกิจ Chao-Dee</h2>
+            <span className="text-xs text-slate-400">{chaodeeOrgs} กิจการ</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-400">รายได้ค่าสมาชิก/เดือน (MRR)</p>
+              <p className="mt-0.5 text-xl font-bold text-emerald-600">{formatBaht(mrr)}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-400">รับชำระเดือนนี้</p>
+              <p className="mt-0.5 text-xl font-bold text-slate-900">{formatBaht(revenueThisMonth)}</p>
+            </div>
+          </div>
+          <Link href="/owner/payments" className="mt-3 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            ดูการชำระค่าสมาชิก →
+          </Link>
+        </div>
+
+        <div className="card p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold text-slate-900">⭐ ธุรกิจ Rent</h2>
+            <span className="text-xs text-slate-400">{rentOrgs} บัญชี rent</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-400">รายได้โปรโมทเดือนนี้</p>
+              <p className="mt-0.5 text-xl font-bold text-amber-600">{formatBaht(rentRevenueThisMonth)}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-400">โปรโมทที่ยัง active</p>
+              <p className="mt-0.5 text-xl font-bold text-slate-900">{formatBaht(rentRevenueTotal)}</p>
+            </div>
+          </div>
+          <Link href="/owner/listings" className="mt-3 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            {rentPending > 0 ? `อนุมัติโปรโมท (${rentPending} รอ) →` : "จัดการโปรโมท →"}
+          </Link>
+        </div>
       </div>
 
       {/* สถานะสมาชิก + แถบสัดส่วน */}

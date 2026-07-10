@@ -67,7 +67,7 @@ export default async function RentSignupPage() {
               </p>
             </div>
             <div className="card p-6 sm:p-8">
-              <SignupForm provinces={provinces} next="/rent/manage" />
+              <SignupForm provinces={provinces} next="/rent/manage" source="rent" />
             </div>
           </div>
         </div>

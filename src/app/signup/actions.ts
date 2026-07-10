@@ -80,6 +80,8 @@ export async function signUpRequest(_prev: SignupState, formData: FormData): Pro
     prop_status,
     email,
     promo,
+    // 'rent' = สมัครผ่าน /rent (ลงประกาศอย่างเดียว, ไม่ได้ trial ระบบจัดการหอ)
+    signup_source: g("signup_source") === "rent" ? "rent" : "chaodee",
   };
 
   const supabase = await createClient();

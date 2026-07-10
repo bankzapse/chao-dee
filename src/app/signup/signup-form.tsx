@@ -23,7 +23,15 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function SignupForm({ provinces, next }: { provinces: string[]; next?: string }) {
+export function SignupForm({
+  provinces,
+  next,
+  source,
+}: {
+  provinces: string[];
+  next?: string;
+  source?: string;
+}) {
   const [reqState, reqAction] = useActionState<SignupState, FormData>(signUpRequest, null);
   const [verState, verAction] = useActionState<AuthState, FormData>(verifyOtp, null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -113,6 +121,7 @@ export function SignupForm({ provinces, next }: { provinces: string[]; next?: st
   // ---- Wizard ----
   return (
     <form ref={formRef} action={reqAction}>
+      {source && <input type="hidden" name="signup_source" value={source} />}
       {/* ตัวบอกขั้นตอน */}
       <div className="mb-6">
         <div className="flex items-center gap-2">

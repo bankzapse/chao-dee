@@ -37,9 +37,13 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, org_id, role, is_platform_admin, organizations(name)")
+    .select("full_name, org_id, role, is_platform_admin, organizations(name, account_type)")
     .eq("id", user.id)
     .single();
+
+  // บัญชี 'rent' (สมัครผ่าน /rent) ใช้แอปจัดการหอไม่ได้ — ส่งไปพื้นที่ประกาศของตัวเอง
+  const accountType = (profile?.organizations as { account_type?: string } | null)?.account_type;
+  if (accountType === "rent") redirect("/rent/manage");
 
   const orgName =
     (profile?.organizations as { name?: string } | null)?.name ?? "หอพักของฉัน";

@@ -6,11 +6,9 @@ import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
   formatDate,
-  PAYMENT_METHOD_LABEL,
   SUBSCRIPTION_STATUS_LABEL,
   SUBSCRIPTION_STATUS_STYLE,
 } from "@/lib/format";
-import type { PaymentMethod } from "@/lib/types";
 import { requirePerm } from "@/lib/admin";
 import { buildingTypeLabel } from "@/lib/signup-options";
 import {
@@ -21,6 +19,7 @@ import {
   SetStatusButton,
   DeleteMemberButton,
 } from "../../member-actions";
+import { ApprovePromotionButton, RejectPromotionButton } from "../../promotion-actions";
 
 export default async function MemberDetail({
   params,
@@ -31,7 +30,7 @@ export default async function MemberDetail({
   await requirePerm("members");
   const admin = createAdminClient();
 
-  const [{ data: org }, { data: sub }, { data: owner }, { data: pays }, { data: buildings }, { data: tenants }, { data: rooms }] =
+  const [{ data: org }, { data: sub }, { data: owner }, { data: pays }, { data: buildings }, { data: tenants }, { data: rooms }, { data: promos }] =
     await Promise.all([
       admin.from("organizations").select("*").eq("id", id).single(),
       admin.from("subscriptions").select("*").eq("org_id", id).maybeSingle(),
@@ -40,19 +39,52 @@ export default async function MemberDetail({
       admin.from("buildings").select("id").eq("org_id", id),
       admin.from("tenants").select("id").eq("org_id", id),
       admin.from("rooms").select("id, building_id, buildings!inner(org_id)").eq("buildings.org_id", id),
+      admin.from("listing_promotions").select("*, property_listings(title)").eq("org_id", id).order("created_at", { ascending: false }),
     ]);
 
   if (!org) notFound();
   const st = sub?.status ?? "expired";
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const paymentList = pays ?? [];
+  const promoList = promos ?? [];
 
-  // signed URL ของสลิปแต่ละใบ (bucket 'slips') เพื่อให้เจ้าของระบบเปิดดูได้
+  // รวมประวัติการชำระ 2 ฝั่ง (ค่าสมาชิก + โปรโมท) แยกด้วยคอลัมน์ "ประเภท"
+  type PayRow = {
+    id: string;
+    kind: "subscription" | "promotion";
+    date: string;
+    label: string;
+    amount: number;
+    status: string;
+    slip_path: string;
+  };
+  const rows: PayRow[] = [
+    ...paymentList.map((p) => ({
+      id: p.id,
+      kind: "subscription" as const,
+      date: p.paid_at || p.created_at,
+      label: `${packageBySlug(p.package_slug)?.name ?? p.package_slug} · ${p.cycle === "yearly" ? "รายปี" : "รายเดือน"}`,
+      amount: Number(p.amount),
+      status: p.status,
+      slip_path: p.slip_path ?? "",
+    })),
+    ...promoList.map((p) => ({
+      id: p.id,
+      kind: "promotion" as const,
+      date: p.created_at,
+      label: `โปรโมท ${p.days} วัน · ${(p.property_listings as { title?: string } | null)?.title ?? "ประกาศ"}`,
+      amount: Number(p.amount),
+      status: p.status,
+      slip_path: p.slip_path ?? "",
+    })),
+  ].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  // signed URL ของสลิปทุกใบ (bucket 'slips')
   const slipUrls = new Map<string, string>();
-  for (const p of paymentList) {
-    if (p.slip_path) {
-      const { data: signed } = await admin.storage.from("slips").createSignedUrl(p.slip_path, 60 * 60);
-      if (signed?.signedUrl) slipUrls.set(p.id, signed.signedUrl);
+  for (const r of rows) {
+    if (r.slip_path) {
+      const { data: signed } = await admin.storage.from("slips").createSignedUrl(r.slip_path, 60 * 60);
+      if (signed?.signedUrl) slipUrls.set(r.id, signed.signedUrl);
     }
   }
 
@@ -131,9 +163,9 @@ export default async function MemberDetail({
         <Detail label="สมัครเมื่อ" value={formatDate(org.created_at)} />
       </div>
 
-      {/* payment history */}
-      <h2 className="mb-3 mt-8 text-lg font-semibold text-slate-900">ประวัติการชำระเงิน</h2>
-      {paymentList.length === 0 ? (
+      {/* payment history — รวม 2 ฝั่ง แยกด้วยประเภท */}
+      <h2 className="mb-3 mt-8 text-lg font-semibold text-slate-900">ประวัติการชำระเงิน (ทุกประเภท)</h2>
+      {rows.length === 0 ? (
         <div className="card p-6 text-sm text-slate-500">ยังไม่มีการชำระเงิน — กด “บันทึกการชำระ” เพื่อเพิ่ม</div>
       ) : (
         <div className="card overflow-hidden">
@@ -142,57 +174,67 @@ export default async function MemberDetail({
               <thead className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">วันที่</th>
-                  <th className="px-4 py-3 font-medium">แพ็คเกจ/รอบ</th>
-                  <th className="px-4 py-3 font-medium">ช่องทาง</th>
+                  <th className="px-4 py-3 font-medium">ประเภท</th>
+                  <th className="px-4 py-3 font-medium">รายการ</th>
                   <th className="px-4 py-3 text-right font-medium">จำนวน</th>
                   <th className="px-4 py-3 font-medium">สถานะ</th>
                   <th className="px-4 py-3 text-right font-medium">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {paymentList.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-600">{formatDate(p.paid_at)}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {packageBySlug(p.package_slug)?.name ?? p.package_slug} · {p.cycle === "yearly" ? "รายปี" : "รายเดือน"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{PAYMENT_METHOD_LABEL[p.method as PaymentMethod]}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatBaht(p.amount)}</td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        className={
-                          p.status === "verified"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : p.status === "rejected"
-                              ? "bg-rose-100 text-rose-700"
-                              : "bg-amber-100 text-amber-700"
-                        }
-                      >
-                        {p.status === "verified" ? "ยืนยันแล้ว" : p.status === "rejected" ? "ปฏิเสธ" : "รอยืนยัน"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-3">
-                        {slipUrls.has(p.id) && (
-                          <a
-                            href={slipUrls.get(p.id)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                          >
-                            🧾 ดูสลิป
-                          </a>
-                        )}
-                        {p.status === "pending" && (
-                          <>
-                            <VerifyPaymentButton paymentId={p.id} />
-                            <RejectPaymentButton paymentId={p.id} />
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((r) => {
+                  const isSub = r.kind === "subscription";
+                  const paid = isSub ? r.status === "verified" : r.status === "active";
+                  const rejected = r.status === "rejected";
+                  const pending = r.status === "pending";
+                  return (
+                    <tr key={`${r.kind}-${r.id}`} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-600">{formatDate(r.date)}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={isSub ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"}>
+                          {isSub ? "ค่าสมาชิก" : "โปรโมท"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">{r.label}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatBaht(r.amount)}</td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          className={
+                            paid ? "bg-emerald-100 text-emerald-700" : rejected ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                          }
+                        >
+                          {paid ? (isSub ? "ยืนยันแล้ว" : "โปรโมทอยู่") : rejected ? "ปฏิเสธ" : isSub ? "รอยืนยัน" : "รออนุมัติ"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-3">
+                          {slipUrls.has(r.id) && (
+                            <a
+                              href={slipUrls.get(r.id)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                            >
+                              🧾 ดูสลิป
+                            </a>
+                          )}
+                          {pending && isSub && (
+                            <>
+                              <VerifyPaymentButton paymentId={r.id} />
+                              <RejectPaymentButton paymentId={r.id} />
+                            </>
+                          )}
+                          {pending && !isSub && (
+                            <>
+                              <ApprovePromotionButton id={r.id} />
+                              <RejectPromotionButton id={r.id} />
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

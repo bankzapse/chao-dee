@@ -10,12 +10,21 @@ import { LeadForm } from "./lead-form";
 
 export const runtime = "nodejs";
 
+/** slug อาจมาแบบ percent-encoded (เช่น slug ภาษาไทย) — decode ก่อนค้นให้ตรงกับ DB */
+function decodeSlug(slug: string): string {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
 async function getListing(slug: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("property_listings")
     .select("*")
-    .eq("slug", slug)
+    .eq("slug", decodeSlug(slug))
     .eq("is_published", true)
     .maybeSingle();
   return (data as unknown as PropertyListing) ?? null;

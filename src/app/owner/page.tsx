@@ -13,12 +13,18 @@ import {
 
 export default async function OwnerDashboard() {
   const admin = createAdminClient();
-  const [{ data: orgs }, { data: subs }, { data: pays }, { data: promos }] = await Promise.all([
-    admin.from("organizations").select("id, name, created_at, account_type"),
+  const [{ data: orgs }, { data: subs }, { data: pays }, { data: promos }, orgTypesRes] = await Promise.all([
+    admin.from("organizations").select("id, name, created_at"),
     admin.from("subscriptions").select("*, organizations(name)"),
     admin.from("subscription_payments").select("amount, status, paid_at, cycle"),
     admin.from("listing_promotions").select("amount, status, created_at"),
+    // แยก + resilient เผื่อ prod ยังไม่ได้รัน migration 0028
+    admin.from("organizations").select("id, account_type"),
   ]);
+  const typeById = new Map<string, string>();
+  (orgTypesRes.data ?? []).forEach((o: { id: string; account_type?: string }) =>
+    typeById.set(o.id, o.account_type ?? "chaodee")
+  );
 
   const subList = subs ?? [];
   const active = subList.filter((s) => s.status === "active").length;
@@ -63,8 +69,8 @@ export default async function OwnerDashboard() {
   const statusTotal = Math.max(1, active + trialing + inactive);
 
   // ===== แยกตามธุรกิจ =====
-  const chaodeeOrgs = (orgs ?? []).filter((o) => (o.account_type ?? "chaodee") !== "rent").length;
-  const rentOrgs = (orgs ?? []).filter((o) => o.account_type === "rent").length;
+  const rentOrgs = (orgs ?? []).filter((o) => typeById.get(o.id) === "rent").length;
+  const chaodeeOrgs = (orgs ?? []).length - rentOrgs;
 
   const promoList = promos ?? [];
   const rentRevenueTotal = promoList

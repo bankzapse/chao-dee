@@ -37,13 +37,22 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, org_id, role, is_platform_admin, organizations(name, account_type)")
+    .select("full_name, org_id, role, is_platform_admin, organizations(name)")
     .eq("id", user.id)
     .single();
 
   // บัญชี 'rent' (สมัครผ่าน /rent) ใช้แอปจัดการหอไม่ได้ — ส่งไปพื้นที่ประกาศของตัวเอง
-  const accountType = (profile?.organizations as { account_type?: string } | null)?.account_type;
-  if (accountType === "rent") redirect("/rent/manage");
+  // แยก query + resilient เผื่อ prod ยังไม่ได้รัน migration 0028 (คอลัมน์ account_type)
+  if (profile?.org_id) {
+    const { data: orgType } = await supabase
+      .from("organizations")
+      .select("account_type")
+      .eq("id", profile.org_id)
+      .maybeSingle();
+    if ((orgType as { account_type?: string } | null)?.account_type === "rent") {
+      redirect("/rent/manage");
+    }
+  }
 
   const orgName =
     (profile?.organizations as { name?: string } | null)?.name ?? "หอพักของฉัน";

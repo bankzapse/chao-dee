@@ -10,9 +10,9 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+      className="w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
     >
-      {pending ? "กำลังส่ง…" : "📨 ติดต่อผ่าน Chao-Dee รับส่วนลด"}
+      {pending ? "กำลังส่ง…" : "ติดต่อผ่าน Chao-Dee รับส่วนลด"}
     </button>
   );
 }
@@ -35,7 +35,7 @@ export function LeadForm({
         <p className="text-2xl">✅</p>
         <p className="mt-1 font-semibold text-emerald-700">ส่งข้อมูลเรียบร้อยแล้ว</p>
         <p className="mt-1 text-sm text-emerald-600">
-          เจ้าของหอจะติดต่อกลับโดยเร็ว
+          เจ้าของจะติดต่อกลับโดยเร็ว
           {discountText ? ` — แจ้งว่าติดต่อผ่าน Chao-Dee เพื่อรับส่วนลดเดือนแรก ${discountText}` : ""}
         </p>
       </div>
@@ -65,7 +65,7 @@ export function LeadForm({
       {state?.error && <p className="text-sm text-rose-600">{state.error}</p>}
       <SubmitButton />
       <p className="text-center text-xs text-slate-400">
-        กรอกข้อมูลเพื่อให้เจ้าของหอติดต่อกลับ · ข้อมูลของคุณปลอดภัย
+        ข้อมูลของคุณจะส่งถึงเจ้าของโดยตรง · ปลอดภัย
       </p>
     </form>
   );

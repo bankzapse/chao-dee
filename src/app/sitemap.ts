@@ -5,7 +5,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://www.chao-dee.com";
   const routes = [
     { path: "/", priority: 1.0, freq: "weekly" as const },
-    { path: "/property", priority: 0.9, freq: "daily" as const },
+    { path: "/rent", priority: 0.9, freq: "daily" as const },
     { path: "/login", priority: 0.5, freq: "monthly" as const },
     { path: "/signup", priority: 0.8, freq: "monthly" as const },
     { path: "/privacy", priority: 0.3, freq: "yearly" as const },
@@ -27,7 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .eq("is_published", true);
     (data ?? []).forEach((l: { slug: string; created_at: string }) => {
       entries.push({
-        url: `${base}/property/${l.slug}`,
+        url: `${base}/rent/${l.slug}`,
         changeFrequency: "weekly",
         priority: 0.7,
         lastModified: l.created_at ? new Date(l.created_at) : undefined,

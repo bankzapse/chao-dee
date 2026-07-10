@@ -5,6 +5,7 @@ import { DeleteButton } from "@/components/action-form";
 import { formatBaht } from "@/lib/format";
 import { PROPERTY_TYPE_LABEL, discountLabel } from "@/lib/listings";
 import { isFeaturedActive } from "@/lib/promotions";
+import { getEffectivePromoPlans } from "@/lib/promotions-db";
 import { formatDate } from "@/lib/format";
 import type { Building, PropertyListing } from "@/lib/types";
 import { ListingButton, PublishToggle } from "./listing-form";
@@ -16,6 +17,7 @@ export default async function ListingPage() {
 
   const platformPromptPay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY ?? "";
   const today = new Date().toISOString().slice(0, 10);
+  const promoPlans = await getEffectivePromoPlans();
 
   const [{ data: buildings }, { data: rooms }, listingRes, leadRes, promoRes] = await Promise.all([
     supabase.from("buildings").select("id, name, org_id, address, note, floors, created_at").order("name"),
@@ -66,7 +68,7 @@ export default async function ListingPage() {
         subtitle="โปรโมทที่พักบนหน้าเว็บ Chao-Dee — ฟรีสำหรับสมาชิก · ห้องว่างอัปเดตอัตโนมัติ"
         action={
           <div className="flex items-center gap-2">
-            <Link href="/property" target="_blank" className="btn-secondary">
+            <Link href="/rent" target="_blank" className="btn-secondary">
               🔗 ดูหน้าประกาศสาธารณะ
             </Link>
             <Link href="/listing/leads" className="btn-primary">
@@ -160,12 +162,13 @@ export default async function ListingPage() {
                         <PromoteButton
                           listingId={listing.id}
                           platformPromptPay={platformPromptPay}
+                          plans={promoPlans}
                           active={isFeaturedActive(listing, today)}
                         />
                       )}
                       {listing.is_published && (
                         <Link
-                          href={`/property/${listing.slug}`}
+                          href={`/rent/${listing.slug}`}
                           target="_blank"
                           className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
                         >

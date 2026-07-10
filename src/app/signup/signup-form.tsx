@@ -23,7 +23,7 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function SignupForm({ provinces }: { provinces: string[] }) {
+export function SignupForm({ provinces, next }: { provinces: string[]; next?: string }) {
   const [reqState, reqAction] = useActionState<SignupState, FormData>(signUpRequest, null);
   const [verState, verAction] = useActionState<AuthState, FormData>(verifyOtp, null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -86,6 +86,7 @@ export function SignupForm({ provinces }: { provinces: string[] }) {
         </p>
         <form action={verAction} className="mt-6 max-w-sm space-y-4">
           <input type="hidden" name="phone" value={phone} />
+          {next && <input type="hidden" name="next" value={next} />}
           <div>
             <label className="label">รหัส OTP</label>
             <input

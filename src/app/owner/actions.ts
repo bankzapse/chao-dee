@@ -278,3 +278,31 @@ export async function rejectPromotion(promoId: string): Promise<void> {
     });
   }
 }
+
+/** owner ตั้งราคาโปรโมทเอง (ต่อจำนวนวัน) — override ค่า default ในโค้ด */
+export async function updatePromoPrice(
+  days: number,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const adminId = await requirePlatformAdmin();
+  const raw = String(formData.get("price") ?? "").trim();
+  const price = Number(raw);
+  if (!raw || !Number.isFinite(price) || price < 0) return { error: "กรุณาระบุราคาที่ถูกต้อง" };
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("promo_prices").upsert(
+    { days, price, updated_at: new Date().toISOString() },
+    { onConflict: "days" }
+  );
+  if (error) return { error: error.message };
+
+  await logAudit({
+    org_id: null,
+    actor_id: adminId,
+    action: "แก้ราคาโปรโมท",
+    target: `${days} วัน`,
+    meta: { days, price },
+  });
+  return { ok: true };
+}

@@ -197,6 +197,10 @@ export type PropertyListing = {
   is_published: boolean;
   is_featured: boolean;
   featured_until: string | null;
+  price_min: number;
+  price_max: number;
+  total_rooms: number;
+  vacant_rooms: number;
   created_at: string;
 };
 

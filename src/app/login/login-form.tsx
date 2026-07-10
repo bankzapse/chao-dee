@@ -14,7 +14,13 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function LoginForm() {
+export function LoginForm({
+  next,
+  signupHref = "/signup",
+}: {
+  next?: string;
+  signupHref?: string;
+} = {}) {
   const [pwState, pwAction] = useActionState<AuthState, FormData>(loginWithPassword, null);
 
   return (
@@ -25,6 +31,7 @@ export function LoginForm() {
       </div>
 
       <form action={pwAction} className="space-y-4">
+        {next && <input type="hidden" name="next" value={next} />}
         <div>
           <label className="label">เบอร์โทรศัพท์</label>
           <input name="phone" type="tel" inputMode="numeric" className="field" placeholder="0812345678" required autoFocus />
@@ -46,7 +53,7 @@ export function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         ยังไม่มีบัญชี?{" "}
-        <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-700">
+        <Link href={signupHref} className="font-medium text-indigo-600 hover:text-indigo-700">
           สมัครใช้งานฟรี
         </Link>
       </p>

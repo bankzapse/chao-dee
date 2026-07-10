@@ -8,6 +8,12 @@ import { thaiAuthError } from "@/lib/auth-errors";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
 
+/** ปลายทางหลังล็อกอิน — รับเฉพาะ path ภายใน (กัน open-redirect) */
+function safeNext(v: FormDataEntryValue | null): string {
+  const s = String(v ?? "").trim();
+  return s.startsWith("/") && !s.startsWith("//") ? s : "/dashboard";
+}
+
 /** เช็คว่ามีบัญชีที่ใช้เบอร์นี้แล้วหรือยัง (กันการยิง OTP ใส่เบอร์มั่ว) */
 async function phoneRegistered(input: string): Promise<boolean> {
   const digits = toE164Digits(input);
@@ -32,7 +38,7 @@ export async function verifyOtp(
   if (error) {
     return { error: thaiAuthError(error), otpSent: true, phone };
   }
-  redirect("/dashboard");
+  redirect(safeNext(formData.get("next")));
 }
 
 /** เข้าสู่ระบบด้วยเบอร์ + รหัสผ่าน (สำหรับผู้ใช้ที่ตั้งรหัสผ่านตอนสมัคร) */
@@ -48,7 +54,7 @@ export async function loginWithPassword(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ phone, password });
   if (error) return { error: "เบอร์หรือรหัสผ่านไม่ถูกต้อง", phone };
-  redirect("/dashboard");
+  redirect(safeNext(formData.get("next")));
 }
 
 /** ลืมรหัสผ่าน — ขั้น 1: ตรวจว่ามีบัญชี แล้วส่ง OTP */

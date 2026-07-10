@@ -3,7 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 
-/** ผู้เช่าติดต่อผ่านหน้าประกาศสาธารณะ → บันทึก lead + แจ้งเจ้าของหอทาง LINE */
+/** ผู้เช่าติดต่อผ่านหน้าประกาศ /rent → บันทึก lead + แจ้งเจ้าของทาง LINE */
 export async function submitLead(
   listingId: string,
   _prev: { ok?: boolean; error?: string },
@@ -34,7 +34,6 @@ export async function submitLead(
   });
   if (error) return { error: "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" };
 
-  // แจ้งเจ้าของหอทาง LINE (best-effort)
   try {
     if (isLineConfigured()) {
       const { data: org } = await supabase
@@ -45,15 +44,15 @@ export async function submitLead(
       if (org?.owner_line_user_id) {
         await pushMessage(org.owner_line_user_id, [
           textMessage(
-            `📥 มีผู้สนใจที่พัก (ผ่าน Chao-Dee)\nประกาศ: ${listing.title}\nชื่อ: ${name}\nเบอร์: ${phone}${
+            `📥 มีผู้สนใจที่พัก (ผ่าน Chao-Dee Rent)\nประกาศ: ${listing.title}\nชื่อ: ${name}\nเบอร์: ${phone}${
               message ? `\nข้อความ: ${message}` : ""
-            }\n\nติดต่อกลับและอัปเดตสถานะได้ที่เมนู “ลงประกาศ → ผู้ติดต่อ” ในแอป Chao-Dee`
+            }\n\nดูและติดต่อกลับได้ที่เมนู “ลงประกาศ → ผู้ติดต่อ”`
           ),
         ]);
       }
     }
   } catch {
-    // เงียบไว้ — บันทึก lead สำเร็จแล้ว
+    // best-effort
   }
 
   return { ok: true };

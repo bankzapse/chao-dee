@@ -2,8 +2,13 @@ import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard, Badge } from "@/components/ui";
 import { formatBaht, formatDate } from "@/lib/format";
+import { getEffectivePromoPlans } from "@/lib/promotions-db";
 import type { PromoStatus } from "@/lib/types";
-import { ApprovePromotionButton, RejectPromotionButton } from "../promotion-actions";
+import {
+  ApprovePromotionButton,
+  RejectPromotionButton,
+  EditPromoPriceButton,
+} from "../promotion-actions";
 
 type PromoRow = {
   id: string;
@@ -27,10 +32,13 @@ const STATUS = {
 export default async function OwnerListings() {
   await requirePerm("promotions");
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("listing_promotions")
-    .select("*, organizations(name), property_listings(title, slug)")
-    .order("created_at", { ascending: false });
+  const [{ data }, promoPlans] = await Promise.all([
+    admin
+      .from("listing_promotions")
+      .select("*, organizations(name), property_listings(title, slug)")
+      .order("created_at", { ascending: false }),
+    getEffectivePromoPlans(),
+  ]);
 
   const list = (data ?? []) as unknown as PromoRow[];
 
@@ -52,6 +60,28 @@ export default async function OwnerListings() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">โปรโมทประกาศ</h1>
       <p className="mt-1 text-sm text-slate-500">อนุมัติคำขอซื้อโปรโมท (Featured) เพื่อดันประกาศขึ้นบนสุด</p>
+
+      {/* ตั้งราคาโปรโมทเอง */}
+      <div className="mt-6 card p-5">
+        <h2 className="font-semibold text-slate-900">ราคาโปรโมท</h2>
+        <p className="mt-1 text-sm text-slate-500">ตั้งราคาแต่ละแพ็คเกจเอง — มีผลทันทีกับหน้าซื้อโปรโมทของเจ้าของหอ</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {promoPlans.map((p) => (
+            <div key={p.days} className="rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-slate-900">{p.label}</p>
+                {p.popular && (
+                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] text-indigo-700">คุ้มสุด</span>
+                )}
+              </div>
+              <p className="mt-1 text-2xl font-bold text-indigo-600">{formatBaht(p.price)}</p>
+              <div className="mt-2">
+                <EditPromoPriceButton days={p.days} label={p.label} price={p.price} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="รออนุมัติ" value={String(pending.length)} accent="amber" />

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { makeSlug } from "@/lib/listings";
 import { promoPlan } from "@/lib/promotions";
+import { effectivePromoPrice } from "@/lib/promotions-db";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
 import type { FormState } from "@/components/action-form";
 import type { DiscountType, LeadStatus, PropertyType } from "@/lib/types";
@@ -135,6 +136,7 @@ export async function submitPromotion(data: {
   slip_path: string;
 }): Promise<{ ok?: boolean; error?: string }> {
   const plan = promoPlan(data.days);
+  const price = await effectivePromoPrice(data.days); // ราคาที่ owner ตั้งไว้ (server-side)
   if (!data.slip_path?.trim()) return { error: "กรุณาแนบสลิปการโอนก่อนส่งคำขอ" };
 
   const supabase = await createClient();
@@ -153,7 +155,7 @@ export async function submitPromotion(data: {
     org_id,
     listing_id: data.listing_id,
     days: plan.days,
-    amount: plan.price,
+    amount: price,
     method: "promptpay",
     status: "pending",
     slip_path: data.slip_path,
@@ -167,6 +169,6 @@ export async function submitPromotion(data: {
     };
   }
 
-  await notifyAdminsNewPromotion(org_id, listing.title, plan.price);
+  await notifyAdminsNewPromotion(org_id, listing.title, price);
   return { ok: true };
 }

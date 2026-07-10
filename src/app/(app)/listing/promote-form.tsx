@@ -7,16 +7,18 @@ import { createClient } from "@/lib/supabase/client";
 import { PromptPayQR } from "@/components/promptpay-qr";
 import { Spinner } from "@/components/spinner";
 import { formatBaht } from "@/lib/format";
-import { PROMO_PLANS } from "@/lib/promotions";
+import { PROMO_PLANS, type PromoPlan } from "@/lib/promotions";
 import { submitPromotion } from "./actions";
 
 export function PromoteButton({
   listingId,
   platformPromptPay,
+  plans = PROMO_PLANS,
   active,
 }: {
   listingId: string;
   platformPromptPay: string;
+  plans?: PromoPlan[];
   active?: boolean;
 }) {
   return (
@@ -26,7 +28,12 @@ export function PromoteButton({
       variant="secondary"
     >
       {(close) => (
-        <PromoPanel listingId={listingId} platformPromptPay={platformPromptPay} onDone={close} />
+        <PromoPanel
+          listingId={listingId}
+          platformPromptPay={platformPromptPay}
+          plans={plans}
+          onDone={close}
+        />
       )}
     </ModalButton>
   );
@@ -35,10 +42,12 @@ export function PromoteButton({
 function PromoPanel({
   listingId,
   platformPromptPay,
+  plans,
   onDone,
 }: {
   listingId: string;
   platformPromptPay: string;
+  plans: PromoPlan[];
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -46,7 +55,7 @@ function PromoPanel({
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
-  const plan = PROMO_PLANS.find((p) => p.days === days) ?? PROMO_PLANS[0];
+  const plan = plans.find((p) => p.days === days) ?? plans[0];
 
   async function submit() {
     if (!file) {
@@ -88,7 +97,7 @@ function PromoPanel({
       <div>
         <label className="label">เลือกระยะเวลา</label>
         <div className="grid grid-cols-3 gap-2">
-          {PROMO_PLANS.map((p) => (
+          {plans.map((p) => (
             <button
               key={p.days}
               type="button"

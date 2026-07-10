@@ -4,6 +4,41 @@ import { HeaderCta } from "@/components/landing/header-cta";
 import { COMPANY } from "@/lib/company";
 import { BrandMark } from "@/components/brand-mark";
 import { getEffectivePackages } from "@/lib/packages-db";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { formatBaht } from "@/lib/format";
+import {
+  PROPERTY_TYPE_LABEL,
+  discountLabel,
+  roomStatByBuilding,
+  displayStat,
+} from "@/lib/listings";
+import type { PropertyListing } from "@/lib/types";
+
+/** ดึงตัวอย่างประกาศห้องว่าง (โปรโมทก่อน) มาโชว์บนหน้าแรก — resilient ถ้ายังไม่ได้ migrate */
+async function sampleListings() {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("property_listings")
+      .select("*")
+      .eq("is_published", true)
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(4);
+    const listings = (data ?? []) as unknown as PropertyListing[];
+    if (!listings.length) return [];
+    const buildingIds = listings.map((l) => l.building_id).filter(Boolean) as string[];
+    const { data: rooms } = buildingIds.length
+      ? await admin.from("rooms").select("building_id, status, base_rent").in("building_id", buildingIds)
+      : { data: [] };
+    const byBuilding = roomStatByBuilding(
+      (rooms ?? []) as { building_id: string; status: string; base_rent: number }[]
+    );
+    return listings.map((l) => ({ l, stat: displayStat(l, byBuilding) }));
+  } catch {
+    return [];
+  }
+}
 
 const FEATURES = [
   { icon: "📊", title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
@@ -46,7 +81,7 @@ const GALLERY = [
 ];
 
 export default async function LandingPage() {
-  const packages = await getEffectivePackages();
+  const [packages, samples] = await Promise.all([getEffectivePackages(), sampleListings()]);
   return (
     <div className="bg-white text-slate-800">
       {/* ===== NAV ===== */}
@@ -177,7 +212,7 @@ export default async function LandingPage() {
               </p>
             </div>
             <Link
-              href="/property"
+              href="/rent"
               className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
             >
               ดูประกาศห้องว่าง →
@@ -204,6 +239,72 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ===== ตัวอย่างห้องว่าง (จากประกาศจริง) ===== */}
+      {samples.length > 0 && (
+        <section className="mx-auto max-w-6xl px-6 pb-16">
+          <div className="mb-5 flex items-end justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">ห้องว่างล่าสุด</p>
+              <h3 className="mt-1 text-2xl font-bold text-slate-900">ตัวอย่างที่พักบน Chao-Dee Rent</h3>
+            </div>
+            <Link href="/rent" className="hidden text-sm font-medium text-indigo-600 hover:text-indigo-700 sm:block">
+              ดูทั้งหมด →
+            </Link>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {samples.map(({ l, stat }) => {
+              const disc = discountLabel(l.first_month_discount_type, l.first_month_discount_value);
+              return (
+                <Link
+                  key={l.id}
+                  href={`/rent/${l.slug}`}
+                  className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  <div className="relative h-40 bg-slate-100">
+                    {l.cover_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={l.cover_image}
+                        alt={l.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-4xl text-slate-300">🏢</div>
+                    )}
+                    {stat.vacant > 0 && (
+                      <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        ว่าง {stat.vacant} ห้อง
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <p className="text-[11px] uppercase tracking-wider text-slate-400">
+                      {PROPERTY_TYPE_LABEL[l.property_type]}
+                    </p>
+                    <h4 className="mt-0.5 truncate font-semibold text-slate-900">{l.title}</h4>
+                    <p className="mt-1 truncate text-sm text-slate-500">
+                      📍 {[l.district, l.province].filter(Boolean).join(" · ") || "—"}
+                    </p>
+                    <div className="mt-3 flex items-baseline gap-1 border-t border-slate-100 pt-3">
+                      <span className="text-lg font-bold text-slate-900">
+                        {stat.minRent > 0 ? formatBaht(stat.minRent) : "สอบถาม"}
+                      </span>
+                      {stat.minRent > 0 && <span className="text-xs text-slate-400">/เดือน</span>}
+                      {disc && (
+                        <span className="ml-auto rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          ลด {disc}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ===== PROPERTY TYPES (gallery) ===== */}
       <section className="mx-auto max-w-6xl px-6 py-16">

@@ -45,6 +45,46 @@ export function discountLabel(type: DiscountType, value: number): string {
   return type === "percent" ? `${value}%` : formatBaht(value);
 }
 
+export type ListingStat = { vacant: number; minRent: number; maxRent: number };
+
+/** สถิติห้องว่าง/ราคา ต่ออาคาร (จาก rooms) — ใช้กับประกาศที่ผูกอาคาร */
+export function roomStatByBuilding(
+  rooms: { building_id: string; status: string; base_rent: number }[]
+): Map<string, ListingStat> {
+  const map = new Map<string, ListingStat>();
+  rooms.forEach((r) => {
+    const s = map.get(r.building_id) ?? { vacant: 0, minRent: 0, maxRent: 0 };
+    if (r.status === "vacant") s.vacant += 1;
+    const rent = Number(r.base_rent);
+    if (rent > 0) {
+      if (s.minRent === 0 || rent < s.minRent) s.minRent = rent;
+      if (rent > s.maxRent) s.maxRent = rent;
+    }
+    map.set(r.building_id, s);
+  });
+  return map;
+}
+
+/** ห้องว่าง/ราคาที่จะแสดง: ผูกอาคาร→ดึงจาก rooms · standalone→ใช้ค่ากรอกเอง */
+export function displayStat(
+  l: {
+    building_id: string | null;
+    price_min: number;
+    price_max: number;
+    vacant_rooms: number;
+  },
+  byBuilding: Map<string, ListingStat>
+): ListingStat {
+  if (l.building_id) {
+    return byBuilding.get(l.building_id) ?? { vacant: 0, minRent: 0, maxRent: 0 };
+  }
+  return {
+    vacant: Number(l.vacant_rooms) || 0,
+    minRent: Number(l.price_min) || 0,
+    maxRent: Number(l.price_max) || 0,
+  };
+}
+
 /** สร้าง slug จากชื่อ + ท้าย id กันชนกัน */
 export function makeSlug(title: string, id: string): string {
   const base = title

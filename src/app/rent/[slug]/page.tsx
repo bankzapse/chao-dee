@@ -7,6 +7,7 @@ import { formatBaht } from "@/lib/format";
 import { PROPERTY_TYPE_LABEL, GENDER_LABEL, discountLabel, waterLabel } from "@/lib/listings";
 import type { PropertyListing } from "@/lib/types";
 import { LeadForm } from "./lead-form";
+import { PhotoGallery } from "./photo-gallery";
 
 export const runtime = "nodejs";
 // อ่านสดจากฐานข้อมูลทุกครั้ง (กัน Next Data Cache ค้างค่าประกาศเก่า)
@@ -102,7 +103,10 @@ export default async function RentDetail({
     : manVacant;
 
   const disc = discountLabel(l.first_month_discount_type, l.first_month_discount_value);
-  const gallery = [l.cover_image, ...((photos ?? []) as { url: string }[]).map((p) => p.url)].filter(Boolean);
+  // รูปทั้งหมด (ปกมาก่อน) ตัดซ้ำออก
+  const gallery = [
+    ...new Set([l.cover_image, ...((photos ?? []) as { url: string }[]).map((p) => p.url)].filter(Boolean)),
+  ];
 
   // ตารางค่าใช้จ่าย & ข้อมูล (แสดงเฉพาะที่ระบุไว้)
   const water = waterLabel(Number(l.water_rate), l.water_mode);
@@ -159,22 +163,7 @@ export default async function RentDetail({
       </header>
 
       <div className="mx-auto max-w-5xl px-5 py-6">
-        <div className="overflow-hidden rounded-2xl bg-slate-100">
-          {l.cover_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={l.cover_image} alt={l.title} className="h-72 w-full object-cover sm:h-96" />
-          ) : (
-            <div className="flex h-72 w-full items-center justify-center text-6xl text-slate-300 sm:h-96">🏢</div>
-          )}
-        </div>
-        {gallery.length > 1 && (
-          <div className="mt-2 flex gap-2 overflow-x-auto">
-            {gallery.slice(1).map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={src} alt="" className="h-16 w-24 shrink-0 rounded-lg object-cover" />
-            ))}
-          </div>
-        )}
+        <PhotoGallery photos={gallery} />
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">

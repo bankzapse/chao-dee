@@ -15,6 +15,24 @@ type Org = {
   bank_account_name: string;
 };
 
+const THAI_BANKS = [
+  "กสิกรไทย",
+  "ไทยพาณิชย์",
+  "กรุงเทพ",
+  "กรุงไทย",
+  "กรุงศรีอยุธยา",
+  "ทหารไทยธนชาต (ttb)",
+  "ออมสิน",
+  "ธ.ก.ส.",
+  "เกียรตินาคินภัทร",
+  "ซีไอเอ็มบี ไทย",
+  "ยูโอบี",
+  "ทิสโก้",
+  "แลนด์ แอนด์ เฮ้าส์",
+  "ไอซีบีซี (ไทย)",
+  "ธนาคารอิสลามแห่งประเทศไทย",
+];
+
 export function SettingsForm({ org }: { org: Org }) {
   const [ppId, setPpId] = useState(org.promptpay_id);
 
@@ -54,7 +72,17 @@ export function SettingsForm({ org }: { org: Org }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label">ธนาคาร</label>
-                  <input name="bank_name" className="field" defaultValue={org.bank_name} placeholder="กสิกรไทย" />
+                  <select name="bank_name" className="field" defaultValue={org.bank_name}>
+                    <option value="">— เลือกธนาคาร —</option>
+                    {org.bank_name && !THAI_BANKS.includes(org.bank_name) && (
+                      <option value={org.bank_name}>{org.bank_name}</option>
+                    )}
+                    {THAI_BANKS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="label">เลขที่บัญชี</label>

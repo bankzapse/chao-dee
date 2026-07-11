@@ -11,9 +11,11 @@ import {
 import { deleteMaintenance } from "./actions";
 
 type Row = MaintenanceRequest & {
-  rooms: { room_number: string } | null;
+  rooms: { room_number: string; buildings: { name: string } | null } | null;
   tenants: { full_name: string } | null;
 };
+
+const NO_ROOM = "— ไม่ระบุห้อง —";
 
 const ACCENT: Record<MaintenanceStatus, { bar: string; chip: string }> = {
   open: { bar: "border-l-rose-400", chip: "bg-rose-100 text-rose-600" },
@@ -27,7 +29,7 @@ export default async function MaintenancePage() {
   const [{ data: reqs }, { data: rooms }, { data: tenants }] = await Promise.all([
     supabase
       .from("maintenance_requests")
-      .select("*, rooms(room_number), tenants(full_name)")
+      .select("*, rooms(room_number, buildings(name)), tenants(full_name)")
       .order("created_at", { ascending: false }),
     supabase.from("rooms").select("id, room_number, buildings(name)").order("room_number"),
     supabase.from("tenants").select("*").order("full_name"),
@@ -37,6 +39,24 @@ export default async function MaintenancePage() {
   const roomOpts: RoomOpt[] = (rooms ?? []).map((r) => {
     const b = r.buildings as unknown as { name: string } | null;
     return { id: r.id, label: `${b?.name ?? "-"} · ${r.room_number}` };
+  });
+
+  // แบ่งตามอาคาร + เรียงห้องจากน้อยไปมาก (ในห้องเดียวกันคงล่าสุดก่อน)
+  const byBuilding = new Map<string, Row[]>();
+  for (const m of list) {
+    const b = m.rooms?.buildings?.name ?? NO_ROOM;
+    if (!byBuilding.has(b)) byBuilding.set(b, []);
+    byBuilding.get(b)!.push(m);
+  }
+  for (const arr of byBuilding.values()) {
+    arr.sort((a, b) =>
+      (a.rooms?.room_number ?? "").localeCompare(b.rooms?.room_number ?? "", undefined, { numeric: true })
+    );
+  }
+  const buildings = [...byBuilding.keys()].sort((a, b) => {
+    if (a === NO_ROOM) return 1;
+    if (b === NO_ROOM) return -1;
+    return a.localeCompare(b, "th");
   });
 
   const count = (s: MaintenanceStatus) => list.filter((m) => m.status === s).length;
@@ -77,14 +97,18 @@ export default async function MaintenancePage() {
           action={<AddMaintenanceButton rooms={roomOpts} tenants={(tenants ?? []) as Tenant[]} />}
         />
       ) : (
-        <div className="space-y-3">
-          {list.map((m) => {
-            const a = ACCENT[m.status];
-            return (
-              <div
-                key={m.id}
-                className={`card card-hover border-l-4 ${a.bar} p-5`}
-              >
+        <div className="space-y-6">
+          {buildings.map((building) => (
+            <section key={building}>
+              <div className="mb-2 flex items-center gap-2 px-1">
+                <h2 className="text-sm font-semibold text-slate-700">🏢 {building}</h2>
+                <span className="text-xs text-slate-400">{byBuilding.get(building)!.length} รายการ</span>
+              </div>
+              <div className="space-y-3">
+                {byBuilding.get(building)!.map((m) => {
+                  const a = ACCENT[m.status];
+                  return (
+                    <div key={m.id} className={`card card-hover border-l-4 ${a.bar} p-5`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 gap-3">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${a.chip}`}>
@@ -120,8 +144,11 @@ export default async function MaintenancePage() {
                   </div>
                 </div>
               </div>
-            );
-          })}
+                    );
+                  })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>

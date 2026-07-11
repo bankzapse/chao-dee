@@ -5,12 +5,25 @@ import { ActionForm } from "@/components/action-form";
 import { createTenant, updateTenant } from "./actions";
 import type { Tenant } from "@/lib/types";
 
-function Fields({ t }: { t?: Tenant }) {
+export type RoomOpt = { id: string; label: string };
+
+function Fields({ t, rooms }: { t?: Tenant; rooms: RoomOpt[] }) {
   return (
     <>
       <div>
         <label className="label">ชื่อ-นามสกุล *</label>
         <input name="full_name" className="field" defaultValue={t?.full_name} placeholder="สมชาย ใจดี" required />
+      </div>
+      <div>
+        <label className="label">เลขห้องเช่า</label>
+        <select name="room_id" className="field" defaultValue={t?.room_id ?? ""}>
+          <option value="">— ยังไม่ระบุห้อง —</option>
+          {rooms.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.label}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -34,24 +47,24 @@ function Fields({ t }: { t?: Tenant }) {
   );
 }
 
-export function AddTenantButton() {
+export function AddTenantButton({ rooms }: { rooms: RoomOpt[] }) {
   return (
     <ModalButton label="+ เพิ่มผู้เช่า" title="เพิ่มผู้เช่า">
       {(close) => (
         <ActionForm action={createTenant} onSuccess={close}>
-          <Fields />
+          <Fields rooms={rooms} />
         </ActionForm>
       )}
     </ModalButton>
   );
 }
 
-export function EditTenantButton({ tenant }: { tenant: Tenant }) {
+export function EditTenantButton({ tenant, rooms }: { tenant: Tenant; rooms: RoomOpt[] }) {
   return (
     <ModalButton label="แก้ไข" title="แก้ไขผู้เช่า" variant="secondary">
       {(close) => (
         <ActionForm action={updateTenant.bind(null, tenant.id)} onSuccess={close}>
-          <Fields t={tenant} />
+          <Fields t={tenant} rooms={rooms} />
         </ActionForm>
       )}
     </ModalButton>

@@ -7,14 +7,25 @@ import { checkLimit } from "@/lib/limits";
 import { toLocalThai } from "@/lib/phone";
 import type { FormState } from "@/components/action-form";
 
+function isMissingColumn(msg?: string): boolean {
+  return Boolean(msg && /schema cache|could not find the .* column/i.test(msg));
+}
+function stripRoom<T extends Record<string, unknown>>(row: T) {
+  const rest = { ...row };
+  delete rest.room_id;
+  return rest;
+}
+
 function parse(formData: FormData) {
   const rawPhone = String(formData.get("phone") ?? "").trim();
+  const room_id = String(formData.get("room_id") ?? "").trim();
   return {
     full_name: String(formData.get("full_name") ?? "").trim(),
     // เก็บเบอร์เป็นตัวเลขล้วน (0xxxxxxxxx) เพื่อให้ผูก LINE ด้วยเบอร์ได้แม่น
     phone: rawPhone ? toLocalThai(rawPhone) : "",
     email: String(formData.get("email") ?? "").trim(),
     id_card: String(formData.get("id_card") ?? "").trim(),
+    room_id: room_id || null,
     note: String(formData.get("note") ?? "").trim(),
   };
 }
@@ -31,7 +42,10 @@ export async function createTenant(
 
   const supabase = await createClient();
   const org_id = await getOrgId();
-  const { error } = await supabase.from("tenants").insert({ org_id, ...data });
+  let { error } = await supabase.from("tenants").insert({ org_id, ...data });
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("tenants").insert({ org_id, ...stripRoom(data) }));
+  }
   if (error) return { error: error.message };
   return { ok: true };
 }
@@ -45,7 +59,10 @@ export async function updateTenant(
   if (!data.full_name) return { error: "กรุณาระบุชื่อผู้เช่า" };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("tenants").update(data).eq("id", id);
+  let { error } = await supabase.from("tenants").update(data).eq("id", id);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("tenants").update(stripRoom(data)).eq("id", id));
+  }
   if (error) return { error: error.message };
   return { ok: true };
 }

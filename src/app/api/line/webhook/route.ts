@@ -299,22 +299,34 @@ async function createMaintenanceRequest(
   fullName: string,
   detail: string
 ) {
-  const { data: contract } = await supabase
-    .from("contracts")
+  // หาห้อง: ใช้ห้องที่ผูกกับผู้เช่าโดยตรงก่อน (tenants.room_id) แล้วค่อย fallback สัญญา active
+  const { data: tenant } = await supabase
+    .from("tenants")
     .select("room_id, rooms(room_number)")
-    .eq("tenant_id", tenantId)
-    .eq("status", "active")
+    .eq("id", tenantId)
     .maybeSingle();
+  let roomId: string | null = (tenant?.room_id as string | null) ?? null;
+  let roomNo = (tenant?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "";
+  if (!roomId) {
+    const { data: contract } = await supabase
+      .from("contracts")
+      .select("room_id, rooms(room_number)")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .maybeSingle();
+    roomId = contract?.room_id ?? null;
+    roomNo = (contract?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "";
+  }
   await supabase.from("maintenance_requests").insert({
     org_id: orgId,
     tenant_id: tenantId,
-    room_id: contract?.room_id ?? null,
+    room_id: roomId,
     title: detail.slice(0, 80),
     description: detail,
     source: "line",
     status: "open",
   });
-  const room = (contract?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "-";
+  const room = roomNo || "-";
   await replyMessage(replyToken, [
     textMessage(
       `ขอบคุณที่แจ้งครับ 🙏\nเรารับเรื่อง “${detail}” และส่งให้ทีมงานดำเนินการแล้ว\nจะรีบดำเนินการให้เร็วที่สุดครับ 🛠️`

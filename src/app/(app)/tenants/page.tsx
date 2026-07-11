@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import type { Tenant } from "@/lib/types";
-import { AddTenantButton, EditTenantButton } from "./tenant-buttons";
+import { AddTenantButton, EditTenantButton, type RoomOpt } from "./tenant-buttons";
 import { TenantDocsButton } from "./tenant-docs";
 import { LineLinkCell } from "./line-link";
 import { deleteTenant } from "./actions";
@@ -11,13 +11,14 @@ const NO_ROOM = "— ยังไม่ได้เข้าพัก —";
 
 export default async function TenantsPage() {
   const supabase = await createClient();
-  const [{ data }, { data: docs }, { data: contracts }] = await Promise.all([
+  const [{ data }, { data: docs }, { data: contracts }, { data: rooms }] = await Promise.all([
     supabase.from("tenants").select("*").order("full_name"),
     supabase.from("tenant_documents").select("tenant_id"),
     supabase
       .from("contracts")
       .select("tenant_id, rooms(room_number, buildings(name))")
       .eq("status", "active"),
+    supabase.from("rooms").select("id, room_number, buildings(name)").order("room_number"),
   ]);
 
   const list = (data ?? []) as Tenant[];
@@ -26,12 +27,23 @@ export default async function TenantsPage() {
     docCount.set(d.tenant_id, (docCount.get(d.tenant_id) ?? 0) + 1);
   });
 
-  // แผนที่ ผู้เช่า → อาคาร/ห้อง (จากสัญญาที่ยัง active)
+  // ห้องทั้งหมด → ตัวเลือกในฟอร์ม + map id → อาคาร/ห้อง
+  const roomMap = new Map<string, { building: string; room: string }>();
+  const roomOpts: RoomOpt[] = (rooms ?? []).map((r: { id: string; room_number: string; buildings: unknown }) => {
+    const b = (r.buildings as { name?: string } | null)?.name ?? "-";
+    roomMap.set(r.id, { building: b, room: r.room_number });
+    return { id: r.id, label: `${b} · ${r.room_number}` };
+  });
+
+  // แผนที่ ผู้เช่า → อาคาร/ห้อง: ใช้ห้องที่ผูกกับผู้เช่าโดยตรงก่อน (room_id) แล้วค่อย fallback สัญญา active
   const placement = new Map<string, { building: string; room: string }>();
   (contracts ?? []).forEach((c: { tenant_id: string; rooms: unknown }) => {
     const r = c.rooms as { room_number: string; buildings: { name: string } | null } | null;
     if (r) placement.set(c.tenant_id, { building: r.buildings?.name ?? "-", room: r.room_number });
   });
+  for (const t of list) {
+    if (t.room_id && roomMap.has(t.room_id)) placement.set(t.id, roomMap.get(t.room_id)!);
+  }
 
   // จัดกลุ่มผู้เช่าตามอาคาร
   const byBuilding = new Map<string, Tenant[]>();
@@ -63,14 +75,14 @@ export default async function TenantsPage() {
       <PageHeader
         title="ผู้เช่า"
         subtitle="จัดกลุ่มตามอาคาร · แสดงห้องที่พักอยู่"
-        action={<AddTenantButton />}
+        action={<AddTenantButton rooms={roomOpts} />}
       />
 
       {list.length === 0 ? (
         <EmptyState
           title="ยังไม่มีผู้เช่า"
           description="เพิ่มผู้เช่าเพื่อผูกกับสัญญาเช่า"
-          action={<AddTenantButton />}
+          action={<AddTenantButton rooms={roomOpts} />}
         />
       ) : (
         <div className="space-y-6">
@@ -117,7 +129,7 @@ export default async function TenantsPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-3">
                             <TenantDocsButton tenantId={t.id} count={docCount.get(t.id) ?? 0} />
-                            <EditTenantButton tenant={t} />
+                            <EditTenantButton tenant={t} rooms={roomOpts} />
                             <DeleteButton
                               action={deleteTenant.bind(null, t.id)}
                               confirmText={`ลบผู้เช่า "${t.full_name}"?`}

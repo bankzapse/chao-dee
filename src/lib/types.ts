@@ -53,6 +53,7 @@ export type Tenant = {
   phone: string;
   email: string;
   id_card: string;
+  room_id: string | null;
   line_user_id: string;
   line_link_code: string;
   note: string;

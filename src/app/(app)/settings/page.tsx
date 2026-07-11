@@ -22,9 +22,18 @@ export default async function SettingsPage() {
     supabase.from("subscriptions").select("*").maybeSingle(),
   ]);
 
-  // แยก query + resilient เผื่อ prod ยังไม่ได้รัน migration 0032 (คอลัมน์ line_oa_id)
+  // แยก query + resilient เผื่อ prod ยังไม่ได้รัน migration ใหม่ (line_oa_id / บัญชีธนาคาร)
   const { data: oaRow } = await supabase.from("organizations").select("line_oa_id").maybeSingle();
   const lineOaId = (oaRow as { line_oa_id?: string } | null)?.line_oa_id ?? "";
+  const { data: bankRow } = await supabase
+    .from("organizations")
+    .select("bank_name, bank_account_no, bank_account_name")
+    .maybeSingle();
+  const bank = {
+    bank_name: (bankRow as { bank_name?: string } | null)?.bank_name ?? "",
+    bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
+    bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
+  };
 
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const st = sub?.status ?? "expired";
@@ -76,6 +85,7 @@ export default async function SettingsPage() {
           promptpay_id: org?.promptpay_id ?? "",
           promptpay_name: org?.promptpay_name ?? "",
           invoice_note: org?.invoice_note ?? "",
+          ...bank,
         }}
       />
     </div>

@@ -18,7 +18,7 @@ import type { Invoice, InvoiceStatus } from "@/lib/types";
 
 type InvoiceRow = Invoice & {
   rooms: { room_number: string; buildings: { name: string } | null } | null;
-  tenants: { full_name: string } | null;
+  tenants: { full_name: string; phone: string } | null;
 };
 
 export default async function InvoicesPage({
@@ -34,7 +34,7 @@ export default async function InvoicesPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("invoices")
-    .select("*, rooms(room_number, buildings(name)), tenants(full_name)")
+    .select("*, rooms(room_number, buildings(name)), tenants(full_name, phone)")
     .eq("period", period)
     .order("created_at", { ascending: true });
 
@@ -102,7 +102,12 @@ export default async function InvoicesPage({
                       {i.rooms?.buildings?.name ?? "-"} · {i.rooms?.room_number ?? "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      {i.tenants?.full_name ?? "-"}
+                      <p>{i.tenants?.full_name ?? "-"}</p>
+                      {i.tenants?.phone && (
+                        <a href={`tel:${i.tenants.phone}`} className="text-xs text-indigo-600 hover:text-indigo-700">
+                          📞 {i.tenants.phone}
+                        </a>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(i.due_date)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-900">

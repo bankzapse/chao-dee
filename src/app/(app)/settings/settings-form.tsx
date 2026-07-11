@@ -10,6 +10,9 @@ type Org = {
   promptpay_id: string;
   promptpay_name: string;
   invoice_note: string;
+  bank_name: string;
+  bank_account_no: string;
+  bank_account_name: string;
 };
 
 export function SettingsForm({ org }: { org: Org }) {
@@ -45,6 +48,25 @@ export function SettingsForm({ org }: { org: Org }) {
                 />
               </div>
             </div>
+            {/* บัญชีธนาคาร (ช่องทางชำระเพิ่มเติมจาก PromptPay) */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+              <p className="mb-2 text-sm font-medium text-slate-700">บัญชีธนาคาร (แสดงในบิลคู่กับ PromptPay)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">ธนาคาร</label>
+                  <input name="bank_name" className="field" defaultValue={org.bank_name} placeholder="กสิกรไทย" />
+                </div>
+                <div>
+                  <label className="label">เลขที่บัญชี</label>
+                  <input name="bank_account_no" className="field" defaultValue={org.bank_account_no} placeholder="123-4-56789-0" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <label className="label">ชื่อบัญชี</label>
+                <input name="bank_account_name" className="field" defaultValue={org.bank_account_name} placeholder="นายสมชาย ใจดี" />
+              </div>
+            </div>
+
             <div>
               <label className="label">ข้อความท้ายบิล</label>
               <textarea

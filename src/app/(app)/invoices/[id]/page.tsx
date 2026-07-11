@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui";
 import { PromptPayQR } from "@/components/promptpay-qr";
+import { BankInfoBox, type BankInfo } from "@/components/bank-info";
 import {
   PrintButton,
   RecordPaymentButton,
@@ -47,6 +48,17 @@ export default async function InvoiceDetailPage({
   ]);
 
   if (!invoice) notFound();
+
+  // บัญชีธนาคาร (แยก query + resilient เผื่อยังไม่ได้รัน migration 0033)
+  const { data: bankRow } = await supabase
+    .from("organizations")
+    .select("bank_name, bank_account_no, bank_account_name")
+    .maybeSingle();
+  const bank: BankInfo = {
+    bank_name: (bankRow as { bank_name?: string } | null)?.bank_name ?? "",
+    bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
+    bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
+  };
 
   const inv = invoice as unknown as Invoice & {
     rooms: { room_number: string; buildings: { name: string } | null } | null;
@@ -200,13 +212,12 @@ export default async function InvoiceDetailPage({
           </tfoot>
         </table>
 
-        {/* PromptPay + note */}
+        {/* PromptPay + บัญชีธนาคาร + note */}
         {inv.status !== "void" && outstanding > 0 && (
           <div className="mt-6 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-5">
             <PromptPayQR promptpayId={org?.promptpay_id ?? ""} amount={outstanding} />
-            <p className="text-xs text-slate-500">
-              สแกนเพื่อชำระ {formatBaht(outstanding)}
-            </p>
+            <p className="text-xs text-slate-500">สแกนเพื่อชำระ {formatBaht(outstanding)}</p>
+            <BankInfoBox bank={bank} />
           </div>
         )}
 

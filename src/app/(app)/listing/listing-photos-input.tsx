@@ -83,26 +83,38 @@ export function ListingPhotosInput({
       </label>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {urls.map((u) => (
-          <div key={u} className="group relative overflow-hidden rounded-lg border border-slate-200">
+          <div key={u} className="relative overflow-hidden rounded-lg border border-slate-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={u} alt="" className="h-20 w-full object-cover" />
-            {cover === u && (
+            <img
+              src={u}
+              alt=""
+              title="แตะเพื่อตั้งเป็นรูปปก"
+              onClick={() => setCover(u)}
+              className="h-20 w-full cursor-pointer object-cover"
+            />
+            {/* ป้าย/ปุ่ม ตั้งปก (โชว์ตลอด แตะได้บนมือถือ) */}
+            {cover === u ? (
               <span className="absolute left-1 top-1 rounded bg-indigo-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 ปก
               </span>
-            )}
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/50 px-1.5 py-1 text-[11px] text-white opacity-0 transition group-hover:opacity-100">
-              {cover !== u ? (
-                <button type="button" onClick={() => setCover(u)} className="hover:text-amber-300">
-                  ตั้งเป็นปก
-                </button>
-              ) : (
-                <span className="text-amber-300">รูปปก</span>
-              )}
-              <button type="button" onClick={() => remove(u)} className="hover:text-rose-300">
-                ลบ
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCover(u)}
+                className="absolute left-1 top-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white"
+              >
+                ตั้งปก
               </button>
-            </div>
+            )}
+            {/* ปุ่มลบ (โชว์ตลอด) */}
+            <button
+              type="button"
+              onClick={() => remove(u)}
+              aria-label="ลบรูป"
+              className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[11px] font-bold text-white shadow"
+            >
+              ✕
+            </button>
           </div>
         ))}
         {urls.length < MAX && (

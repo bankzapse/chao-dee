@@ -9,7 +9,7 @@ import {
   getLineContent,
   isLineConfigured,
 } from "@/lib/line";
-import { formatBaht, formatPeriod } from "@/lib/format";
+import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import { toLocalThai } from "@/lib/phone";
 
 export const runtime = "nodejs";
@@ -392,7 +392,7 @@ async function handleCommand(
       await replyMessage(replyToken, [textMessage(`คุณ ${fullName}\nไม่มีพัสดุค้างรับครับ`)]);
       return;
     }
-    const lines = parcels.map((p) => `• ${p.carrier || "พัสดุ"} (รับเข้า ${p.received_at})`);
+    const lines = parcels.map((p) => `• ${p.carrier || "พัสดุ"} (รับเข้า ${formatDate(p.received_at)})`);
     await replyMessage(replyToken, [
       textMessage(`📦 พัสดุค้างรับ ${parcels.length} ชิ้น\n\n${lines.join("\n")}\n\nรับได้ที่สำนักงานหอพักครับ`),
     ]);
@@ -418,7 +418,7 @@ async function handleCommand(
       const out = Number(i.total_amount) - Number(i.paid_amount);
       total += out;
       const room = (i.rooms as unknown as { room_number: string } | null)?.room_number ?? "-";
-      return `• ห้อง ${room} รอบ ${formatPeriod(i.period)}\n   ค้าง ${formatBaht(out)} (ครบกำหนด ${i.due_date})`;
+      return `• ห้อง ${room} รอบ ${formatPeriod(i.period)}\n   ค้าง ${formatBaht(out)} (ครบกำหนด ${formatDate(i.due_date)})`;
     });
 
     await replyMessage(replyToken, [
@@ -480,7 +480,7 @@ async function handleCommand(
       textMessage(
         `ข้อมูลห้องพักของคุณ ${fullName}\n🏢 ${room?.buildings?.name ?? "-"}\n🚪 ห้อง ${
           room?.room_number ?? "-"
-        }\n💰 ค่าเช่า ${formatBaht(contract.rent_amount)}/เดือน\n📅 เริ่มสัญญา ${contract.start_date}`
+        }\n💰 ค่าเช่า ${formatBaht(contract.rent_amount)}/เดือน\n📅 เริ่มสัญญา ${formatDate(contract.start_date)}`
       ),
     ]);
     return;

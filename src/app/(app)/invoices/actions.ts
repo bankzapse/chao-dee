@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
-import { formatBaht, formatPeriod } from "@/lib/format";
+import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import type { FormState } from "@/components/action-form";
 import type { PaymentMethod } from "@/lib/types";
 
@@ -196,7 +196,7 @@ export async function sendInvoiceViaLine(
     textMessage(
       `🧾 ใบแจ้งหนี้ ห้อง ${room}\nรอบ ${formatPeriod(inv.period)}\n\nยอดที่ต้องชำระ ${formatBaht(
         outstanding
-      )}\nครบกำหนด ${inv.due_date}\n\n👉 กดดูรายละเอียด + สแกน QR ชำระเงิน:\n${link}\n\nโอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยครับ`
+      )}\nครบกำหนด ${formatDate(inv.due_date)}\n\n👉 กดดูรายละเอียด + สแกน QR ชำระเงิน:\n${link}\n\nโอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยครับ`
     ),
   ]);
   if (!res.ok) return { error: "ส่งไม่สำเร็จ: " + (res.error ?? res.status) };

@@ -7,6 +7,7 @@ import { GenerateButton } from "./generate-button";
 import { deleteInvoice } from "./actions";
 import {
   formatBaht,
+  formatDate,
   formatPeriod,
   currentPeriod,
   recentPeriods,
@@ -103,7 +104,7 @@ export default async function InvoicesPage({
                     <td className="px-4 py-3 text-slate-600">
                       {i.tenants?.full_name ?? "-"}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{i.due_date}</td>
+                    <td className="px-4 py-3 text-slate-500">{formatDate(i.due_date)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-900">
                       {formatBaht(i.total_amount)}
                     </td>

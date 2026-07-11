@@ -113,7 +113,6 @@ export function MetersForm({
   defaultDate: string;
 }) {
   const router = useRouter();
-  const [date, setDate] = useState(defaultDate);
   const [values, setValues] = useState<Record<string, { w: string; e: string }>>(
     () =>
       Object.fromEntries(
@@ -143,7 +142,7 @@ export function MetersForm({
         water_value: Number(values[r.id].w) || 0,
         electric_value: Number(values[r.id].e) || 0,
       }));
-    const res = await saveMeterReadings(period, date, rows);
+    const res = await saveMeterReadings(period, defaultDate, rows);
     setSaving(false);
     if (res?.error) setMsg("เกิดข้อผิดพลาด: " + res.error);
     else {
@@ -154,22 +153,11 @@ export function MetersForm({
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-slate-600">วันที่จด:</label>
-          <input
-            type="date"
-            className="field w-auto"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          {msg && <span className="text-sm text-emerald-600">{msg}</span>}
-          <button className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? "กำลังบันทึก…" : "💾 บันทึกค่ามิเตอร์"}
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3 border-b border-slate-200 p-4">
+        {msg && <span className="text-sm text-emerald-600">{msg}</span>}
+        <button className="btn-primary" onClick={save} disabled={saving}>
+          {saving ? "กำลังบันทึก…" : "💾 บันทึกค่ามิเตอร์"}
+        </button>
       </div>
 
       <div className="overflow-x-auto">

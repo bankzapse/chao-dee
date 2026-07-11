@@ -85,7 +85,7 @@ export default async function MetersPage({
           description="เพิ่มห้องพักก่อนจึงจะจดมิเตอร์ได้"
         />
       ) : (
-        <MetersForm rooms={meterRooms} period={period} defaultDate={today} />
+        <MetersForm key={period} rooms={meterRooms} period={period} defaultDate={today} />
       )}
     </div>
   );

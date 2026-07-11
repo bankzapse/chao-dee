@@ -197,9 +197,8 @@ export function MetersForm({
                   {r.water_mode === "flat_person" ? (
                     <td colSpan={3} className="px-3 py-2">
                       <span className="rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700">
-                        เหมาจ่ายน้ำ {formatBaht(r.water_flat_per_person)}/คน
+                        เหมาจ่าย {formatBaht(r.water_flat_per_person)}/คน
                       </span>
-                      <span className="ml-2 text-xs text-slate-400">คิดตอนออกบิลตามจำนวนผู้พัก · ไม่ต้องจดมิเตอร์น้ำ</span>
                     </td>
                   ) : (
                     <>

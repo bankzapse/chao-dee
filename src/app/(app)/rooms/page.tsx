@@ -41,6 +41,10 @@ export default async function RoomsPage({
     if (!byFloor.has(f)) byFloor.set(f, []);
     byFloor.get(f)!.push(r);
   }
+  // เรียงเลขห้องจากน้อยไปมากในแต่ละชั้น (รับรู้ตัวเลข: 2 < 10)
+  for (const arr of byFloor.values()) {
+    arr.sort((a, b) => a.room_number.localeCompare(b.room_number, undefined, { numeric: true }));
+  }
   const floors = [...byFloor.keys()].sort((a, b) => a - b);
 
   return (

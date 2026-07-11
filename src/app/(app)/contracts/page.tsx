@@ -57,6 +57,25 @@ export default async function ContractsPage() {
     };
   });
 
+  // แบ่งตามอาคาร + เรียงห้องจากน้อยไปมาก
+  const NO_ROOM = "— ไม่ระบุอาคาร —";
+  const byBuilding = new Map<string, ContractRow[]>();
+  for (const c of list) {
+    const b = c.rooms?.buildings?.name ?? NO_ROOM;
+    if (!byBuilding.has(b)) byBuilding.set(b, []);
+    byBuilding.get(b)!.push(c);
+  }
+  for (const arr of byBuilding.values()) {
+    arr.sort((a, b) =>
+      (a.rooms?.room_number ?? "").localeCompare(b.rooms?.room_number ?? "", undefined, { numeric: true })
+    );
+  }
+  const buildings = [...byBuilding.keys()].sort((a, b) => {
+    if (a === NO_ROOM) return 1;
+    if (b === NO_ROOM) return -1;
+    return a.localeCompare(b, "th");
+  });
+
   return (
     <div>
       <PageHeader
@@ -80,61 +99,64 @@ export default async function ContractsPage() {
           }
         />
       ) : (
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">ห้อง</th>
-                  <th className="px-4 py-3 font-medium">ผู้เช่า</th>
-                  <th className="px-4 py-3 font-medium">ช่วงสัญญา</th>
-                  <th className="px-4 py-3 font-medium">ค่าเช่า</th>
-                  <th className="px-4 py-3 font-medium">ประกัน</th>
-                  <th className="px-4 py-3 font-medium">สถานะ</th>
-                  <th className="px-4 py-3 text-right font-medium">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {list.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      {c.rooms?.buildings?.name ?? "-"} · {c.rooms?.room_number ?? "-"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {c.tenants?.full_name ?? "-"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {formatDate(c.start_date)} → {c.end_date ? formatDate(c.end_date) : "ไม่กำหนด"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-900">{formatBaht(c.rent_amount)}</td>
-                    <td className="px-4 py-3 text-slate-600">{formatBaht(c.deposit_amount)}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={CONTRACT_STATUS_STYLE[c.status as ContractStatus]}>
-                        {CONTRACT_STATUS_LABEL[c.status as ContractStatus]}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-3">
-                        <ContractDocsButton contractId={c.id} count={docCount.get(c.id) ?? 0} />
-                        <EditContractButton
-                          contract={c}
-                          roomLabel={`${c.rooms?.buildings?.name ?? "-"} · ${c.rooms?.room_number ?? "-"}`}
-                          tenantName={c.tenants?.full_name ?? "-"}
-                        />
-                        {c.status === "active" && (
-                          <CloseContractButton contractId={c.id} roomId={c.room_id} />
-                        )}
-                        <DeleteButton
-                          action={deleteContract.bind(null, c.id)}
-                          confirmText="ลบสัญญานี้?"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-6">
+          {buildings.map((building) => (
+            <section key={building} className="card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">🏢 {building}</h2>
+                <span className="text-xs text-slate-400">{byBuilding.get(building)!.length} สัญญา</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-slate-100 text-left text-slate-400">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">ห้อง</th>
+                      <th className="px-4 py-2 font-medium">ผู้เช่า</th>
+                      <th className="px-4 py-2 font-medium">ช่วงสัญญา</th>
+                      <th className="px-4 py-2 font-medium">ค่าเช่า</th>
+                      <th className="px-4 py-2 font-medium">ประกัน</th>
+                      <th className="px-4 py-2 font-medium">สถานะ</th>
+                      <th className="px-4 py-2 text-right font-medium">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {byBuilding.get(building)!.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-900">
+                          🚪 {c.rooms?.room_number ?? "-"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">{c.tenants?.full_name ?? "-"}</td>
+                        <td className="px-4 py-3 text-xs text-slate-500">
+                          {formatDate(c.start_date)} → {c.end_date ? formatDate(c.end_date) : "ไม่กำหนด"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-900">{formatBaht(c.rent_amount)}</td>
+                        <td className="px-4 py-3 text-slate-600">{formatBaht(c.deposit_amount)}</td>
+                        <td className="px-4 py-3">
+                          <Badge className={CONTRACT_STATUS_STYLE[c.status as ContractStatus]}>
+                            {CONTRACT_STATUS_LABEL[c.status as ContractStatus]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-3">
+                            <ContractDocsButton contractId={c.id} count={docCount.get(c.id) ?? 0} />
+                            <EditContractButton
+                              contract={c}
+                              roomLabel={`${c.rooms?.buildings?.name ?? "-"} · ${c.rooms?.room_number ?? "-"}`}
+                              tenantName={c.tenants?.full_name ?? "-"}
+                            />
+                            {c.status === "active" && (
+                              <CloseContractButton contractId={c.id} roomId={c.room_id} />
+                            )}
+                            <DeleteButton action={deleteContract.bind(null, c.id)} confirmText="ลบสัญญานี้?" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>

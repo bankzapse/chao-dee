@@ -63,6 +63,12 @@ export default async function MetersPage({
     };
   });
 
+  // เรียงตามอาคาร แล้วตามเลขห้องจากน้อยไปมาก (รับรู้ตัวเลข: 2 < 10)
+  meterRooms.sort((a, b) => {
+    if (a.building_name !== b.building_name) return a.building_name.localeCompare(b.building_name, "th");
+    return a.room_number.localeCompare(b.room_number, undefined, { numeric: true });
+  });
+
   const today = new Date().toISOString().slice(0, 10);
 
   return (

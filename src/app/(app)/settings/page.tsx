@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Badge } from "@/components/ui";
 import { SettingsForm } from "./settings-form";
 import { LineOwnerCard } from "./line-owner-card";
+import { LineOaCard } from "./line-oa-card";
 import { TaxInfoCard } from "./tax-info-card";
 import { packageBySlug } from "@/lib/packages";
 import {
@@ -20,6 +21,10 @@ export default async function SettingsPage() {
       .single(),
     supabase.from("subscriptions").select("*").maybeSingle(),
   ]);
+
+  // แยก query + resilient เผื่อ prod ยังไม่ได้รัน migration 0032 (คอลัมน์ line_oa_id)
+  const { data: oaRow } = await supabase.from("organizations").select("line_oa_id").maybeSingle();
+  const lineOaId = (oaRow as { line_oa_id?: string } | null)?.line_oa_id ?? "";
 
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const st = sub?.status ?? "expired";
@@ -51,6 +56,9 @@ export default async function SettingsPage() {
         linked={Boolean(org?.owner_line_user_id)}
         code={org?.line_link_code ?? ""}
       />
+
+      {/* LINE OA ของหอ (QR ให้ผู้เช่าสแกน) */}
+      <LineOaCard lineOaId={lineOaId} />
 
       {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ Chao-Dee) */}
       <TaxInfoCard

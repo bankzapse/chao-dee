@@ -85,36 +85,30 @@ export function ListingPhotosInput({
         {urls.map((u) => (
           <div key={u} className="relative overflow-hidden rounded-lg border border-slate-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={u}
-              alt=""
-              title="แตะเพื่อตั้งเป็นรูปปก"
-              onClick={() => setCover(u)}
-              className="h-20 w-full cursor-pointer object-cover"
-            />
-            {/* ป้าย/ปุ่ม ตั้งปก (โชว์ตลอด แตะได้บนมือถือ) */}
-            {cover === u ? (
+            <img src={u} alt="" className="h-24 w-full object-cover" />
+            {cover === u && (
               <span className="absolute left-1 top-1 rounded bg-indigo-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 ปก
               </span>
-            ) : (
+            )}
+            {/* แถบปุ่มด้านล่าง โชว์ตลอด แตะง่ายบนมือถือ */}
+            <div className="absolute inset-x-0 bottom-0 flex items-stretch bg-black/60 text-[11px] text-white">
+              {cover === u ? (
+                <span className="flex-1 py-1.5 text-center text-amber-300">รูปปก</span>
+              ) : (
+                <button type="button" onClick={() => setCover(u)} className="flex-1 py-1.5 text-center active:bg-white/20">
+                  ตั้งปก
+                </button>
+              )}
+              <span className="w-px bg-white/25" />
               <button
                 type="button"
-                onClick={() => setCover(u)}
-                className="absolute left-1 top-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white"
+                onClick={() => remove(u)}
+                className="flex-1 py-1.5 text-center font-medium text-rose-300 active:bg-rose-500/30"
               >
-                ตั้งปก
+                ลบ
               </button>
-            )}
-            {/* ปุ่มลบ (โชว์ตลอด) */}
-            <button
-              type="button"
-              onClick={() => remove(u)}
-              aria-label="ลบรูป"
-              className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[11px] font-bold text-white shadow"
-            >
-              ✕
-            </button>
+            </div>
           </div>
         ))}
         {urls.length < MAX && (

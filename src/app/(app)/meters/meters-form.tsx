@@ -96,6 +96,8 @@ export type MeterRoom = {
   room_number: string;
   building_name: string;
   water_rate: number;
+  water_mode: "unit" | "flat_person";
+  water_flat_per_person: number;
   electricity_rate: number;
   prev_water: number | null;
   prev_electric: number | null;
@@ -136,10 +138,14 @@ export function MetersForm({
     setSaving(true);
     setMsg("");
     const rows: MeterRow[] = rooms
-      .filter((r) => values[r.id].w !== "" || values[r.id].e !== "")
+      .filter((r) => {
+        const hasWater = r.water_mode !== "flat_person" && values[r.id].w !== "";
+        return hasWater || values[r.id].e !== "";
+      })
       .map((r) => ({
         room_id: r.id,
-        water_value: Number(values[r.id].w) || 0,
+        // ห้องเหมาจ่ายน้ำ ไม่บันทึกมิเตอร์น้ำ (คิดตอนออกบิลตามจำนวนผู้พัก)
+        water_value: r.water_mode === "flat_person" ? 0 : Number(values[r.id].w) || 0,
         electric_value: Number(values[r.id].e) || 0,
       }));
     const res = await saveMeterReadings(period, defaultDate, rows);
@@ -188,34 +194,45 @@ export function MetersForm({
                   <td className="px-4 py-2 font-medium text-slate-900">
                     {r.building_name} · {r.room_number}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{r.prev_water ?? "-"}</td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="field w-24"
-                        value={values[r.id].w}
-                        onChange={(ev) => set(r.id, "w", ev.target.value)}
-                      />
-                      <AiReadButton
-                        previous={r.prev_water}
-                        meterType="water"
-                        onResult={(v) => set(r.id, "w", String(v))}
-                        onMessage={setMsg}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-sky-600">
-                    {wu != null ? (
-                      <span>
-                        <span className="font-medium">{wu}</span>{" "}
-                        <span className="text-xs text-slate-400">หน่วย · {formatBaht(wu * r.water_rate)}</span>
+                  {r.water_mode === "flat_person" ? (
+                    <td colSpan={3} className="px-3 py-2">
+                      <span className="rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700">
+                        เหมาจ่ายน้ำ {formatBaht(r.water_flat_per_person)}/คน
                       </span>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
+                      <span className="ml-2 text-xs text-slate-400">คิดตอนออกบิลตามจำนวนผู้พัก · ไม่ต้องจดมิเตอร์น้ำ</span>
+                    </td>
+                  ) : (
+                    <>
+                      <td className="px-3 py-2 text-slate-400">{r.prev_water ?? "-"}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="field w-24"
+                            value={values[r.id].w}
+                            onChange={(ev) => set(r.id, "w", ev.target.value)}
+                          />
+                          <AiReadButton
+                            previous={r.prev_water}
+                            meterType="water"
+                            onResult={(v) => set(r.id, "w", String(v))}
+                            onMessage={setMsg}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-sky-600">
+                        {wu != null ? (
+                          <span>
+                            <span className="font-medium">{wu}</span>{" "}
+                            <span className="text-xs text-slate-400">หน่วย · {formatBaht(wu * r.water_rate)}</span>
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                    </>
+                  )}
                   <td className="px-3 py-2 text-slate-400">{r.prev_electric ?? "-"}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1">

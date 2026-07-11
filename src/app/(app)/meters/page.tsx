@@ -19,7 +19,7 @@ export default async function MetersPage({
   const [{ data: rooms }, { data: readings }] = await Promise.all([
     supabase
       .from("rooms")
-      .select("id, room_number, water_rate, electricity_rate, buildings(name)")
+      .select("id, room_number, water_rate, water_mode, water_flat_per_person, electricity_rate, buildings(name)")
       .order("room_number"),
     supabase
       .from("meter_readings")
@@ -55,6 +55,8 @@ export default async function MetersPage({
       room_number: r.room_number,
       building_name: b?.name ?? "-",
       water_rate: Number(r.water_rate),
+      water_mode: (r.water_mode === "flat_person" ? "flat_person" : "unit") as "unit" | "flat_person",
+      water_flat_per_person: Number(r.water_flat_per_person ?? 0),
       electricity_rate: Number(r.electricity_rate),
       prev_water: prev ? prev.w : null,
       prev_electric: prev ? prev.e : null,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PromptPayQR } from "@/components/promptpay-qr";
+import { BankInfoBox, type BankInfo } from "@/components/bank-info";
 import { Spinner } from "@/components/spinner";
 import { PACKAGES, COMMON_FEATURES, yearlyDiscount, type Package } from "@/lib/packages";
 import { COMPANY, splitVat } from "@/lib/company";
@@ -12,10 +13,12 @@ import { submitRenewal, checkPromo } from "./actions";
 
 export function RenewForm({
   platformPromptPay,
+  bank,
   defaultSlug,
   packages = PACKAGES,
 }: {
   platformPromptPay: string;
+  bank?: BankInfo;
   defaultSlug?: string;
   packages?: Package[];
 }) {
@@ -246,7 +249,7 @@ export function RenewForm({
             <p className="mt-1 text-right text-xs text-slate-400">ราคานี้ไม่มีภาษีมูลค่าเพิ่ม (VAT)</p>
           )}
 
-          {/* PromptPay */}
+          {/* PromptPay + บัญชีธนาคาร */}
           <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
             {platformPromptPay ? (
               <>
@@ -255,10 +258,13 @@ export function RenewForm({
                 <p className="text-base font-bold text-slate-900">{formatBaht(amount)}</p>
               </>
             ) : (
-              <p className="py-6 text-center text-xs text-slate-400">
-                ยังไม่ได้ตั้งค่า PromptPay ของระบบ — กรุณาติดต่อทีมงาน
-              </p>
+              !bank?.bank_account_no && (
+                <p className="py-6 text-center text-xs text-slate-400">
+                  ยังไม่ได้ตั้งค่าช่องทางรับเงิน — กรุณาติดต่อทีมงาน
+                </p>
+              )
             )}
+            {bank && <BankInfoBox bank={bank} />}
           </div>
 
           {/* แนบสลิป (บังคับ) */}

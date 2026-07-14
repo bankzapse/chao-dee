@@ -2,6 +2,7 @@
 
 import { ActionForm } from "@/components/action-form";
 import { PromptPayQR } from "@/components/promptpay-qr";
+import { THAI_BANKS } from "@/lib/banks";
 import { updateOrgSettings } from "./actions";
 import { useState } from "react";
 
@@ -14,24 +15,6 @@ type Org = {
   bank_account_no: string;
   bank_account_name: string;
 };
-
-const THAI_BANKS = [
-  "กสิกรไทย",
-  "ไทยพาณิชย์",
-  "กรุงเทพ",
-  "กรุงไทย",
-  "กรุงศรีอยุธยา",
-  "ทหารไทยธนชาต (ttb)",
-  "ออมสิน",
-  "ธ.ก.ส.",
-  "เกียรตินาคินภัทร",
-  "ซีไอเอ็มบี ไทย",
-  "ยูโอบี",
-  "ทิสโก้",
-  "แลนด์ แอนด์ เฮ้าส์",
-  "ไอซีบีซี (ไทย)",
-  "ธนาคารอิสลามแห่งประเทศไทย",
-];
 
 export function SettingsForm({ org }: { org: Org }) {
   const [ppId, setPpId] = useState(org.promptpay_id);

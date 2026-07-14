@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui";
 import { RenewForm } from "./renew-form";
 import { BrandMark } from "@/components/brand-mark";
 import { getEffectivePackages } from "@/lib/packages-db";
+import { getPlatformPayment } from "@/lib/platform-settings";
 import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
@@ -38,7 +39,7 @@ export default async function RenewPage() {
 
   const orgName = (profile?.organizations as { name?: string } | null)?.name ?? "หอพักของคุณ";
   const st = sub?.status ?? "expired";
-  const platformPromptPay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY ?? "";
+  const pay = await getPlatformPayment();
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -67,7 +68,16 @@ export default async function RenewPage() {
         </div>
 
         <div className="mt-6">
-          <RenewForm platformPromptPay={platformPromptPay} defaultSlug={sub?.package_slug} packages={await getEffectivePackages()} />
+          <RenewForm
+            platformPromptPay={pay.promptpay_id}
+            bank={{
+              bank_name: pay.bank_name,
+              bank_account_no: pay.bank_account_no,
+              bank_account_name: pay.bank_account_name,
+            }}
+            defaultSlug={sub?.package_slug}
+            packages={await getEffectivePackages()}
+          />
         </div>
 
         {/* คำขอล่าสุด */}

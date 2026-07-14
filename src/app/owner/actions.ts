@@ -306,3 +306,25 @@ export async function updatePromoPrice(
   });
   return { ok: true };
 }
+
+/** owner ตั้งค่าช่องทางรับเงินของบริษัท (PromptPay/บัญชีธนาคาร) */
+export async function savePlatformPayment(_prev: FormState, formData: FormData): Promise<FormState> {
+  const adminId = await requirePlatformAdmin();
+  const g = (k: string) => String(formData.get(k) ?? "").trim();
+  const admin = createAdminClient();
+  const { error } = await admin.from("platform_settings").upsert(
+    {
+      id: 1,
+      promptpay_id: g("promptpay_id"),
+      promptpay_name: g("promptpay_name"),
+      bank_name: g("bank_name"),
+      bank_account_no: g("bank_account_no"),
+      bank_account_name: g("bank_account_name"),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+  if (error) return { error: error.message };
+  await logAudit({ org_id: null, actor_id: adminId, action: "ตั้งค่าช่องทางรับเงิน", target: "platform_settings", meta: {} });
+  return { ok: true };
+}

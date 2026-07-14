@@ -8,6 +8,7 @@ import { incrementPromoUse } from "@/lib/promo";
 import { COMPANY } from "@/lib/company";
 import { formatBaht } from "@/lib/format";
 import { sendEmail, isEmailConfigured, emailShell } from "@/lib/email";
+import { paymentRejectedEmail } from "@/lib/email-templates";
 import type { FormState } from "@/components/action-form";
 
 function addPeriod(from: Date, cycle: string): Date {
@@ -149,6 +150,21 @@ export async function rejectPayment(paymentId: string): Promise<void> {
     action: "ปฏิเสธการชำระเงิน",
     meta: { amount: pay ? Number(pay.amount) : null, payment_id: paymentId },
   });
+
+  // อีเมลแจ้งเจ้าของหอ (best-effort)
+  if (pay?.org_id && isEmailConfigured()) {
+    const { data: owner } = await admin
+      .from("profiles")
+      .select("email")
+      .eq("org_id", pay.org_id)
+      .eq("role", "owner")
+      .maybeSingle();
+    const { data: org } = await admin.from("organizations").select("name").eq("id", pay.org_id).maybeSingle();
+    if (owner?.email) {
+      const tpl = paymentRejectedEmail((org as { name?: string } | null)?.name || "หอพักของคุณ");
+      await sendEmail({ to: owner.email, subject: tpl.subject, html: tpl.html });
+    }
+  }
 }
 
 /** ออกเลขที่ใบกำกับภาษีให้การชำระที่ยืนยันแล้ว (ออกด้วยมือจาก Console) */

@@ -25,6 +25,39 @@ export function welcomeEmail(orgName: string): { subject: string; html: string }
   };
 }
 
+/** อีเมลแจ้งเจ้าของหอเมื่อมีผู้สนใจติดต่อจากประกาศ (marketplace lead) */
+export function newLeadEmail(opts: {
+  listingTitle: string;
+  name: string;
+  phone: string;
+  message?: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `📥 มีผู้สนใจที่พัก: ${opts.listingTitle}`,
+    html: emailShell(
+      "มีผู้สนใจติดต่อผ่าน Chao-Dee Rent",
+      `ประกาศ: <b>${opts.listingTitle}</b><br/>
+       ชื่อ: <b>${opts.name}</b><br/>
+       เบอร์: <b>${opts.phone}</b>
+       ${opts.message ? `<br/>ข้อความ: ${opts.message}` : ""}`,
+      { label: "ดูผู้ติดต่อทั้งหมด", url: `${APP_URL}/listing/leads` }
+    ),
+  };
+}
+
+/** อีเมลแจ้งเมื่อการชำระถูกปฏิเสธ */
+export function paymentRejectedEmail(orgName: string): { subject: string; html: string } {
+  return {
+    subject: `การชำระเงินไม่ผ่านการตรวจสอบ — ${orgName}`,
+    html: emailShell(
+      "การชำระเงินไม่ผ่านการตรวจสอบ",
+      `การแจ้งชำระของ <b>${orgName}</b> ยังไม่ผ่านการยืนยัน อาจเพราะสลิปไม่ชัด/ยอดไม่ตรง
+       กรุณาส่งใหม่อีกครั้ง หากมีข้อสงสัยติดต่อทีมงานได้`,
+      { label: "แจ้งชำระอีกครั้ง", url: `${APP_URL}/renew` }
+    ),
+  };
+}
+
 /** อีเมลใกล้หมดช่วงทดลอง/แพ็คเกจ */
 export function trialEndingEmail(orgName: string, daysLeft: number): { subject: string; html: string } {
   return {

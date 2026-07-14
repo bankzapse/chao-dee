@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import { rateLimit } from "@/lib/rate-limit";
 import { rateLimitDb } from "@/lib/rate-limit-db";
+import { sendEmail, isEmailConfigured } from "@/lib/email";
+import { newLeadEmail } from "@/lib/email-templates";
 
 /** ผู้เช่าติดต่อผ่านหน้าประกาศ /rent → บันทึก lead + แจ้งเจ้าของทาง LINE */
 export async function submitLead(
@@ -62,6 +64,24 @@ export async function submitLead(
             }\n\nดูและติดต่อกลับได้ที่เมนู “ลงประกาศ → ผู้ติดต่อ”`
           ),
         ]);
+      }
+    }
+  } catch {
+    // best-effort
+  }
+
+  // แจ้งเจ้าของหอทางอีเมลด้วย (best-effort — เมื่อตั้งค่าอีเมลแล้ว)
+  try {
+    if (isEmailConfigured()) {
+      const { data: owner } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("org_id", listing.org_id)
+        .eq("role", "owner")
+        .maybeSingle();
+      if (owner?.email) {
+        const tpl = newLeadEmail({ listingTitle: listing.title, name, phone, message });
+        await sendEmail({ to: owner.email, subject: tpl.subject, html: tpl.html });
       }
     }
   } catch {

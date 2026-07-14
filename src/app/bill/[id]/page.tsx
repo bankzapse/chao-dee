@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PromptPayQR } from "@/components/promptpay-qr";
-import { BankInfoBox, type BankInfo } from "@/components/bank-info";
+import { PaymentBox } from "@/components/payment-box";
+import { type BankInfo } from "@/components/bank-info";
 import {
   formatBaht,
   formatDate,
@@ -59,6 +59,14 @@ export default async function PublicBillPage({
     bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
     bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
   };
+  const { data: pmRow } = await supabase
+    .from("organizations")
+    .select("payment_method")
+    .eq("id", inv.org_id)
+    .maybeSingle();
+  const paymentMethod = ((pmRow as { payment_method?: string } | null)?.payment_method ?? "promptpay") as
+    | "promptpay"
+    | "bank";
 
   const outstanding = Number(inv.total_amount) - Number(inv.paid_amount);
   const paid = inv.status === "paid" || outstanding <= 0;
@@ -148,11 +156,12 @@ export default async function PublicBillPage({
               </div>
             ) : (
               <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-5">
-                <PromptPayQR promptpayId={org?.promptpay_id ?? ""} amount={outstanding} />
-                <p className="text-sm font-medium text-slate-700">
-                  สแกนเพื่อชำระ {formatBaht(outstanding)}
-                </p>
-                <BankInfoBox bank={bank} />
+                <PaymentBox
+                  method={paymentMethod}
+                  promptpayId={org?.promptpay_id ?? ""}
+                  bank={bank}
+                  amount={outstanding}
+                />
                 <p className="mt-1 text-center text-xs text-slate-500">
                   โอนแล้ว <span className="font-medium">ส่งสลิปกลับมาในแชท LINE</span> ได้เลย
                   <br />

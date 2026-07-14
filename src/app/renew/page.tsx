@@ -70,6 +70,7 @@ export default async function RenewPage() {
         <div className="mt-6">
           <RenewForm
             platformPromptPay={pay.promptpay_id}
+            paymentMethod={pay.payment_method}
             bank={{
               bank_name: pay.bank_name,
               bank_account_no: pay.bank_account_no,

@@ -31,6 +31,12 @@ export async function updateOrgSettings(
     ({ error } = await supabase.from("organizations").update(base).eq("id", org_id));
   }
   if (error) return { error: error.message };
+
+  // ช่องทางรับเงินหลัก (0035) — บันทึกแยก + ไม่ล้มถ้า prod ยังไม่มีคอลัมน์
+  const method = String(formData.get("payment_method") ?? "promptpay");
+  if (method === "promptpay" || method === "bank") {
+    await supabase.from("organizations").update({ payment_method: method }).eq("id", org_id);
+  }
   return { ok: true };
 }
 

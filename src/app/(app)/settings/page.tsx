@@ -34,6 +34,10 @@ export default async function SettingsPage() {
     bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
     bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
   };
+  const { data: pmRow } = await supabase.from("organizations").select("payment_method").maybeSingle();
+  const payment_method = ((pmRow as { payment_method?: string } | null)?.payment_method ?? "promptpay") as
+    | "promptpay"
+    | "bank";
 
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const st = sub?.status ?? "expired";
@@ -85,6 +89,7 @@ export default async function SettingsPage() {
           promptpay_id: org?.promptpay_id ?? "",
           promptpay_name: org?.promptpay_name ?? "",
           invoice_note: org?.invoice_note ?? "",
+          payment_method,
           ...bank,
         }}
       />

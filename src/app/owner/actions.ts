@@ -312,18 +312,28 @@ export async function savePlatformPayment(_prev: FormState, formData: FormData):
   const adminId = await requirePlatformAdmin();
   const g = (k: string) => String(formData.get(k) ?? "").trim();
   const admin = createAdminClient();
-  const { error } = await admin.from("platform_settings").upsert(
-    {
-      id: 1,
-      promptpay_id: g("promptpay_id"),
-      promptpay_name: g("promptpay_name"),
-      bank_name: g("bank_name"),
-      bank_account_no: g("bank_account_no"),
-      bank_account_name: g("bank_account_name"),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
+  const method = g("payment_method") === "bank" ? "bank" : "promptpay";
+  const base = {
+    id: 1,
+    promptpay_id: g("promptpay_id"),
+    promptpay_name: g("promptpay_name"),
+    bank_name: g("bank_name"),
+    bank_account_no: g("bank_account_no"),
+    bank_account_name: g("bank_account_name"),
+    updated_at: new Date().toISOString(),
+  };
+  const ext = {
+    payment_method: method,
+    tax_name: g("tax_name"),
+    tax_id: g("tax_id").replace(/\D/g, ""),
+    tax_address: g("tax_address"),
+    tax_branch: g("tax_branch") || "สำนักงานใหญ่",
+  };
+  let { error } = await admin.from("platform_settings").upsert({ ...base, ...ext }, { onConflict: "id" });
+  // resilient: ถ้า prod ยังไม่ได้รัน migration 0035 (payment_method/tax_*) → บันทึกเฉพาะคอลัมน์เดิม
+  if (error && /schema cache|could not find the .* column/i.test(error.message)) {
+    ({ error } = await admin.from("platform_settings").upsert(base, { onConflict: "id" }));
+  }
   if (error) return { error: error.message };
   await logAudit({ org_id: null, actor_id: adminId, action: "ตั้งค่าช่องทางรับเงิน", target: "platform_settings", meta: {} });
   return { ok: true };

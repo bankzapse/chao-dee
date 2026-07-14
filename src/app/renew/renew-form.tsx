@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PromptPayQR } from "@/components/promptpay-qr";
-import { BankInfoBox, type BankInfo } from "@/components/bank-info";
+import { PaymentBox, type PaymentMethod } from "@/components/payment-box";
+import { type BankInfo } from "@/components/bank-info";
 import { Spinner } from "@/components/spinner";
 import { PACKAGES, COMMON_FEATURES, yearlyDiscount, type Package } from "@/lib/packages";
 import { COMPANY, splitVat } from "@/lib/company";
@@ -13,11 +13,13 @@ import { submitRenewal, checkPromo } from "./actions";
 
 export function RenewForm({
   platformPromptPay,
+  paymentMethod = "promptpay",
   bank,
   defaultSlug,
   packages = PACKAGES,
 }: {
   platformPromptPay: string;
+  paymentMethod?: PaymentMethod;
   bank?: BankInfo;
   defaultSlug?: string;
   packages?: Package[];
@@ -249,22 +251,9 @@ export function RenewForm({
             <p className="mt-1 text-right text-xs text-slate-400">ราคานี้ไม่มีภาษีมูลค่าเพิ่ม (VAT)</p>
           )}
 
-          {/* PromptPay + บัญชีธนาคาร */}
+          {/* ช่องทางชำระเงินตามที่บริษัทตั้งไว้ */}
           <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
-            {platformPromptPay ? (
-              <>
-                <p className="text-xs font-medium text-slate-500">สแกนจ่ายผ่าน PromptPay</p>
-                <PromptPayQR promptpayId={platformPromptPay} amount={amount} size={160} />
-                <p className="text-base font-bold text-slate-900">{formatBaht(amount)}</p>
-              </>
-            ) : (
-              !bank?.bank_account_no && (
-                <p className="py-6 text-center text-xs text-slate-400">
-                  ยังไม่ได้ตั้งค่าช่องทางรับเงิน — กรุณาติดต่อทีมงาน
-                </p>
-              )
-            )}
-            {bank && <BankInfoBox bank={bank} />}
+            <PaymentBox method={paymentMethod} promptpayId={platformPromptPay} bank={bank} amount={amount} />
           </div>
 
           {/* แนบสลิป (บังคับ) */}

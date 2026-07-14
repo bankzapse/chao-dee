@@ -39,7 +39,6 @@ export function LineOaCard({ lineOaId }: { lineOaId: string }) {
             <p className="text-sm font-medium text-slate-700">{lineOaId}</p>
             <Link
               href="/settings/line-qr"
-              target="_blank"
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
               🖨️ เปิดหน้าพิมพ์ QR

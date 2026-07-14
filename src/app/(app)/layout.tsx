@@ -19,7 +19,7 @@ const MOBILE_NAV = [
   { href: "/parcels", label: "พัสดุ" },
   { href: "/vehicles", label: "ยานพาหนะ" },
   { href: "/expenses", label: "ค่าใช้จ่าย" },
-  { href: "/settings", label: "ตั้งค่า" },
+  { href: "/settings", label: "ตั้งค่าและการชำระเงิน" },
   { href: "/help", label: "ช่วยเหลือ" },
 ];
 

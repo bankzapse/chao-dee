@@ -21,7 +21,7 @@ const NAV = [
   { href: "/expenses", label: "ค่าใช้จ่าย", icon: "💸" },
   { href: "/team", label: "ทีมงาน", icon: "🧑‍🤝‍🧑", manageTeam: true },
   { href: "/renew", label: "ต่ออายุ/อัปเกรด", icon: "⭐" },
-  { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
+  { href: "/settings", label: "ตั้งค่าและการชำระเงิน", icon: "⚙️" },
   { href: "/help", label: "ช่วยเหลือ", icon: "❓" },
 ];
 

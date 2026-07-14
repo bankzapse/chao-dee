@@ -44,7 +44,7 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="ตั้งค่า" subtitle="ข้อมูลกิจการและการชำระเงิน" />
+      <PageHeader title="ตั้งค่าและการชำระเงิน" subtitle="ข้อมูลกิจการและการชำระเงิน" />
 
       {/* แพ็คเกจของฉัน */}
       <div className="card mb-6 flex flex-wrap items-center justify-between gap-4 p-5">

@@ -23,14 +23,15 @@ language sql
 security definer
 set search_path = public
 as $$
+  -- cast ::text ทุกคอลัมน์ที่ประกาศ text (กัน enum/varchar ไม่ตรงกับ return type)
   select
     o.id,
-    o.name,
+    o.name::text,
     o.created_at,
-    p.full_name,
-    p.phone,
-    s.package_slug,
-    coalesce(s.status, 'expired') as status,
+    p.full_name::text,
+    p.phone::text,
+    s.package_slug::text,
+    coalesce(s.status::text, 'expired') as status,
     s.expires_at,
     (select count(*) from public.tenants t where t.org_id = o.id) as tenant_count,
     count(*) over() as total_count

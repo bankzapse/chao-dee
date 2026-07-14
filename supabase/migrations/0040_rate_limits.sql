@@ -16,24 +16,33 @@ security definer
 set search_path = public
 as $$
 declare
-  r public.rate_limits%rowtype;
-  now_ts timestamptz := now();
-  win interval := (p_window_ms || ' milliseconds')::interval;
+  now_ts   timestamptz := now();
+  win      interval := (p_window_ms || ' milliseconds')::interval;
+  cur_cnt  int;
+  cur_reset timestamptz;
 begin
-  insert into public.rate_limits(key, count, reset_at)
-    values (p_key, 1, now_ts + win)
-  on conflict (key) do update
-    set count = case when public.rate_limits.reset_at <= now_ts then 1
-                     else public.rate_limits.count + 1 end,
-        reset_at = case when public.rate_limits.reset_at <= now_ts then now_ts + win
-                        else public.rate_limits.reset_at end
-  returning * into r;
+  -- ล็อกแถวเดิม (ถ้ามี) เพื่อกัน race
+  select count, reset_at into cur_cnt, cur_reset
+  from public.rate_limits where key = p_key for update;
 
-  if r.count > p_limit then
-    return query select false, greatest(1, ceil(extract(epoch from (r.reset_at - now_ts)))::int);
-  else
+  -- ยังไม่มี หรือหมด window เดิม → เริ่มนับใหม่
+  if not found or cur_reset <= now_ts then
+    insert into public.rate_limits(key, count, reset_at)
+      values (p_key, 1, now_ts + win)
+    on conflict (key) do update set count = 1, reset_at = now_ts + win;
     return query select true, 0;
+    return;
   end if;
+
+  -- เกิน limit ในช่วง window → ปฏิเสธ
+  if cur_cnt >= p_limit then
+    return query select false, greatest(1, ceil(extract(epoch from (cur_reset - now_ts)))::int);
+    return;
+  end if;
+
+  -- ยังไม่เกิน → นับเพิ่ม
+  update public.rate_limits set count = count + 1 where key = p_key;
+  return query select true, 0;
 end;
 $$;
 grant execute on function public.rate_limit_hit(text, int, int) to service_role;

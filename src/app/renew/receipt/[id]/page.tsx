@@ -48,8 +48,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
   const receiptNo = `CD-${String(pay.id).slice(0, 8).toUpperCase()}`;
   const amount = Number(pay.amount);
 
-  // โหมดใบกำกับภาษี: เปิดเมื่อจด VAT แล้ว + การชำระนี้มีเลขที่ใบกำกับ
-  const isTaxInvoice = COMPANY.vatRegistered && Boolean(pay.tax_invoice_no);
+  // โหมดใบกำกับภาษี: เปิดเมื่อการชำระนี้มีเลขที่ใบกำกับ (ออกจาก Console แล้ว)
+  const isTaxInvoice = Boolean(pay.tax_invoice_no);
   const { base, vat } = splitVat(amount);
 
   return (

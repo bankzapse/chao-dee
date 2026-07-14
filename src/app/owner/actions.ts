@@ -127,6 +127,32 @@ export async function rejectPayment(paymentId: string): Promise<void> {
   });
 }
 
+/** ออกเลขที่ใบกำกับภาษีให้การชำระที่ยืนยันแล้ว (ออกด้วยมือจาก Console) */
+export async function issueTaxInvoice(paymentId: string): Promise<void> {
+  const adminId = await requirePlatformAdmin();
+  const admin = createAdminClient();
+
+  const { data: pay } = await admin
+    .from("subscription_payments")
+    .select("org_id, status, tax_invoice_no, amount, package_slug")
+    .eq("id", paymentId)
+    .maybeSingle();
+  if (!pay || pay.status !== "verified") return; // ออกได้เฉพาะที่ยืนยันแล้ว
+  if (pay.tax_invoice_no) return; // ออกไปแล้ว ไม่ออกซ้ำ
+
+  const { data: no } = await admin.rpc("next_tax_invoice_no");
+  if (typeof no !== "string" || !no) return;
+
+  await admin.from("subscription_payments").update({ tax_invoice_no: no }).eq("id", paymentId);
+  await logAudit({
+    org_id: pay.org_id,
+    actor_id: adminId,
+    action: "ออกใบกำกับภาษี",
+    target: pay.package_slug,
+    meta: { tax_invoice_no: no, amount: Number(pay.amount), payment_id: paymentId },
+  });
+}
+
 /** ลบสมาชิก (กิจการ) — ลบข้อมูลทั้งหมดของกิจการ + บัญชีเข้าระบบของทีมงานกิจการนั้น */
 export async function deleteMember(orgId: string): Promise<void> {
   const adminId = await requirePlatformAdmin();

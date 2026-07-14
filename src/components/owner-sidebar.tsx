@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { href: "/owner", label: "ภาพรวม", icon: "📈", exact: true, perm: null, group: "" },
   { href: "/owner/members", label: "สมาชิก", icon: "👥", perm: "members", group: "chaodee" },
   { href: "/owner/payments", label: "การชำระค่าสมาชิก", icon: "💳", badgeKey: "payments", perm: "payments", group: "chaodee" },
+  { href: "/owner/tax-invoices", label: "ใบกำกับภาษี", icon: "🧾", perm: "payments", group: "chaodee" },
   { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦", perm: "packages", group: "chaodee" },
   { href: "/owner/settings", label: "ช่องทางรับเงิน", icon: "🏦", perm: null, group: "chaodee" },
   { href: "/owner/promos", label: "คูปองส่วนลด", icon: "🎟️", perm: "promos", group: "chaodee" },
@@ -74,7 +75,7 @@ export function OwnerSidebar({
   };
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">
+    <aside className="no-print hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">
       <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-4">
         <BrandMark size={36} />
         <div className="min-w-0">

@@ -21,7 +21,7 @@ export function TaxInfoCard({ org }: { org: TaxInfo }) {
     <div className="card mb-6 p-5">
       <h2 className="font-semibold text-slate-900">ข้อมูลสำหรับใบกำกับภาษี</h2>
       <p className="mt-1 text-xs text-slate-500">
-        กรอกข้อมูลผู้เสียภาษีของคุณ เพื่อให้เราออก <b>ใบกำกับภาษี</b> ค่าบริการ Chao-Dee ได้ถูกต้อง (ไว้ลดหย่อน)
+        กรอกข้อมูลผู้เสียภาษีของคุณ <b>ให้ครบทุกช่อง</b> เพื่อให้เราออก <b>ใบกำกับภาษี</b> ค่าบริการ Chao-Dee ได้ถูกต้อง (ไว้ลดหย่อน)
       </p>
       <div className="mt-4">
         <ActionForm action={updateTaxInfo} submitLabel="บันทึกข้อมูลภาษี">
@@ -46,10 +46,11 @@ export function TaxInfoCard({ org }: { org: TaxInfo }) {
           </div>
 
           <div>
-            <label className="label">{isIndiv ? "ชื่อ-นามสกุล" : "ชื่อผู้เสียภาษี (นิติบุคคล)"}</label>
+            <label className="label">{isIndiv ? "ชื่อ-นามสกุล *" : "ชื่อผู้เสียภาษี (นิติบุคคล) *"}</label>
             <input
               name="tax_name"
               className="field"
+              required
               defaultValue={org.tax_name}
               placeholder={isIndiv ? "นายสมชาย ใจดี" : "บริษัท ตัวอย่าง จำกัด"}
             />
@@ -57,13 +58,16 @@ export function TaxInfoCard({ org }: { org: TaxInfo }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="label">
-                {isIndiv ? "เลขประจำตัวประชาชน (13 หลัก)" : "เลขประจำตัวผู้เสียภาษี (13 หลัก)"}
+                {isIndiv ? "เลขประจำตัวประชาชน (13 หลัก) *" : "เลขประจำตัวผู้เสียภาษี (13 หลัก) *"}
               </label>
               <input
                 name="tax_id"
                 inputMode="numeric"
                 maxLength={13}
                 className="field"
+                required
+                pattern="[0-9\-\s]{13,}"
+                title="กรอกเลข 13 หลัก"
                 defaultValue={org.tax_id}
                 placeholder={isIndiv ? "1100xxxxxxxxx" : "0105500000000"}
               />
@@ -81,21 +85,23 @@ export function TaxInfoCard({ org }: { org: TaxInfo }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="label">ที่อยู่ตามใบกำกับภาษี</label>
+              <label className="label">ที่อยู่ตามใบกำกับภาษี *</label>
               <textarea
                 name="tax_address"
                 className="field"
                 rows={2}
+                required
                 defaultValue={org.tax_address}
                 placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
               />
             </div>
             <div>
-              <label className="label">เบอร์โทรติดต่อ</label>
+              <label className="label">เบอร์โทรติดต่อ *</label>
               <input
                 name="tax_phone"
                 inputMode="tel"
                 className="field"
+                required
                 defaultValue={org.tax_phone}
                 placeholder="08x-xxx-xxxx"
               />

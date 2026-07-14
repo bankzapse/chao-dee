@@ -21,6 +21,8 @@ import {
 } from "../../member-actions";
 import { ApprovePromotionButton, RejectPromotionButton } from "../../promotion-actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function MemberDetail({
   params,
 }: {

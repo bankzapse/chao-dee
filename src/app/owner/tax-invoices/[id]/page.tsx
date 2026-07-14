@@ -163,9 +163,7 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
           <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
             ✓ ชำระเงินเรียบร้อยแล้ว
           </div>
-          <p className="mt-6 text-center text-xs text-slate-400">
-            เอกสารนี้ออกโดยระบบ Chao-Dee · ชำระผ่าน {pay.method === "promptpay" ? "PromptPay" : "โอนเงิน"}
-          </p>
+          <p className="mt-6 text-center text-xs text-slate-400">เอกสารนี้ออกโดยระบบ Chao-Dee</p>
         </div>
       </div>
     </div>

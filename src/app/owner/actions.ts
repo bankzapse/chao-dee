@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -213,15 +214,35 @@ export async function updateSubscription(
   const expiresRaw = String(formData.get("expires_at") ?? "").trim();
   const pkg = String(formData.get("package_slug") ?? "pro");
   const status = String(formData.get("status") ?? "trialing");
+  const cycle = String(formData.get("cycle") ?? "monthly");
+  const isActiveLike = status === "active" || status === "trialing";
+
+  // คำนวณวันหมดอายุอัตโนมัติตามรอบ (เดือน/ปี) ถ้าไม่ได้กรอกเอง
+  // ต่อจากวันหมดอายุเดิมถ้ายังไม่หมด ไม่งั้นนับจากวันนี้
+  let expiresIso: string | null;
+  if (expiresRaw) {
+    expiresIso = new Date(expiresRaw).toISOString();
+  } else if (isActiveLike) {
+    const { data: cur } = await admin
+      .from("subscriptions")
+      .select("expires_at")
+      .eq("org_id", orgId)
+      .maybeSingle();
+    const base =
+      cur?.expires_at && new Date(cur.expires_at) > new Date() ? new Date(cur.expires_at) : new Date();
+    expiresIso = addPeriod(base, cycle).toISOString();
+  } else {
+    expiresIso = null; // ระงับ/หมดอายุ → ไม่มีวันหมดอายุ
+  }
 
   const { error } = await admin
     .from("subscriptions")
     .update({
       package_slug: pkg,
-      cycle: String(formData.get("cycle") ?? "monthly"),
+      cycle,
       status,
       price: Number(formData.get("price") ?? 0),
-      expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
+      expires_at: expiresIso,
       note: String(formData.get("note") ?? "").trim(),
       updated_at: new Date().toISOString(),
     })
@@ -232,8 +253,9 @@ export async function updateSubscription(
     actor_id: adminId,
     action: "แก้ไขการสมัครสมาชิก",
     target: pkg,
-    meta: { status, expires_at: expiresRaw || null },
+    meta: { status, cycle, expires_at: expiresIso },
   });
+  revalidatePath(`/owner/members/${orgId}`);
   return { ok: true };
 }
 

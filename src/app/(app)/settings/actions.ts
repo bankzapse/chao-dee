@@ -55,6 +55,13 @@ export async function updateTaxInfo(
     // บุคคลธรรมดาไม่มีสาขา
     tax_branch: isIndiv ? "" : String(formData.get("tax_branch") ?? "สำนักงานใหญ่").trim(),
   };
+  const tax_phone = String(formData.get("tax_phone") ?? "").trim();
+
+  // ต้องกรอกให้ครบทุกช่อง
+  if (!base.tax_name) return { error: `กรุณากรอก${isIndiv ? "ชื่อ-นามสกุล" : "ชื่อผู้เสียภาษี"}` };
+  if (base.tax_id.length !== 13) return { error: `กรุณากรอก${isIndiv ? "เลขประจำตัวประชาชน" : "เลขประจำตัวผู้เสียภาษี"} 13 หลัก` };
+  if (!base.tax_address) return { error: "กรุณากรอกที่อยู่ตามใบกำกับภาษี" };
+  if (!tax_phone) return { error: "กรุณากรอกเบอร์โทรติดต่อ" };
 
   const entity = { tax_entity_type: isIndiv ? "individual" : "juristic" };
   const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
@@ -62,7 +69,7 @@ export async function updateTaxInfo(
   // resilient แบบชั้น: full(+phone 0038) → +entity(0037) → base เดิม
   let { error } = await supabase
     .from("organizations")
-    .update({ ...base, ...entity, tax_phone: String(formData.get("tax_phone") ?? "").trim() })
+    .update({ ...base, ...entity, tax_phone })
     .eq("id", org_id);
   if (missingCol(error?.message)) {
     ({ error } = await supabase.from("organizations").update({ ...base, ...entity }).eq("id", org_id));

@@ -128,6 +128,7 @@ export function ManageSubButton({
           <div>
             <label className="label">วันหมดอายุ</label>
             <input name="expires_at" type="date" className="field" defaultValue={sub.expires_at ? sub.expires_at.slice(0, 10) : ""} />
+            <p className="mt-1 text-xs text-slate-400">เว้นว่างไว้ = คำนวณจากรอบ (เดือน/ปี) ให้อัตโนมัติ</p>
           </div>
           <div>
             <label className="label">หมายเหตุ</label>

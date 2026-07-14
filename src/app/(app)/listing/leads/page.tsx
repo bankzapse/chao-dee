@@ -6,7 +6,10 @@ import { formatDate } from "@/lib/format";
 import { LEAD_STATUS_LABEL, LEAD_STATUS_STYLE } from "@/lib/listings";
 import type { LeadStatus } from "@/lib/types";
 import { LeadStatusSelect } from "./lead-controls";
+import { Pagination, parsePage } from "@/components/pagination";
 import { deleteLead } from "../actions";
+
+const PAGE_SIZE = 30;
 
 type LeadRow = {
   id: string;
@@ -19,14 +22,21 @@ type LeadRow = {
   property_listings: { title: string; slug: string } | null;
 };
 
-export default async function LeadsPage() {
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("listing_leads")
-    .select("id, name, phone, message, source, status, created_at, property_listings(title, slug)")
-    .order("created_at", { ascending: false });
+    .select("id, name, phone, message, source, status, created_at, property_listings(title, slug)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const leads = (data ?? []) as unknown as LeadRow[];
+  const total = count ?? 0;
 
   return (
     <div>
@@ -89,6 +99,7 @@ export default async function LeadsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination basePath="/listing/leads" page={page} pageSize={PAGE_SIZE} total={total} />
         </div>
       )}
     </div>

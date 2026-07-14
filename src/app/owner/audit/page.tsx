@@ -1,8 +1,12 @@
 import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTime } from "@/lib/format";
+import { Pagination, parsePage } from "@/components/pagination";
 
 export const metadata = { title: "บันทึกกิจกรรม" };
+export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 50;
 
 type Log = {
   id: string;
@@ -14,17 +18,23 @@ type Log = {
   created_at: string;
 };
 
-export default async function AuditPage() {
+export default async function AuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await requirePerm("audit");
+  const page = parsePage((await searchParams).page);
   const admin = createAdminClient();
 
-  const { data: logs } = await admin
+  const { data: logs, count } = await admin
     .from("audit_logs")
-    .select("id, org_id, actor_name, action, target, meta, created_at")
+    .select("id, org_id, actor_name, action, target, meta, created_at", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(200);
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const rows = (logs ?? []) as Log[];
+  const total = count ?? 0;
   const orgIds = [...new Set(rows.map((r) => r.org_id).filter(Boolean))] as string[];
   const orgMap = new Map<string, string>();
   if (orgIds.length) {
@@ -35,7 +45,7 @@ export default async function AuditPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900">บันทึกกิจกรรม</h1>
-      <p className="mt-1 text-sm text-slate-500">ประวัติการดำเนินการล่าสุด (200 รายการ)</p>
+      <p className="mt-1 text-sm text-slate-500">ประวัติการดำเนินการทั้งหมด ({total.toLocaleString()})</p>
 
       <div className="mt-6 card overflow-hidden">
         <div className="overflow-x-auto">
@@ -78,6 +88,7 @@ export default async function AuditPage() {
             </tbody>
           </table>
         </div>
+        <Pagination basePath="/owner/audit" page={page} pageSize={PAGE_SIZE} total={total} />
       </div>
     </div>
   );

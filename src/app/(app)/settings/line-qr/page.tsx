@@ -4,14 +4,27 @@ import { QRCodeImg, PrintButton, lineOaUrl } from "@/components/qr-code";
 
 export default async function LineQrPrintPage() {
   const supabase = await createClient();
+
+  // resolve org ของผู้ใช้อย่างชัดเจน (กัน .single() ได้หลายแถว/ไม่มีแถว แล้ว throw)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user?.id ?? "")
+    .maybeSingle();
+  const orgId = (profile as { org_id?: string } | null)?.org_id ?? "";
+
   const { data: org } = await supabase
     .from("organizations")
     .select("name, line_oa_id")
-    .single();
+    .eq("id", orgId)
+    .maybeSingle();
 
   const id = (org as { line_oa_id?: string } | null)?.line_oa_id ?? "";
   const url = lineOaUrl(id);
-  const name = org?.name ?? "หอพัก";
+  const name = (org as { name?: string } | null)?.name ?? "หอพัก";
 
   return (
     <div className="mx-auto max-w-md">

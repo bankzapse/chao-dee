@@ -322,16 +322,22 @@ export async function savePlatformPayment(_prev: FormState, formData: FormData):
     bank_account_name: g("bank_account_name"),
     updated_at: new Date().toISOString(),
   };
-  const ext = {
+  const extNoPhone = {
     payment_method: method,
     tax_name: g("tax_name"),
     tax_id: g("tax_id").replace(/\D/g, ""),
     tax_address: g("tax_address"),
     tax_branch: g("tax_branch") || "สำนักงานใหญ่",
   };
-  let { error } = await admin.from("platform_settings").upsert({ ...base, ...ext }, { onConflict: "id" });
-  // resilient: ถ้า prod ยังไม่ได้รัน migration 0035 (payment_method/tax_*) → บันทึกเฉพาะคอลัมน์เดิม
-  if (error && /schema cache|could not find the .* column/i.test(error.message)) {
+  const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
+  let { error } = await admin
+    .from("platform_settings")
+    .upsert({ ...base, ...extNoPhone, tax_phone: g("tax_phone") }, { onConflict: "id" });
+  // resilient: ตัดคอลัมน์ใหม่ที่ prod ยังไม่มีออกทีละชั้น (0036 → 0035 → เดิม)
+  if (missingCol(error?.message)) {
+    ({ error } = await admin.from("platform_settings").upsert({ ...base, ...extNoPhone }, { onConflict: "id" }));
+  }
+  if (missingCol(error?.message)) {
     ({ error } = await admin.from("platform_settings").upsert(base, { onConflict: "id" }));
   }
   if (error) return { error: error.message };

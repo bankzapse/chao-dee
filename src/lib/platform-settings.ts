@@ -12,6 +12,7 @@ export type PlatformPayment = {
   tax_id: string;
   tax_address: string;
   tax_branch: string;
+  tax_phone: string;
 };
 
 /**
@@ -32,6 +33,7 @@ export async function getPlatformPayment(): Promise<PlatformPayment> {
     tax_id: "",
     tax_address: "",
     tax_branch: "สำนักงานใหญ่",
+    tax_phone: "",
   };
   try {
     const admin = createAdminClient();
@@ -65,6 +67,13 @@ export async function getPlatformPayment(): Promise<PlatformPayment> {
       base.tax_address = (ext.tax_address as string) ?? "";
       base.tax_branch = (ext.tax_branch as string) || "สำนักงานใหญ่";
     }
+    // tax_phone (0036) — อ่านแยก เผื่อ prod ยังไม่ได้รัน migration
+    const { data: phoneRow } = await admin
+      .from("platform_settings")
+      .select("tax_phone")
+      .eq("id", 1)
+      .maybeSingle();
+    if (phoneRow) base.tax_phone = (phoneRow.tax_phone as string) ?? "";
     return base;
   } catch {
     return empty;

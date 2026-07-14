@@ -26,12 +26,20 @@ export default function GlobalError({
             <p className="mt-2 text-sm text-slate-500">
               ระบบขัดข้องชั่วคราว ทีมงานได้รับแจ้งแล้ว กรุณาลองใหม่อีกครั้ง
             </p>
-            <button
-              onClick={() => reset()}
-              className="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white transition hover:bg-indigo-500"
-            >
-              ลองใหม่
-            </button>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+              <button
+                onClick={() => window.history.back()}
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                ← ย้อนกลับ
+              </button>
+              <button
+                onClick={() => reset()}
+                className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white transition hover:bg-indigo-500"
+              >
+                ลองใหม่
+              </button>
+            </div>
             <div className="mt-3 flex items-center justify-center gap-4 text-sm">
               <a href="/" className="text-slate-500 hover:text-slate-700">หน้าแรก</a>
               <span className="text-slate-300">·</span>

@@ -19,6 +19,7 @@ type Pay = {
   tax_id: string;
   tax_address: string;
   tax_branch: string;
+  tax_phone: string;
 };
 
 export function PlatformPaymentForm({ pay }: { pay: Pay }) {
@@ -144,15 +145,27 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
                   </select>
                 </div>
               </div>
-              <div className="mt-3">
-                <label className="label">ที่อยู่ตามใบกำกับภาษี</label>
-                <textarea
-                  name="tax_address"
-                  className="field"
-                  rows={2}
-                  defaultValue={pay.tax_address}
-                  placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
-                />
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="label">ที่อยู่ตามใบกำกับภาษี</label>
+                  <textarea
+                    name="tax_address"
+                    className="field"
+                    rows={2}
+                    defaultValue={pay.tax_address}
+                    placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
+                  />
+                </div>
+                <div>
+                  <label className="label">เบอร์โทรติดต่อ</label>
+                  <input
+                    name="tax_phone"
+                    inputMode="tel"
+                    className="field"
+                    defaultValue={pay.tax_phone}
+                    placeholder="02-123-4567 หรือ 08x-xxx-xxxx"
+                  />
+                </div>
               </div>
             </div>
 

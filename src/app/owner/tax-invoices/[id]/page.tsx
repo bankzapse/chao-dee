@@ -34,6 +34,14 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
 
   const platform = await getPlatformPayment();
   const org = (pay.organizations as OrgTax | null) ?? {};
+
+  // ประเภทผู้เสียภาษีของสมาชิก (แยก query + resilient เผื่อ prod ยังไม่ได้รัน 0037)
+  const { data: etRow } = await admin
+    .from("organizations")
+    .select("tax_entity_type")
+    .eq("id", pay.org_id)
+    .maybeSingle();
+  const isIndiv = (etRow as { tax_entity_type?: string } | null)?.tax_entity_type === "individual";
   const pkg = packageBySlug(pay.package_slug);
   const amount = Number(pay.amount);
   const { base, vat } = splitVat(amount);
@@ -82,10 +90,14 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
           {/* ผู้ซื้อ + วันที่ */}
           <div className="grid grid-cols-2 gap-6 py-6 text-sm">
             <div>
-              <p className="text-slate-400">ผู้ซื้อ / ลูกค้า</p>
+              <p className="text-slate-400">ผู้ซื้อ / ลูกค้า{isIndiv ? " (บุคคลธรรมดา)" : " (นิติบุคคล)"}</p>
               <p className="mt-1 font-medium text-slate-900">{org.tax_name || org.name || "-"}</p>
-              {org.tax_id && <p className="text-slate-500">เลขผู้เสียภาษี {org.tax_id}</p>}
-              {org.tax_branch && <p className="text-slate-500">{org.tax_branch}</p>}
+              {org.tax_id && (
+                <p className="text-slate-500">
+                  {isIndiv ? "เลขประจำตัวประชาชน" : "เลขประจำตัวผู้เสียภาษี"} {org.tax_id}
+                </p>
+              )}
+              {!isIndiv && org.tax_branch && <p className="text-slate-500">{org.tax_branch}</p>}
               {org.tax_address && <p className="text-slate-500">{org.tax_address}</p>}
               {!org.tax_name && !org.tax_id && (
                 <p className="text-xs text-amber-600">⚠ สมาชิกยังไม่กรอกข้อมูลผู้เสียภาษี</p>

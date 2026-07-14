@@ -47,15 +47,23 @@ export async function updateTaxInfo(
 ): Promise<FormState> {
   const supabase = await createClient();
   const org_id = await getOrgId();
-  const { error } = await supabase
+  const isIndiv = String(formData.get("tax_entity_type") ?? "juristic") === "individual";
+  const base = {
+    tax_name: String(formData.get("tax_name") ?? "").trim(),
+    tax_id: String(formData.get("tax_id") ?? "").replace(/\D/g, ""),
+    tax_address: String(formData.get("tax_address") ?? "").trim(),
+    // บุคคลธรรมดาไม่มีสาขา
+    tax_branch: isIndiv ? "" : String(formData.get("tax_branch") ?? "สำนักงานใหญ่").trim(),
+  };
+
+  let { error } = await supabase
     .from("organizations")
-    .update({
-      tax_name: String(formData.get("tax_name") ?? "").trim(),
-      tax_id: String(formData.get("tax_id") ?? "").replace(/\D/g, ""),
-      tax_address: String(formData.get("tax_address") ?? "").trim(),
-      tax_branch: String(formData.get("tax_branch") ?? "สำนักงานใหญ่").trim(),
-    })
+    .update({ ...base, tax_entity_type: isIndiv ? "individual" : "juristic" })
     .eq("id", org_id);
+  // resilient: ถ้า prod ยังไม่ได้รัน migration 0037 (tax_entity_type) → บันทึกเฉพาะส่วนเดิม
+  if (error && /schema cache|could not find the .* column/i.test(error.message)) {
+    ({ error } = await supabase.from("organizations").update(base).eq("id", org_id));
+  }
   if (error) return { error: error.message };
   return { ok: true };
 }

@@ -38,6 +38,10 @@ export default async function SettingsPage() {
   const payment_method = ((pmRow as { payment_method?: string } | null)?.payment_method ?? "promptpay") as
     | "promptpay"
     | "bank";
+  const { data: etRow } = await supabase.from("organizations").select("tax_entity_type").maybeSingle();
+  const tax_entity_type = ((etRow as { tax_entity_type?: string } | null)?.tax_entity_type ?? "juristic") as
+    | "juristic"
+    | "individual";
 
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const st = sub?.status ?? "expired";
@@ -76,6 +80,7 @@ export default async function SettingsPage() {
       {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ Chao-Dee) */}
       <TaxInfoCard
         org={{
+          tax_entity_type,
           tax_name: org?.tax_name ?? "",
           tax_id: org?.tax_id ?? "",
           tax_address: org?.tax_address ?? "",

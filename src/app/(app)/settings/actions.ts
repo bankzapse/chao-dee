@@ -56,12 +56,18 @@ export async function updateTaxInfo(
     tax_branch: isIndiv ? "" : String(formData.get("tax_branch") ?? "สำนักงานใหญ่").trim(),
   };
 
+  const entity = { tax_entity_type: isIndiv ? "individual" : "juristic" };
+  const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
+
+  // resilient แบบชั้น: full(+phone 0038) → +entity(0037) → base เดิม
   let { error } = await supabase
     .from("organizations")
-    .update({ ...base, tax_entity_type: isIndiv ? "individual" : "juristic" })
+    .update({ ...base, ...entity, tax_phone: String(formData.get("tax_phone") ?? "").trim() })
     .eq("id", org_id);
-  // resilient: ถ้า prod ยังไม่ได้รัน migration 0037 (tax_entity_type) → บันทึกเฉพาะส่วนเดิม
-  if (error && /schema cache|could not find the .* column/i.test(error.message)) {
+  if (missingCol(error?.message)) {
+    ({ error } = await supabase.from("organizations").update({ ...base, ...entity }).eq("id", org_id));
+  }
+  if (missingCol(error?.message)) {
     ({ error } = await supabase.from("organizations").update(base).eq("id", org_id));
   }
   if (error) return { error: error.message };

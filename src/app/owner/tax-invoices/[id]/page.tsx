@@ -42,6 +42,12 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
     .eq("id", pay.org_id)
     .maybeSingle();
   const isIndiv = (etRow as { tax_entity_type?: string } | null)?.tax_entity_type === "individual";
+  const { data: tpRow } = await admin
+    .from("organizations")
+    .select("tax_phone")
+    .eq("id", pay.org_id)
+    .maybeSingle();
+  const buyerPhone = (tpRow as { tax_phone?: string } | null)?.tax_phone ?? "";
   const pkg = packageBySlug(pay.package_slug);
   const amount = Number(pay.amount);
   const { base, vat } = splitVat(amount);
@@ -99,6 +105,7 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
               )}
               {!isIndiv && org.tax_branch && <p className="text-slate-500">{org.tax_branch}</p>}
               {org.tax_address && <p className="text-slate-500">{org.tax_address}</p>}
+              {buyerPhone && <p className="text-slate-500">โทร {buyerPhone}</p>}
               {!org.tax_name && !org.tax_id && (
                 <p className="text-xs text-amber-600">⚠ สมาชิกยังไม่กรอกข้อมูลผู้เสียภาษี</p>
               )}

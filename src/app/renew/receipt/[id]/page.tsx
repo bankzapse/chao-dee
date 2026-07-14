@@ -52,6 +52,12 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
     .eq("id", profile?.org_id ?? "")
     .maybeSingle();
   const isIndiv = (etRow as { tax_entity_type?: string } | null)?.tax_entity_type === "individual";
+  const { data: tpRow } = await supabase
+    .from("organizations")
+    .select("tax_phone")
+    .eq("id", profile?.org_id ?? "")
+    .maybeSingle();
+  const buyerPhone = (tpRow as { tax_phone?: string } | null)?.tax_phone ?? "";
 
   const pkg = packageBySlug(pay.package_slug);
   const receiptNo = `CD-${String(pay.id).slice(0, 8).toUpperCase()}`;
@@ -123,6 +129,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
                   )}
                   {!isIndiv && org.tax_branch && <p className="text-slate-500">{org.tax_branch}</p>}
                   {org.tax_address && <p className="text-slate-500">{org.tax_address}</p>}
+                  {buyerPhone && <p className="text-slate-500">โทร {buyerPhone}</p>}
                 </>
               ) : (
                 profile?.full_name && <p className="text-slate-500">{profile.full_name}</p>

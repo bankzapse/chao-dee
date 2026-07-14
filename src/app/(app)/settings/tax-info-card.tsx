@@ -10,6 +10,7 @@ export type TaxInfo = {
   tax_id: string;
   tax_address: string;
   tax_branch: string;
+  tax_phone: string;
 };
 
 export function TaxInfoCard({ org }: { org: TaxInfo }) {
@@ -78,15 +79,27 @@ export function TaxInfoCard({ org }: { org: TaxInfo }) {
               </div>
             )}
           </div>
-          <div>
-            <label className="label">ที่อยู่ตามใบกำกับภาษี</label>
-            <textarea
-              name="tax_address"
-              className="field"
-              rows={2}
-              defaultValue={org.tax_address}
-              placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
-            />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label">ที่อยู่ตามใบกำกับภาษี</label>
+              <textarea
+                name="tax_address"
+                className="field"
+                rows={2}
+                defaultValue={org.tax_address}
+                placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
+              />
+            </div>
+            <div>
+              <label className="label">เบอร์โทรติดต่อ</label>
+              <input
+                name="tax_phone"
+                inputMode="tel"
+                className="field"
+                defaultValue={org.tax_phone}
+                placeholder="08x-xxx-xxxx"
+              />
+            </div>
           </div>
         </ActionForm>
       </div>

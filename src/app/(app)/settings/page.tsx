@@ -42,6 +42,8 @@ export default async function SettingsPage() {
   const tax_entity_type = ((etRow as { tax_entity_type?: string } | null)?.tax_entity_type ?? "juristic") as
     | "juristic"
     | "individual";
+  const { data: tpRow } = await supabase.from("organizations").select("tax_phone").maybeSingle();
+  const tax_phone = (tpRow as { tax_phone?: string } | null)?.tax_phone ?? "";
 
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const st = sub?.status ?? "expired";
@@ -85,6 +87,7 @@ export default async function SettingsPage() {
           tax_id: org?.tax_id ?? "",
           tax_address: org?.tax_address ?? "",
           tax_branch: org?.tax_branch ?? "สำนักงานใหญ่",
+          tax_phone,
         }}
       />
 

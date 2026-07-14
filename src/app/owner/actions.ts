@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { incrementPromoUse } from "@/lib/promo";
 import { COMPANY } from "@/lib/company";
+import { formatBaht } from "@/lib/format";
+import { sendEmail, isEmailConfigured, emailShell } from "@/lib/email";
 import type { FormState } from "@/components/action-form";
 
 function addPeriod(from: Date, cycle: string): Date {
@@ -106,6 +108,27 @@ export async function verifyPayment(paymentId: string): Promise<void> {
     target: pay.package_slug,
     meta: { amount: Number(pay.amount), cycle: pay.cycle, payment_id: paymentId, promo: pay.promo_code || null },
   });
+
+  // อีเมลยืนยัน/ใบเสร็จ (best-effort — ข้ามถ้ายังไม่ตั้งค่าอีเมลหรือไม่มีอีเมลเจ้าของ)
+  if (isEmailConfigured()) {
+    const { data: owner } = await admin
+      .from("profiles")
+      .select("email")
+      .eq("org_id", pay.org_id)
+      .eq("role", "owner")
+      .maybeSingle();
+    if (owner?.email) {
+      await sendEmail({
+        to: owner.email,
+        subject: "ยืนยันการชำระเงิน Chao-Dee",
+        html: emailShell(
+          "เปิดสิทธิ์การใช้งานเรียบร้อยแล้ว",
+          `เราได้รับและยืนยันการชำระเงินของคุณแล้ว ยอด <b>${formatBaht(Number(pay.amount))}</b> ขอบคุณที่ใช้บริการ Chao-Dee`,
+          { label: "ดูใบเสร็จ", url: `https://chao-dee.com/renew/receipt/${paymentId}` }
+        ),
+      });
+    }
+  }
 }
 
 export async function rejectPayment(paymentId: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, isSmsConfigured } from "@/lib/sms";
+import { sendEmail, isEmailConfigured, emailShell } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -39,9 +40,9 @@ export async function GET(req: Request) {
     // ยังไม่ได้ migrate — ข้าม
   }
 
-  // 2) reminders (ใกล้หมดใน 2–3 วัน)
+  // 2) reminders (ใกล้หมดใน 2–3 วัน) — ส่งได้ทั้ง SMS และอีเมล
   let reminded = 0;
-  if (isSmsConfigured()) {
+  if (isSmsConfigured() || isEmailConfigured()) {
     const from = new Date(now.getTime() + 2 * 86400000).toISOString();
     const to = new Date(now.getTime() + 3 * 86400000).toISOString();
     const { data: soon } = await admin
@@ -54,17 +55,32 @@ export async function GET(req: Request) {
     for (const s of soon ?? []) {
       const { data: owner } = await admin
         .from("profiles")
-        .select("phone")
+        .select("phone, email")
         .eq("org_id", s.org_id)
         .eq("role", "owner")
         .maybeSingle();
-      if (!owner?.phone) continue;
       const name = (s.organizations as { name?: string } | null)?.name ?? "หอพักของคุณ";
-      const res = await sendSms(
-        owner.phone,
-        `แพ็คเกจ Chao-Dee ของ ${name} ใกล้หมดอายุ ต่ออายุได้ที่ https://chao-dee.com/renew เพื่อใช้งานต่อเนื่อง`
-      );
-      if (res.ok) reminded++;
+      let sent = false;
+      if (owner?.phone && isSmsConfigured()) {
+        const res = await sendSms(
+          owner.phone,
+          `แพ็คเกจ Chao-Dee ของ ${name} ใกล้หมดอายุ ต่ออายุได้ที่ https://chao-dee.com/renew เพื่อใช้งานต่อเนื่อง`
+        );
+        sent = sent || res.ok;
+      }
+      if (owner?.email && isEmailConfigured()) {
+        const res = await sendEmail({
+          to: owner.email,
+          subject: `แพ็คเกจ Chao-Dee ของ ${name} ใกล้หมดอายุ`,
+          html: emailShell(
+            "แพ็คเกจใกล้หมดอายุ",
+            `แพ็คเกจของ <b>${name}</b> จะหมดอายุเร็ว ๆ นี้ ต่ออายุเพื่อใช้งานต่อเนื่องได้เลย`,
+            { label: "ต่ออายุแพ็คเกจ", url: "https://chao-dee.com/renew" }
+          ),
+        });
+        sent = sent || res.ok;
+      }
+      if (sent) reminded++;
     }
   }
 

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
+import { rateLimitDb } from "@/lib/rate-limit-db";
 import { toE164 } from "@/lib/phone";
 
 export type OwnerAuthState = { error?: string } | null;
@@ -18,10 +19,12 @@ export async function ownerLogin(
   if (!phone) return { error: "เบอร์โทรไม่ถูกต้อง" };
   if (!password) return { error: "กรุณากรอกรหัสผ่าน" };
 
-  // กัน brute-force รหัสผ่าน (5 ครั้ง/นาที ต่อเบอร์)
+  // กัน brute-force รหัสผ่าน (5 ครั้ง/นาที ต่อเบอร์) — ชั้น in-memory + durable (ข้าม instance)
   sweepIfNeeded();
   const rl = rateLimit(`owner-login:${phone}`, 5, 60_000);
   if (!rl.ok) return { error: `พยายามเข้าสู่ระบบบ่อยเกินไป ลองใหม่ใน ${rl.retryAfter} วินาที` };
+  const rlDb = await rateLimitDb(`owner-login:${phone}`, 5, 60_000);
+  if (!rlDb.ok) return { error: `พยายามเข้าสู่ระบบบ่อยเกินไป ลองใหม่ใน ${rlDb.retryAfter} วินาที` };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ phone, password });

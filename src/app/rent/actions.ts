@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import { rateLimit } from "@/lib/rate-limit";
+import { rateLimitDb } from "@/lib/rate-limit-db";
 
 /** ผู้เช่าติดต่อผ่านหน้าประกาศ /rent → บันทึก lead + แจ้งเจ้าของทาง LINE */
 export async function submitLead(
@@ -14,6 +15,9 @@ export async function submitLead(
   // กัน spam: จำกัดจำนวนต่อ IP (ชั้นเสริม)
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!rateLimit(`lead:${ip}`, 5, 5 * 60_000).ok) {
+    return { error: "ส่งข้อมูลถี่เกินไป กรุณารอสักครู่แล้วลองใหม่" };
+  }
+  if (!(await rateLimitDb(`lead:${ip}`, 5, 5 * 60_000)).ok) {
     return { error: "ส่งข้อมูลถี่เกินไป กรุณารอสักครู่แล้วลองใหม่" };
   }
 

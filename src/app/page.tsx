@@ -455,7 +455,12 @@ export default async function LandingPage() {
         </div>
         <div className="pb-8 text-center text-xs text-slate-400">
           <p>Chao-Dee เป็นผลิตภัณฑ์ในเครือกลุ๊ป · ดำเนินการโดย {COMPANY.name}</p>
-          <p className="mt-1">© 2026 Chao-Dee · chao-dee.com · เลขประจำตัวผู้เสียภาษี {COMPANY.taxId}</p>
+          <p className="mt-1">เลขประจำตัวผู้เสียภาษี {COMPANY.taxId} · {COMPANY.address}</p>
+          <p className="mt-1">
+            ติดต่อ/ร้องเรียน: <a href={`mailto:${COMPANY.email}`} className="underline hover:text-slate-600">{COMPANY.email}</a>
+            {COMPANY.phone ? ` · โทร ${COMPANY.phone}` : ""}
+          </p>
+          <p className="mt-1">© 2026 Chao-Dee · chao-dee.com</p>
         </div>
       </footer>
     </div>

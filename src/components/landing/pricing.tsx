@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PACKAGES, COMMON_FEATURES, type Package } from "@/lib/packages";
+import { COMPANY } from "@/lib/company";
 
 export function Pricing({ packages = PACKAGES }: { packages?: Package[] }) {
   const [yearly, setYearly] = useState(true);
@@ -18,6 +19,11 @@ export function Pricing({ packages = PACKAGES }: { packages?: Package[] }) {
         </h2>
         <p className="mt-3 text-slate-500">
           ทุกแพ็คเกจได้ฟีเจอร์ครบ · ต่างกันแค่จำนวนอาคาร/ห้อง/ผู้เช่า · ทดลองฟรี 30 วัน
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
+          {COMPANY.vatRegistered
+            ? "ราคารวมภาษีมูลค่าเพิ่ม (VAT 7%) แล้ว"
+            : "ราคายังไม่รวมภาษีมูลค่าเพิ่ม (ผู้ประกอบการยังไม่ได้จดทะเบียน VAT)"}
         </p>
 
         {/* toggle */}

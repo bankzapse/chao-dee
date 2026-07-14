@@ -65,7 +65,11 @@ export function LeadForm({
       {state?.error && <p className="text-sm text-rose-600">{state.error}</p>}
       <SubmitButton />
       <p className="text-center text-xs text-slate-400">
-        ข้อมูลของคุณจะส่งถึงเจ้าของโดยตรง · ปลอดภัย
+        การกดส่งถือว่าคุณยินยอมให้ Chao-Dee เก็บชื่อและเบอร์ติดต่อ เพื่อส่งให้เจ้าของที่พักติดต่อกลับ
+        ตาม{" "}
+        <a href="/privacy" target="_blank" className="underline hover:text-slate-600">
+          นโยบายความเป็นส่วนตัว
+        </a>
       </p>
     </form>
   );

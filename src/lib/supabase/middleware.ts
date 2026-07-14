@@ -46,6 +46,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/owner-login") || // ทางเข้าแผงเจ้าของ (ตรวจสิทธิ์ในหน้าเอง)
     pathname.startsWith("/bill") || // หน้าบิลสาธารณะสำหรับผู้เช่า (เข้าผ่านลิงก์ใน LINE)
+    pathname.startsWith("/print") || // หน้าพิมพ์ QR (เนื้อหาสาธารณะ รับค่าจาก query)
     pathname.startsWith("/property") || // marketplace เดิม (redirect ไป /rent)
     pathname.startsWith("/rent") || // Chao-Dee Rent marketplace (สาธารณะ/SEO + auth เอง)
     pathname.startsWith("/logout") || // ทางออกฉุกเฉิน — ล้าง cookie ได้เสมอ

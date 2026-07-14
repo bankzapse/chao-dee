@@ -1,11 +1,13 @@
 "use client";
 
 import { ActionForm } from "@/components/action-form";
-import { QRCodeImg, lineOaUrl } from "@/components/qr-code";
+import { QRCodeImg } from "@/components/qr-code";
+import { lineOaUrl } from "@/lib/line-oa";
 import { saveLineOa } from "./line-oa-actions";
 
-export function LineOaCard({ lineOaId }: { lineOaId: string }) {
+export function LineOaCard({ lineOaId, orgName }: { lineOaId: string; orgName: string }) {
   const url = lineOaUrl(lineOaId);
+  const printHref = `/print/line-qr?oa=${encodeURIComponent(lineOaId)}&name=${encodeURIComponent(orgName)}`;
   return (
     <div className="card mb-6 p-5">
       <div className="flex items-center gap-2">
@@ -37,7 +39,7 @@ export function LineOaCard({ lineOaId }: { lineOaId: string }) {
             <QRCodeImg text={url} size={160} />
             <p className="text-sm font-medium text-slate-700">{lineOaId}</p>
             <a
-              href="/settings/line-qr"
+              href={printHref}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
               🖨️ เปิดหน้าพิมพ์ QR

@@ -71,7 +71,7 @@ export default async function SettingsPage() {
       />
 
       {/* LINE OA ของหอ (QR ให้ผู้เช่าสแกน) */}
-      <LineOaCard lineOaId={lineOaId} />
+      <LineOaCard lineOaId={lineOaId} orgName={org?.name ?? "หอพัก"} />
 
       {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ Chao-Dee) */}
       <TaxInfoCard

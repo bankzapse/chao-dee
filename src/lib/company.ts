@@ -18,6 +18,10 @@ export const COMPANY = {
   /** จด VAT แล้วหรือยัง — ตั้ง NEXT_PUBLIC_COMPANY_VAT=true เมื่อจด VAT เพื่อเปิดใบกำกับภาษี */
   vatRegistered: process.env.NEXT_PUBLIC_COMPANY_VAT === "true",
   vatRate: 7,
+  /** เลขทะเบียนพาณิชย์อิเล็กทรอนิกส์ (DBD) — ใส่เมื่อได้เลขมา แล้วเครื่องหมายจะโชว์เลข+ลิงก์ตรวจสอบ */
+  dbdRegNo: process.env.NEXT_PUBLIC_DBD_REG_NO || "",
+  /** ลิงก์ตรวจสอบ DBD (จากเครื่องหมายที่ DBD ออกให้) — ว่างได้ */
+  dbdVerifyUrl: process.env.NEXT_PUBLIC_DBD_VERIFY_URL || "",
 };
 
 /** แยกยอดรวม (รวม VAT แล้ว) เป็นฐาน + VAT */

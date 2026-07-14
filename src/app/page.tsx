@@ -3,6 +3,7 @@ import { Pricing } from "@/components/landing/pricing";
 import { HeaderCta } from "@/components/landing/header-cta";
 import { COMPANY } from "@/lib/company";
 import { BrandMark } from "@/components/brand-mark";
+import { DbdBadge } from "@/components/dbd-badge";
 import { getEffectivePackages } from "@/lib/packages-db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht } from "@/lib/format";
@@ -455,6 +456,9 @@ export default async function LandingPage() {
           </div>
         </div>
         <div className="pb-8 text-center text-xs text-slate-400">
+          <div className="mb-4 flex justify-center">
+            <DbdBadge />
+          </div>
           <p>Chao-Dee เป็นผลิตภัณฑ์ในเครือกลุ๊ป · ดำเนินการโดย {COMPANY.name}</p>
           <p className="mt-1">เลขประจำตัวผู้เสียภาษี {COMPANY.taxId} · {COMPANY.address}</p>
           <p className="mt-1">

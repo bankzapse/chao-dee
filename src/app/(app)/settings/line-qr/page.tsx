@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { QRCodeImg, PrintButton, lineOaUrl } from "@/components/qr-code";
 
+export const dynamic = "force-dynamic";
+
 export default async function LineQrPrintPage() {
   const supabase = await createClient();
 

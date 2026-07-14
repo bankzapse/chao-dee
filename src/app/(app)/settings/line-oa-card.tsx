@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
 import { QRCodeImg, lineOaUrl } from "@/components/qr-code";
 import { saveLineOa } from "./line-oa-actions";
@@ -37,12 +36,12 @@ export function LineOaCard({ lineOaId }: { lineOaId: string }) {
           <div className="flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
             <QRCodeImg text={url} size={160} />
             <p className="text-sm font-medium text-slate-700">{lineOaId}</p>
-            <Link
+            <a
               href="/settings/line-qr"
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
               🖨️ เปิดหน้าพิมพ์ QR
-            </Link>
+            </a>
           </div>
         ) : (
           <div className="flex items-center justify-center rounded-xl bg-slate-50 p-6 text-center text-xs text-slate-400 sm:w-48">

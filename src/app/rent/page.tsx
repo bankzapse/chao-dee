@@ -161,6 +161,9 @@ export default async function RentHome({
             <span className="font-bold">Chao-Dee <span className="font-light text-amber-300">Rent</span></span>
           </Link>
           <div className="flex items-center gap-3 text-sm">
+            <Link href="/" className="hidden text-slate-300 hover:text-white sm:block">
+              🏢 ระบบจัดการหอ
+            </Link>
             <Link href="/rent/login" className="text-slate-300 hover:text-white">
               เข้าสู่ระบบ
             </Link>

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { money } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
 
 export type MeterRow = {
@@ -16,7 +17,7 @@ export async function saveMeterReadings(
   readingDate: string,
   rows: MeterRow[]
 ): Promise<FormState> {
-  if (!period) return { error: "ไม่พบรอบเดือน" };
+  if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบเดือนไม่ถูกต้อง (YYYY-MM)" };
   const supabase = await createClient();
   const org_id = await getOrgId();
 
@@ -24,8 +25,8 @@ export async function saveMeterReadings(
     org_id,
     room_id: r.room_id,
     period,
-    water_value: Number(r.water_value) || 0,
-    electric_value: Number(r.electric_value) || 0,
+    water_value: money(r.water_value),
+    electric_value: money(r.electric_value),
     reading_date: readingDate,
   }));
 

@@ -13,18 +13,22 @@ export default async function OwnerPayments() {
   const { data: pays } = await admin
     .from("subscription_payments")
     .select("*, organizations(name)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   const list = pays ?? [];
 
-  // signed URL ของสลิปแต่ละใบ เพื่อให้เจ้าของระบบเปิดดูก่อนยืนยัน
-  const slipUrls = new Map<string, string>();
-  for (const p of list) {
-    if (p.slip_path) {
-      const { data: signed } = await admin.storage.from("slips").createSignedUrl(p.slip_path, 60 * 60);
-      if (signed?.signedUrl) slipUrls.set(p.id, signed.signedUrl);
-    }
-  }
+  // signed URL ของสลิป — สร้างพร้อมกัน (กัน N+1 sequential ที่ทำหน้าค้างเมื่อรายการเยอะ)
+  const withSlip = list.filter((p) => p.slip_path);
+  const signed = await Promise.all(
+    withSlip.map((p) =>
+      admin.storage
+        .from("slips")
+        .createSignedUrl(p.slip_path, 60 * 60)
+        .then((r) => [p.id, r.data?.signedUrl ?? ""] as const)
+    )
+  );
+  const slipUrls = new Map(signed.filter(([, u]) => u));
 
   const pending = list.filter((p) => p.status === "pending");
   const verified = list.filter((p) => p.status === "verified");

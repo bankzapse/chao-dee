@@ -1,5 +1,5 @@
 /** อ่านค่าเงิน/ตัวเลขจากฟอร์มแบบปลอดภัย — ไม่ใช่ตัวเลข → fallback, ติดลบ → 0 */
-export function money(v: FormDataEntryValue | null | undefined, fallback = 0): number {
+export function money(v: FormDataEntryValue | number | null | undefined, fallback = 0): number {
   const n = Number(String(v ?? "").trim());
   if (!Number.isFinite(n)) return fallback;
   return Math.max(0, n);

@@ -28,11 +28,18 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { pathname } = request.nextUrl;
+
+  // getUser() เป็น network call — ถ้า Supabase Auth สะดุด อย่าให้ทั้งเว็บล่ม
+  let user = null;
+  try {
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {
+    // auth ล่มชั่วคราว: ปล่อยหน้า public ผ่าน, หน้าที่ต้องล็อกอินให้ layout/page จัดการเอง
+    return supabaseResponse;
+  }
+
   const isAuthRoute = pathname.startsWith("/login");
   // หน้า auth ที่ถ้าล็อกอินแล้วควรเด้งกลับแดชบอร์ด
   const authedShouldLeave =

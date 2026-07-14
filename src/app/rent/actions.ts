@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
+import { rateLimit } from "@/lib/rate-limit";
 
 /** ผู้เช่าติดต่อผ่านหน้าประกาศ /rent → บันทึก lead + แจ้งเจ้าของทาง LINE */
 export async function submitLead(
@@ -9,10 +11,17 @@ export async function submitLead(
   _prev: { ok?: boolean; error?: string },
   formData: FormData
 ): Promise<{ ok?: boolean; error?: string }> {
-  const name = String(formData.get("name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  const message = String(formData.get("message") ?? "").trim();
+  // กัน spam: จำกัดจำนวนต่อ IP (ชั้นเสริม)
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(`lead:${ip}`, 5, 5 * 60_000).ok) {
+    return { error: "ส่งข้อมูลถี่เกินไป กรุณารอสักครู่แล้วลองใหม่" };
+  }
+
+  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
+  const phone = String(formData.get("phone") ?? "").trim().slice(0, 30);
+  const message = String(formData.get("message") ?? "").trim().slice(0, 1000);
   if (!name || !phone) return { error: "กรุณากรอกชื่อและเบอร์ติดต่อ" };
+  if (!/^[0-9+\-\s()]{6,20}$/.test(phone)) return { error: "เบอร์ติดต่อไม่ถูกต้อง" };
 
   const supabase = createAdminClient();
   const { data: listing } = await supabase

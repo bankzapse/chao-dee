@@ -22,17 +22,27 @@ function stripNewInvoiceCols<T extends Record<string, unknown>>(row: T) {
 
 /** ออกบิลอัตโนมัติสำหรับทุกห้องที่มีสัญญา active ในรอบเดือนที่เลือก (ข้ามห้องที่ออกบิลไปแล้ว) */
 export async function generateInvoices(period: string): Promise<FormState> {
+  if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบบิลไม่ถูกต้อง (ต้องเป็น YYYY-MM)" };
   const supabase = await createClient();
   const org_id = await getOrgId();
 
-  const [{ data: contracts }, { data: readings }, { data: existing }, parking] =
+  // ดึงสัญญา active — resilient: ถ้า prod ยังไม่มีคอลัมน์ 0020 ให้ถอยไป select แบบเดิม (กันบิลหยุดเงียบ)
+  let contractsRes = await supabase
+    .from("contracts")
+    .select(
+      "id, room_id, tenant_id, rent_amount, occupant_count, late_fee, rooms(water_rate, water_mode, water_flat_per_person, electricity_rate)"
+    )
+    .eq("status", "active");
+  if (isMissingColumn(contractsRes.error?.message)) {
+    contractsRes = (await supabase
+      .from("contracts")
+      .select("id, room_id, tenant_id, rent_amount, rooms(water_rate, electricity_rate)")
+      .eq("status", "active")) as typeof contractsRes;
+  }
+  const contracts = contractsRes.data;
+
+  const [{ data: readings }, { data: existing }, parking] =
     await Promise.all([
-      supabase
-        .from("contracts")
-        .select(
-          "id, room_id, tenant_id, rent_amount, occupant_count, late_fee, rooms(water_rate, water_mode, water_flat_per_person, electricity_rate)"
-        )
-        .eq("status", "active"),
       supabase
         .from("meter_readings")
         .select("room_id, period, water_value, electric_value")

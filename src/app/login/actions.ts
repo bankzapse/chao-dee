@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164, toE164Digits } from "@/lib/phone";
 import { thaiAuthError } from "@/lib/auth-errors";
+import { sendWelcomeIfNeeded } from "@/lib/onboarding";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
 
@@ -38,6 +39,9 @@ export async function verifyOtp(
   if (error) {
     return { error: thaiAuthError(error), otpSent: true, phone };
   }
+  // ส่งอีเมลต้อนรับครั้งแรก (best-effort — ไม่ขวาง flow)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) await sendWelcomeIfNeeded(user.id);
   redirect(safeNext(formData.get("next")));
 }
 

@@ -59,6 +59,12 @@ export default function TermsPage() {
         <p className="mt-2">
           ท่านมีหน้าที่แจ้ง/ขอความยินยอมจากผู้เช่าและมีฐานทางกฎหมายที่เหมาะสมในการเก็บข้อมูลผู้เช่า (รวมถึงเลขบัตรประชาชน) ตาม PDPA
         </p>
+        <p className="mt-2">
+          รายละเอียดข้อตกลงการประมวลผลข้อมูลฉบับเต็ม ดูได้ที่{" "}
+          <a href="/dpa" className="font-medium text-indigo-600 hover:text-indigo-700">
+            ข้อตกลงการประมวลผลข้อมูลส่วนบุคคล (DPA)
+          </a>
+        </p>
       </Section>
 
       <Section heading="5. การระงับหรือยกเลิกบริการ">

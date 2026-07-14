@@ -450,6 +450,7 @@ export default async function LandingPage() {
             <a href="#pricing" className="hover:text-slate-900">ราคา</a>
             <Link href="/privacy" className="hover:text-slate-900">ความเป็นส่วนตัว</Link>
             <Link href="/terms" className="hover:text-slate-900">ข้อกำหนด</Link>
+            <Link href="/dpa" className="hover:text-slate-900">DPA</Link>
             <Link href="/login" className="hover:text-slate-900">เข้าสู่ระบบ</Link>
           </div>
         </div>

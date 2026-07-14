@@ -59,6 +59,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/logout") || // ทางออกฉุกเฉิน — ล้าง cookie ได้เสมอ
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
+    pathname.startsWith("/dpa") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api") ||
     // ไฟล์ SEO / metadata สาธารณะ

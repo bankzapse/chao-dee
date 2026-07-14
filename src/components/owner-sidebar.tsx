@@ -21,7 +21,7 @@ const NAV: NavItem[] = [
   { href: "/owner/payments", label: "การชำระค่าสมาชิก", icon: "💳", badgeKey: "payments", perm: "payments", group: "chaodee" },
   { href: "/owner/tax-invoices", label: "ใบกำกับภาษี", icon: "🧾", perm: "payments", group: "chaodee" },
   { href: "/owner/packages", label: "แพ็คเกจ", icon: "📦", perm: "packages", group: "chaodee" },
-  { href: "/owner/settings", label: "ช่องทางรับเงิน", icon: "🏦", perm: null, group: "chaodee" },
+  { href: "/owner/settings", label: "ช่องทางรับเงิน", icon: "🏦", ownerOnly: true, group: "chaodee" },
   { href: "/owner/promos", label: "คูปองส่วนลด", icon: "🎟️", perm: "promos", group: "chaodee" },
   { href: "/owner/reports", label: "รายงาน", icon: "📊", perm: "reports", group: "chaodee" },
   { href: "/owner/audit", label: "บันทึกกิจกรรม", icon: "📝", perm: "audit", group: "chaodee" },

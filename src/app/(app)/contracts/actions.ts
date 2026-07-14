@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { money, intMin } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (ยังไม่ได้รัน migration 0020) */
@@ -30,6 +31,7 @@ export async function createContract(
   if (!room_id) return { error: "กรุณาเลือกห้อง" };
   if (!tenant_id) return { error: "กรุณาเลือกผู้เช่า" };
   if (!start_date) return { error: "กรุณาระบุวันเริ่มสัญญา" };
+  if (end_date && end_date < start_date) return { error: "วันสิ้นสุดสัญญาต้องไม่ก่อนวันเริ่มสัญญา" };
 
   const supabase = await createClient();
   const org_id = await getOrgId();
@@ -50,10 +52,10 @@ export async function createContract(
 function extraFields(formData: FormData) {
   const late_fee_mode = String(formData.get("late_fee_mode") ?? "once") === "per_day" ? "per_day" : "once";
   return {
-    rent_amount: Number(formData.get("rent_amount") ?? 0),
-    deposit_amount: Number(formData.get("deposit_amount") ?? 0),
-    occupant_count: Math.max(1, Number(formData.get("occupant_count") ?? 1)),
-    late_fee: Number(formData.get("late_fee") ?? 0),
+    rent_amount: money(formData.get("rent_amount")),
+    deposit_amount: money(formData.get("deposit_amount")),
+    occupant_count: intMin(formData.get("occupant_count"), 1),
+    late_fee: money(formData.get("late_fee")),
     late_fee_mode,
     terms: String(formData.get("terms") ?? "").trim(),
     note: String(formData.get("note") ?? "").trim(),
@@ -69,6 +71,7 @@ export async function updateContract(
   const start_date = String(formData.get("start_date") ?? "");
   const end_date = String(formData.get("end_date") ?? "").trim() || null;
   if (!start_date) return { error: "กรุณาระบุวันเริ่มสัญญา" };
+  if (end_date && end_date < start_date) return { error: "วันสิ้นสุดสัญญาต้องไม่ก่อนวันเริ่มสัญญา" };
 
   const supabase = await createClient();
   const row = { start_date, end_date, ...extraFields(formData) };

@@ -1,9 +1,9 @@
-import { requirePlatformAdmin } from "@/lib/admin";
+import { requireOwner } from "@/lib/admin";
 import { getPlatformPayment } from "@/lib/platform-settings";
 import { PlatformPaymentForm } from "./platform-payment-form";
 
 export default async function OwnerSettingsPage() {
-  await requirePlatformAdmin();
+  await requireOwner();
   const pay = await getPlatformPayment();
 
   return (

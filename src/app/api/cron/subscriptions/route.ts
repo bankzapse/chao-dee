@@ -11,8 +11,9 @@ export const runtime = "nodejs";
  * ป้องกันด้วย Authorization: Bearer ${CRON_SECRET}
  */
 export async function GET(req: Request) {
+  // fail-closed: ถ้าไม่ได้ตั้ง CRON_SECRET หรือ token ไม่ตรง → ปฏิเสธ (กัน endpoint หลุดเป็น public)
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return new NextResponse("unauthorized", { status: 401 });
   }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/admin";
+import { requirePerm, requireOwner } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { incrementPromoUse } from "@/lib/promo";
@@ -21,7 +21,7 @@ export async function recordPayment(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  await requirePlatformAdmin();
+  await requirePerm("payments");
   const admin = createAdminClient();
   const amount = Number(formData.get("amount") ?? 0);
   if (amount <= 0) return { error: "จำนวนเงินต้องมากกว่า 0" };
@@ -42,7 +42,7 @@ export async function recordPayment(
 
 /** ยืนยันการชำระ → เปิดสิทธิ์ (active) + ต่ออายุตามรอบ */
 export async function verifyPayment(paymentId: string): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("payments");
   const admin = createAdminClient();
 
   const { data: pay } = await admin
@@ -109,7 +109,7 @@ export async function verifyPayment(paymentId: string): Promise<void> {
 }
 
 export async function rejectPayment(paymentId: string): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("payments");
   const admin = createAdminClient();
   const { data: pay } = await admin
     .from("subscription_payments")
@@ -129,8 +129,12 @@ export async function rejectPayment(paymentId: string): Promise<void> {
 }
 
 /** ออกเลขที่ใบกำกับภาษีให้การชำระที่ยืนยันแล้ว (ออกด้วยมือจาก Console) */
-export async function issueTaxInvoice(paymentId: string): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+export async function issueTaxInvoice(paymentId: string): Promise<{ ok: boolean; error?: string }> {
+  const { userId: adminId } = await requirePerm("payments");
+  // ตามกฎหมาย (ประมวลรัษฎากร ม.86) เฉพาะผู้จดทะเบียน VAT เท่านั้นจึงออกใบกำกับภาษีได้
+  if (!COMPANY.vatRegistered) {
+    return { ok: false, error: "บริษัทยังไม่ได้จดทะเบียน VAT — ออกใบกำกับภาษีไม่ได้ตามกฎหมาย" };
+  }
   const admin = createAdminClient();
 
   const { data: pay } = await admin
@@ -138,11 +142,23 @@ export async function issueTaxInvoice(paymentId: string): Promise<void> {
     .select("org_id, status, tax_invoice_no, amount, package_slug")
     .eq("id", paymentId)
     .maybeSingle();
-  if (!pay || pay.status !== "verified") return; // ออกได้เฉพาะที่ยืนยันแล้ว
-  if (pay.tax_invoice_no) return; // ออกไปแล้ว ไม่ออกซ้ำ
+  if (!pay) return { ok: false, error: "ไม่พบรายการชำระ" };
+  if (pay.status !== "verified") return { ok: false, error: "ต้องยืนยันการชำระก่อนจึงออกใบกำกับภาษีได้" };
+  if (pay.tax_invoice_no) return { ok: true }; // ออกไปแล้ว ไม่ออกซ้ำ
+
+  // ใบกำกับภาษีเต็มรูป (ม.86/4) ต้องมีชื่อ/เลขผู้เสียภาษี/ที่อยู่ของผู้ซื้อครบ
+  const { data: buyer } = await admin
+    .from("organizations")
+    .select("tax_name, tax_id, tax_address")
+    .eq("id", pay.org_id)
+    .maybeSingle();
+  const b = (buyer as { tax_name?: string; tax_id?: string; tax_address?: string } | null) ?? {};
+  if (!b.tax_name || !b.tax_id || (b.tax_id ?? "").replace(/\D/g, "").length !== 13 || !b.tax_address) {
+    return { ok: false, error: "สมาชิกยังกรอกข้อมูลผู้เสียภาษีไม่ครบ (ชื่อ / เลข 13 หลัก / ที่อยู่)" };
+  }
 
   const { data: no } = await admin.rpc("next_tax_invoice_no");
-  if (typeof no !== "string" || !no) return;
+  if (typeof no !== "string" || !no) return { ok: false, error: "ออกเลขที่ใบกำกับภาษีไม่สำเร็จ" };
 
   await admin.from("subscription_payments").update({ tax_invoice_no: no }).eq("id", paymentId);
   await logAudit({
@@ -152,11 +168,13 @@ export async function issueTaxInvoice(paymentId: string): Promise<void> {
     target: pay.package_slug,
     meta: { tax_invoice_no: no, amount: Number(pay.amount), payment_id: paymentId },
   });
+  revalidatePath("/owner/tax-invoices");
+  return { ok: true };
 }
 
 /** ลบสมาชิก (กิจการ) — ลบข้อมูลทั้งหมดของกิจการ + บัญชีเข้าระบบของทีมงานกิจการนั้น */
 export async function deleteMember(orgId: string): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("members");
   const admin = createAdminClient();
 
   const { data: org } = await admin.from("organizations").select("name").eq("id", orgId).maybeSingle();
@@ -190,7 +208,7 @@ export async function setOrgStatus(
   orgId: string,
   status: "active" | "cancelled"
 ): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("members");
   const admin = createAdminClient();
   await admin
     .from("subscriptions")
@@ -209,7 +227,7 @@ export async function updateSubscription(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("members");
   const admin = createAdminClient();
   const expiresRaw = String(formData.get("expires_at") ?? "").trim();
   const pkg = String(formData.get("package_slug") ?? "pro");
@@ -221,7 +239,9 @@ export async function updateSubscription(
   // ต่อจากวันหมดอายุเดิมถ้ายังไม่หมด ไม่งั้นนับจากวันนี้
   let expiresIso: string | null;
   if (expiresRaw) {
-    expiresIso = new Date(expiresRaw).toISOString();
+    const d = new Date(expiresRaw);
+    if (isNaN(d.getTime())) return { error: "วันหมดอายุไม่ถูกต้อง" };
+    expiresIso = d.toISOString();
   } else if (isActiveLike) {
     const { data: cur } = await admin
       .from("subscriptions")
@@ -261,7 +281,7 @@ export async function updateSubscription(
 
 /** อนุมัติคำขอโปรโมทประกาศ → ตั้ง featured + วันหมดอายุ (ต่อจากของเดิมถ้ายังโปรโมทอยู่) */
 export async function approvePromotion(promoId: string): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("promotions");
   const admin = createAdminClient();
 
   const { data: promo } = await admin
@@ -308,7 +328,7 @@ export async function approvePromotion(promoId: string): Promise<void> {
 
 /** ปฏิเสธคำขอโปรโมท */
 export async function rejectPromotion(promoId: string): Promise<void> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("promotions");
   const admin = createAdminClient();
   const { data: promo } = await admin
     .from("listing_promotions")
@@ -333,7 +353,7 @@ export async function updatePromoPrice(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("promotions");
   const raw = String(formData.get("price") ?? "").trim();
   const price = Number(raw);
   if (!raw || !Number.isFinite(price) || price < 0) return { error: "กรุณาระบุราคาที่ถูกต้อง" };
@@ -357,7 +377,8 @@ export async function updatePromoPrice(
 
 /** owner ตั้งค่าช่องทางรับเงินของบริษัท (PromptPay/บัญชีธนาคาร) */
 export async function savePlatformPayment(_prev: FormState, formData: FormData): Promise<FormState> {
-  const adminId = await requirePlatformAdmin();
+  // ช่องทางรับเงินของบริษัท = ข้อมูลอ่อนไหวสูง → เจ้าของแพลตฟอร์มเท่านั้น
+  const { userId: adminId } = await requireOwner();
   const g = (k: string) => String(formData.get(k) ?? "").trim();
   const admin = createAdminClient();
   const method = g("payment_method") === "bank" ? "bank" : "promptpay";

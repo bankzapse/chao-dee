@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/admin";
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import type { FormState } from "@/components/action-form";
 
 export async function createPromo(_prev: FormState, formData: FormData): Promise<FormState> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("promos");
   const admin = createAdminClient();
 
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
@@ -38,14 +38,14 @@ export async function createPromo(_prev: FormState, formData: FormData): Promise
 }
 
 export async function togglePromo(id: string, active: boolean): Promise<void> {
-  await requirePlatformAdmin();
+  await requirePerm("promos");
   const admin = createAdminClient();
   await admin.from("promo_codes").update({ active }).eq("id", id);
   revalidatePath("/owner/promos");
 }
 
 export async function deletePromo(id: string): Promise<void> {
-  await requirePlatformAdmin();
+  await requirePerm("promos");
   const admin = createAdminClient();
   await admin.from("promo_codes").delete().eq("id", id);
   revalidatePath("/owner/promos");

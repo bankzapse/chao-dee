@@ -1,6 +1,6 @@
 "use server";
 
-import { requirePlatformAdmin } from "@/lib/admin";
+import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import type { FormState } from "@/components/action-form";
@@ -11,10 +11,12 @@ export async function updatePackagePrice(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const adminId = await requirePlatformAdmin();
+  const { userId: adminId } = await requirePerm("packages");
   const num = (k: string) => {
     const raw = String(formData.get(k) ?? "").trim();
-    return raw === "" ? null : Number(raw);
+    if (raw === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : null; // ค่าผิด → null (ไม่ตั้งราคา) แทน NaN
   };
   const price_monthly = num("price_monthly");
   const price_yearly_per_month = num("price_yearly_per_month");

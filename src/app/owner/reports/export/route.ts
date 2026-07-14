@@ -1,4 +1,4 @@
-import { isPlatformAdmin } from "@/lib/admin";
+import { getAdminContext } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { packageBySlug } from "@/lib/packages";
 import { toCsv, csvResponse } from "@/lib/csv";
@@ -7,7 +7,9 @@ export const runtime = "nodejs";
 
 /** ดาวน์โหลดรายงานเป็น CSV — /owner/reports/export?type=members|payments|subscriptions */
 export async function GET(req: Request) {
-  if (!(await isPlatformAdmin())) {
+  // ต้องมีสิทธิ์ "reports" (owner ผ่านทุกกรณี)
+  const ctx = await getAdminContext().catch(() => null);
+  if (!ctx || (ctx.role !== "owner" && !ctx.perms.includes("reports"))) {
     return new Response("unauthorized", { status: 401 });
   }
   const type = new URL(req.url).searchParams.get("type") ?? "subscriptions";

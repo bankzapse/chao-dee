@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { money } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
 
 export async function createExpense(
@@ -10,8 +11,10 @@ export async function createExpense(
 ): Promise<FormState> {
   const building_id = String(formData.get("building_id") ?? "");
   const expense_date = String(formData.get("expense_date") ?? "");
+  const amount = money(formData.get("amount"));
   if (!building_id) return { error: "กรุณาเลือกอาคาร" };
   if (!expense_date) return { error: "กรุณาระบุวันที่" };
+  if (amount <= 0) return { error: "กรุณาระบุจำนวนเงินให้ถูกต้อง" };
 
   const supabase = await createClient();
   const org_id = await getOrgId();
@@ -19,7 +22,7 @@ export async function createExpense(
     org_id,
     building_id,
     category: String(formData.get("category") ?? "อื่นๆ"),
-    amount: Number(formData.get("amount") ?? 0),
+    amount,
     expense_date,
     note: String(formData.get("note") ?? "").trim(),
   });

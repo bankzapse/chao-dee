@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { checkLimit } from "@/lib/limits";
+import { money, intMin, intClamp } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
 import type { RoomStatus } from "@/lib/types";
 
@@ -23,16 +24,15 @@ function parseRoom(formData: FormData) {
   return {
     building_id: String(formData.get("building_id") ?? ""),
     room_number: String(formData.get("room_number") ?? "").trim(),
-    floor: Number(formData.get("floor") ?? 1),
-    size_sqm: Number(formData.get("size_sqm") ?? 0),
-    base_rent: Number(formData.get("base_rent") ?? 0),
+    floor: intMin(formData.get("floor"), 0),
+    size_sqm: money(formData.get("size_sqm")),
+    base_rent: money(formData.get("base_rent")),
     water_mode,
     // เก็บทั้งสองค่าไว้ แต่ใช้ตาม mode ที่เลือก
-    water_rate: water_mode === "unit" ? Number(formData.get("water_rate") ?? 0) : 0,
-    water_flat_per_person:
-      water_mode === "flat_person" ? Number(formData.get("water_flat_per_person") ?? 0) : 0,
-    electricity_rate: Number(formData.get("electricity_rate") ?? 0),
-    parking_fee: Number(formData.get("parking_fee") ?? 0),
+    water_rate: water_mode === "unit" ? money(formData.get("water_rate")) : 0,
+    water_flat_per_person: water_mode === "flat_person" ? money(formData.get("water_flat_per_person")) : 0,
+    electricity_rate: money(formData.get("electricity_rate")),
+    parking_fee: money(formData.get("parking_fee")),
     status: (String(formData.get("status") ?? "vacant") as RoomStatus),
     note: String(formData.get("note") ?? "").trim(),
   };
@@ -67,13 +67,13 @@ export async function createRoomsBulk(
   formData: FormData
 ): Promise<FormState> {
   const building_id = String(formData.get("building_id") ?? "");
-  const floor = Number(formData.get("floor") ?? 1);
+  const floor = intMin(formData.get("floor"), 0);
   const prefix = String(formData.get("prefix") ?? "").trim();
-  const start = Number(formData.get("start") ?? 1);
-  const count = Number(formData.get("count") ?? 0);
-  const base_rent = Number(formData.get("base_rent") ?? 0);
-  const water_rate = Number(formData.get("water_rate") ?? 0);
-  const electricity_rate = Number(formData.get("electricity_rate") ?? 0);
+  const start = intMin(formData.get("start"), 0);
+  const count = intClamp(formData.get("count"), 0, 200);
+  const base_rent = money(formData.get("base_rent"));
+  const water_rate = money(formData.get("water_rate"));
+  const electricity_rate = money(formData.get("electricity_rate"));
 
   const values = { building_id, floor, prefix, start, count, base_rent, water_rate, electricity_rate };
   if (!building_id) return { error: "กรุณาเลือกอาคาร", values };

@@ -15,7 +15,8 @@ export function IssueTaxInvoiceButton({ paymentId, disabled }: { paymentId: stri
       onClick={() =>
         start(async () => {
           if (!window.confirm("ออกเลขที่ใบกำกับภาษีให้การชำระนี้? (ออกแล้วแก้ไข/ยกเลิกไม่ได้)")) return;
-          await issueTaxInvoice(paymentId);
+          const res = await issueTaxInvoice(paymentId);
+          if (res && !res.ok && res.error) window.alert(res.error);
           router.refresh();
         })
       }

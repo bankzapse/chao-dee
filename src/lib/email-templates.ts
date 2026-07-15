@@ -1,7 +1,56 @@
 import "server-only";
 import { emailShell } from "@/lib/email";
+import { formatBaht } from "@/lib/format";
 
 const APP_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://chao-dee.com";
+
+/** สรุปผลประกอบการรายเดือนให้เจ้าของหอ */
+export function monthlySummaryEmail(opts: {
+  orgName: string;
+  periodLabel: string; // เช่น "กรกฎาคม 2568"
+  invoiceCount: number;
+  collected: number; // เก็บได้จริง (paid_amount รวม)
+  outstanding: number; // ค้างชำระ
+  unpaidCount: number;
+  occupied: number;
+  totalRooms: number;
+  expenses: number;
+  net: number; // เก็บได้ - ค่าใช้จ่าย
+}): { subject: string; html: string } {
+  const occPct = opts.totalRooms > 0 ? Math.round((opts.occupied / opts.totalRooms) * 100) : 0;
+  const stat = (label: string, value: string, color = "#0f172a") =>
+    `<td style="padding:10px;border:1px solid #e2e8f0;border-radius:10px;text-align:center;width:50%">
+       <div style="font-size:20px;font-weight:700;color:${color}">${value}</div>
+       <div style="font-size:12px;color:#64748b">${label}</div>
+     </td>`;
+
+  const body = `
+    สรุปภาพรวมของ <b>${opts.orgName}</b> ประจำเดือน <b>${opts.periodLabel}</b>
+    <table style="width:100%;border-collapse:separate;border-spacing:6px;margin:14px 0">
+      <tr>
+        ${stat("เก็บเงินได้", formatBaht(opts.collected), "#059669")}
+        ${stat("ค้างชำระ", formatBaht(opts.outstanding), opts.outstanding > 0 ? "#e11d48" : "#0f172a")}
+      </tr>
+      <tr>
+        ${stat("ค่าใช้จ่าย", formatBaht(opts.expenses))}
+        ${stat("คงเหลือสุทธิ", formatBaht(opts.net), opts.net >= 0 ? "#059669" : "#e11d48")}
+      </tr>
+      <tr>
+        ${stat("อัตราเข้าพัก", `${occPct}% (${opts.occupied}/${opts.totalRooms})`)}
+        ${stat("บิลค้างชำระ", `${opts.unpaidCount} จาก ${opts.invoiceCount} ใบ`)}
+      </tr>
+    </table>
+    ${opts.outstanding > 0 ? `<div style="font-size:13px;color:#b45309">มีบิลค้างชำระ ${opts.unpaidCount} ใบ — ติดตามได้ในหน้าบิล</div>` : ""}
+  `;
+
+  return {
+    subject: `📊 สรุปรายเดือน ${opts.periodLabel} — ${opts.orgName}`,
+    html: emailShell(`สรุปประจำเดือน ${opts.periodLabel}`, body, {
+      label: "ดูรายงานฉบับเต็ม",
+      url: `${APP_URL}/reports`,
+    }),
+  };
+}
 
 /** อีเมลต้อนรับ (ส่งครั้งแรกหลังสมัคร) */
 export function welcomeEmail(orgName: string): { subject: string; html: string } {

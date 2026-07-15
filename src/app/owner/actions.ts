@@ -88,17 +88,18 @@ export async function verifyPayment(paymentId: string): Promise<void> {
     })
     .eq("id", paymentId);
 
-  await admin
-    .from("subscriptions")
-    .update({
+  await admin.from("subscriptions").upsert(
+    {
+      org_id: pay.org_id,
       status: "active",
       package_slug: pay.package_slug,
       cycle: pay.cycle,
       price: pay.amount,
       expires_at: newExpiry.toISOString(),
       updated_at: new Date().toISOString(),
-    })
-    .eq("org_id", pay.org_id);
+    },
+    { onConflict: "org_id" }
+  );
 
   if (pay.promo_code) await incrementPromoUse(pay.promo_code);
 
@@ -251,13 +252,13 @@ export async function setOrgStatus(
   const admin = createAdminClient();
   await admin
     .from("subscriptions")
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq("org_id", orgId);
+    .upsert({ org_id: orgId, status, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
   await logAudit({
     org_id: orgId,
     actor_id: adminId,
     action: status === "active" ? "เปิดสิทธิ์การใช้งาน" : "ระงับการใช้งาน",
   });
+  revalidatePath(`/owner/members/${orgId}`);
 }
 
 /** แก้ไขแพ็คเกจ/สถานะ/วันหมดอายุด้วยมือ */
@@ -294,18 +295,21 @@ export async function updateSubscription(
     expiresIso = null; // ระงับ/หมดอายุ → ไม่มีวันหมดอายุ
   }
 
-  const { error } = await admin
-    .from("subscriptions")
-    .update({
+  const priceVal = Number(formData.get("price") ?? 0);
+  // upsert: กันกรณี org ยังไม่มีแถว subscription (update เดิมจะไม่โดนแถวไหน = ไม่อัปเดต)
+  const { error } = await admin.from("subscriptions").upsert(
+    {
+      org_id: orgId,
       package_slug: pkg,
       cycle,
       status,
-      price: Number(formData.get("price") ?? 0),
+      price: Number.isFinite(priceVal) ? Math.max(0, priceVal) : 0,
       expires_at: expiresIso,
       note: String(formData.get("note") ?? "").trim(),
       updated_at: new Date().toISOString(),
-    })
-    .eq("org_id", orgId);
+    },
+    { onConflict: "org_id" }
+  );
   if (error) return { error: error.message };
   await logAudit({
     org_id: orgId,

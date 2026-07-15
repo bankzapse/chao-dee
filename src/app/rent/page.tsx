@@ -160,16 +160,17 @@ export default async function RentHome({
             <BrandMark size={30} />
             <span className="font-bold">Chao-Dee <span className="font-light text-amber-300">Rent</span></span>
           </Link>
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/" className="hidden text-slate-300 hover:text-white sm:block">
-              🏢 ระบบจัดการหอ
+          <div className="flex items-center gap-2 text-sm sm:gap-3">
+            <Link href="/" className="rounded-lg px-2 py-1.5 text-slate-300 hover:bg-white/10 hover:text-white">
+              <span className="sm:hidden">🏠</span>
+              <span className="hidden sm:inline">🏢 กลับหน้าหลัก</span>
             </Link>
-            <Link href="/rent/login" className="text-slate-300 hover:text-white">
+            <Link href="/rent/login" className="hidden text-slate-300 hover:text-white sm:block">
               เข้าสู่ระบบ
             </Link>
             <Link
               href="/rent/signup"
-              className="rounded-lg bg-amber-400 px-4 py-2 font-semibold text-amber-950 hover:bg-amber-300"
+              className="rounded-lg bg-amber-400 px-3 py-2 font-semibold text-amber-950 hover:bg-amber-300 sm:px-4"
             >
               ลงประกาศฟรี
             </Link>

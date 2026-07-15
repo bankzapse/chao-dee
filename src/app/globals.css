@@ -62,11 +62,12 @@ body {
   @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
 }
 .btn-primary {
-  @apply text-white shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25;
-  background-image: linear-gradient(135deg, #6366f1, #4f46e5);
+  @apply text-white shadow-md shadow-indigo-500/25 hover:shadow-lg hover:shadow-cyan-500/25;
+  /* brand gradient: indigo → cyan (สีโลโก้) */
+  background-image: linear-gradient(135deg, #4f46e5, #06b6d4);
 }
 .btn-primary:hover {
-  background-image: linear-gradient(135deg, #6d70f3, #4338ca);
+  background-image: linear-gradient(135deg, #4338ca, #0891b2);
 }
 .btn-secondary {
   @apply border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50;

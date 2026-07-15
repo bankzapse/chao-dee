@@ -39,12 +39,14 @@ export function Sidebar({
   const nav = NAV.filter((item) => !("manageTeam" in item) || canManageTeam);
 
   return (
-    <aside className="no-print hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-      <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
-        <BrandMark size={36} />
+    <aside className="no-print hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">
+      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-4">
+        <span className="rounded-xl bg-white/95 p-1">
+          <BrandMark size={30} />
+        </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900">{orgName}</p>
-          <p className="text-xs text-slate-400">Chao-Dee</p>
+          <p className="truncate text-sm font-semibold text-white">{orgName}</p>
+          <p className="text-xs text-slate-500">Chao-Dee</p>
         </div>
       </div>
 
@@ -58,8 +60,8 @@ export function Sidebar({
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 active
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? "bg-indigo-500/15 text-white ring-1 ring-inset ring-indigo-400/20"
+                  : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
               }`}
             >
               <span className="text-base">{item.icon}</span>

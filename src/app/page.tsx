@@ -73,7 +73,7 @@ const FAQ = [
 ];
 
 const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80";
+  "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80";
 
 const GALLERY = [
   { src: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=75", label: "อพาร์ตเมนต์" },
@@ -334,45 +334,47 @@ export default async function LandingPage() {
       </section>
 
       {/* ===== FEATURES ===== */}
-      <section id="features" className="mx-auto max-w-6xl px-6 py-20">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">ฟีเจอร์</p>
-          <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-            ทุกอย่างที่หอพักต้องใช้ ในระบบเดียว
-          </h2>
-          <p className="mt-3 text-slate-500">ครบตั้งแต่จดมิเตอร์ ออกบิล ไปจนถึงรายงานและแอปมือถือ</p>
-        </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-2xl">
-                {f.icon}
+      <section id="features" className="bg-slate-950">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="text-center">
+            <p className="text-sm font-semibold uppercase tracking-wider text-amber-300">ฟีเจอร์</p>
+            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">
+              ทุกอย่างที่หอพักต้องใช้ ในระบบเดียว
+            </h2>
+            <p className="mt-3 text-slate-400">ครบตั้งแต่จดมิเตอร์ ออกบิล ไปจนถึงรายงานและแอปมือถือ</p>
+          </div>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((f) => (
+              <div
+                key={f.title}
+                className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur transition hover:border-amber-300/30 hover:bg-white/[0.07]"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/25 to-cyan-500/25 text-2xl ring-1 ring-white/10">
+                  {f.icon}
+                </div>
+                <h3 className="mt-4 font-bold text-white">{f.title}</h3>
+                <p className="mt-2 text-sm text-slate-400">{f.desc}</p>
               </div>
-              <h3 className="mt-4 font-bold text-slate-900">{f.title}</h3>
-              <p className="mt-2 text-sm text-slate-500">{f.desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <section id="how" className="bg-gradient-to-b from-white to-indigo-50/40">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">วิธีใช้งาน</p>
-            <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">เริ่มใช้งานได้ใน 4 ขั้นตอน</h2>
+      <section id="how" className="bg-slate-950">
+        <div className="mx-auto max-w-6xl px-6 pb-20">
+          <div className="border-t border-white/10 pt-16 text-center">
+            <p className="text-sm font-semibold uppercase tracking-wider text-amber-300">วิธีใช้งาน</p>
+            <h2 className="mt-2 text-3xl font-bold text-white sm:text-4xl">เริ่มใช้งานได้ใน 4 ขั้นตอน</h2>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-4">
             {STEPS.map((s) => (
-              <div key={s.n} className="relative rounded-2xl border border-slate-200 bg-white p-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-cyan-500 font-bold text-white">
+              <div key={s.n} className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 font-bold text-white">
                   {s.n}
                 </div>
-                <h3 className="mt-4 font-bold text-slate-900">{s.title}</h3>
-                <p className="mt-2 text-sm text-slate-500">{s.desc}</p>
+                <h3 className="mt-4 font-bold text-white">{s.title}</h3>
+                <p className="mt-2 text-sm text-slate-400">{s.desc}</p>
               </div>
             ))}
           </div>

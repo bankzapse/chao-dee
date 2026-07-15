@@ -103,37 +103,39 @@ export default async function LandingPage() {
       </header>
 
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-50 via-cyan-50/40 to-white" />
-        <div className="absolute right-0 top-0 -z-10 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
+      <section className="relative overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900" />
+        <div className="absolute -left-24 top-0 -z-10 h-96 w-96 rounded-full bg-indigo-600/25 blur-3xl" />
+        <div className="absolute right-0 top-24 -z-10 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 -z-10 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" />
         <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-medium text-indigo-700">
-                🎉 ทดลองฟรี 30 วัน · ไม่ต้องผูกบัตร
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200">
+                ✦ ทดลองฟรี 30 วัน · ไม่ต้องผูกบัตร
               </span>
-              <h1 className="mt-5 text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl">
+              <h1 className="mt-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
                 จัดการหอพัก คอนโด<br />
                 อพาร์ตเมนต์{" "}
-                <span className="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent">
                   ครบวงจร
                 </span>
                 <br />ในที่เดียว
               </h1>
-              <p className="mt-5 text-lg text-slate-600">
+              <p className="mt-5 text-lg text-slate-300">
                 เปลี่ยนงานวุ่นวายให้เป็นระบบอัตโนมัติ — จดมิเตอร์ด้วย AI, ออกบิล+PromptPay,
                 เชื่อม LINE ผู้เช่า, รายงานเรียลไทม์ เพิ่มกำไร ประหยัดเวลา
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/signup"
-                  className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700"
+                  className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:from-indigo-400 hover:to-cyan-300"
                 >
                   เริ่มใช้งานฟรี 30 วัน
                 </Link>
                 <a
                   href="#pricing"
-                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur transition hover:bg-white/10"
                 >
                   ดูแพ็คเกจ & ราคา
                 </a>
@@ -149,7 +151,7 @@ export default async function LandingPage() {
               <img
                 src={HERO_IMAGE}
                 alt="อาคารอพาร์ตเมนต์"
-                className="h-80 w-full rounded-3xl object-cover shadow-2xl shadow-indigo-200/70 sm:h-[440px]"
+                className="h-80 w-full rounded-3xl object-cover shadow-2xl shadow-black/50 ring-1 ring-white/10 sm:h-[440px]"
               />
               {/* การ์ดแดชบอร์ดลอย */}
               <div className="absolute -bottom-2 left-2 right-2 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur sm:left-6 sm:right-6 sm:p-5">
@@ -191,7 +193,7 @@ export default async function LandingPage() {
             ["ไม่จำกัด", "อาคาร/ห้อง/ผู้เช่า"],
           ].map(([v, l]) => (
             <div key={l} className="text-center">
-              <p className="text-2xl font-bold text-indigo-600 sm:text-3xl">{v}</p>
+              <p className="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">{v}</p>
               <p className="mt-1 text-sm text-slate-500">{l}</p>
             </div>
           ))}
@@ -422,18 +424,22 @@ export default async function LandingPage() {
 
       {/* ===== CTA ===== */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-cyan-500 px-8 py-14 text-center text-white">
-          <h2 className="text-3xl font-bold sm:text-4xl">พร้อมเปลี่ยนหอของคุณให้เป็นระบบ?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-indigo-100">
-            เริ่มใช้ฟรี 30 วันวันนี้ ตั้งค่าเสร็จใน 10 นาที ไม่ต้องผูกบัตร
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
-              เริ่มใช้งานฟรี
-            </Link>
-            <a href="https://line.me" target="_blank" rel="noreferrer" className="rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">
-              💬 ปรึกษาผ่าน LINE
-            </a>
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 px-8 py-14 text-center text-white ring-1 ring-white/10">
+          <div className="absolute -left-16 top-0 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
+          <div className="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" />
+          <div className="relative">
+            <h2 className="text-3xl font-bold sm:text-4xl">พร้อมเปลี่ยนหอของคุณให้เป็นระบบ?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-slate-300">
+              เริ่มใช้ฟรี 30 วันวันนี้ ตั้งค่าเสร็จใน 10 นาที ไม่ต้องผูกบัตร
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link href="/signup" className="rounded-xl bg-gradient-to-r from-amber-300 to-amber-400 px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-amber-900/20 transition hover:from-amber-200 hover:to-amber-300">
+                เริ่มใช้งานฟรี
+              </Link>
+              <a href="https://line.me" target="_blank" rel="noreferrer" className="rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">
+                💬 ปรึกษาผ่าน LINE
+              </a>
+            </div>
           </div>
         </div>
       </section>

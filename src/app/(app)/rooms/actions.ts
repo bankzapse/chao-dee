@@ -10,6 +10,30 @@ import type { RoomStatus } from "@/lib/types";
 function isMissingColumn(msg?: string): boolean {
   return Boolean(msg && /schema cache|could not find the .* column/i.test(msg));
 }
+export type RoomFeeRow = { id: string; parking_fee: number; garbage_fee: number };
+
+/** บันทึกค่าจอดรถ/ค่าขยะ หลายห้องพร้อมกัน (RLS จำกัดให้แก้ได้เฉพาะห้องของกิจการตัวเอง) */
+export async function saveRoomFees(rows: RoomFeeRow[]): Promise<FormState> {
+  if (!rows.length) return { ok: true };
+  const supabase = await createClient();
+  const results = await Promise.all(
+    rows.map((r) =>
+      supabase
+        .from("rooms")
+        .update({ parking_fee: money(r.parking_fee), garbage_fee: money(r.garbage_fee) })
+        .eq("id", r.id)
+    )
+  );
+  const bad = results.find((r) => r.error);
+  if (bad?.error) {
+    if (isMissingColumn(bad.error.message)) {
+      return { error: "ยังไม่ได้อัปเดตฐานข้อมูล (migration 0043) — กรุณารัน migration ก่อน" };
+    }
+    return { error: bad.error.message };
+  }
+  return { ok: true };
+}
+
 /** ตัดคอลัมน์ของ migration 0020 ออก (เผื่อ prod ยังไม่ได้รัน) */
 function stripNewCols<T extends Record<string, unknown>>(row: T) {
   const rest = { ...row };

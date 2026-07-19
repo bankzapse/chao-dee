@@ -53,7 +53,10 @@ export default async function RoomsPage({
         title="ห้องพัก"
         subtitle="จัดการห้องพักแยกตามชั้น · แก้ไขเลขห้อง/ชั้นได้"
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/rooms/fees" className="btn-secondary">
+              🅿️ ค่าจอดรถ / 🗑️ ค่าขยะ
+            </Link>
             <BulkAddRoomsButton buildings={buildingList} defaultBuilding={building} />
             <AddRoomButton buildings={buildingList} defaultBuilding={building} />
           </div>
@@ -110,6 +113,7 @@ export default async function RoomsPage({
                             {!building && <th className="px-4 py-2 font-medium">อาคาร</th>}
                             <th className="px-4 py-2 font-medium">ค่าเช่า</th>
                             <th className="px-4 py-2 font-medium">น้ำ/ไฟ</th>
+                            <th className="px-4 py-2 font-medium">จอดรถ/ขยะ</th>
                             <th className="px-4 py-2 font-medium">สถานะ</th>
                             <th className="px-4 py-2 text-right font-medium">จัดการ</th>
                           </tr>
@@ -124,6 +128,9 @@ export default async function RoomsPage({
                               <td className="px-4 py-3 text-slate-900">{formatBaht(r.base_rent)}</td>
                               <td className="px-4 py-3 text-xs text-slate-500">
                                 {formatBaht(r.water_rate)} / {formatBaht(r.electricity_rate)}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-slate-500">
+                                {formatBaht(Number(r.parking_fee ?? 0))} / {formatBaht(Number(r.garbage_fee ?? 0))}
                               </td>
                               <td className="px-4 py-3">
                                 <Badge className={ROOM_STATUS_STYLE[r.status as RoomStatus]}>

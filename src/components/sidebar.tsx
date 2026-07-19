@@ -17,7 +17,6 @@ const NAV = [
   { href: "/announcements", label: "ประกาศ LINE", icon: "📢" },
   { href: "/maintenance", label: "แจ้งซ่อม", icon: "🔧" },
   { href: "/parcels", label: "พัสดุ", icon: "📦" },
-  { href: "/vehicles", label: "ยานพาหนะ", icon: "🚗" },
   { href: "/fees", label: "ค่าจอดรถ/ค่าขยะ", icon: "🅿️" },
   { href: "/expenses", label: "ค่าใช้จ่าย", icon: "💸" },
   { href: "/team", label: "ทีมงาน", icon: "🧑‍🤝‍🧑", manageTeam: true },

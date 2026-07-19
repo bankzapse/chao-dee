@@ -63,10 +63,14 @@ export default async function FeesPage({
       a.room_number.localeCompare(b.room_number, undefined, { numeric: true })
   );
 
-  // รถแยกตามห้อง
+  // รถแยกตามห้อง + รถที่ยังไม่ระบุห้อง (จะได้ไม่หายไปจากระบบ)
   const vehiclesByRoom: Record<string, Vehicle[]> = {};
+  const unassigned: Vehicle[] = [];
   ((vehicles ?? []) as unknown as Vehicle[]).forEach((v) => {
-    if (!v.room_id) return;
+    if (!v.room_id) {
+      unassigned.push(v);
+      return;
+    }
     (vehiclesByRoom[v.room_id] ??= []).push(v);
   });
 
@@ -110,6 +114,7 @@ export default async function FeesPage({
         <FeesForm
           rooms={rooms}
           vehiclesByRoom={vehiclesByRoom}
+          unassigned={unassigned}
           roomOpts={roomOpts}
           tenants={(tenants ?? []) as Tenant[]}
           garbageFlatMode={gb?.garbage_mode === "flat"}

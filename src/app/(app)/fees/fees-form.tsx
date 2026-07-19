@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { formatBaht, VEHICLE_TYPE_LABEL } from "@/lib/format";
 import type { Vehicle, VehicleType, Tenant } from "@/lib/types";
 import { AddVehicleButton, EditVehicleButton, type RoomOpt } from "../vehicles/vehicle-buttons";
+import { DeleteButton } from "@/components/action-form";
+import { deleteVehicle } from "../vehicles/actions";
 import { saveRoomFees, type RoomFeeRow } from "../rooms/actions";
 
 export type FeeRoom = {
@@ -18,6 +20,7 @@ export type FeeRoom = {
 export function FeesForm({
   rooms,
   vehiclesByRoom,
+  unassigned = [],
   roomOpts,
   tenants,
   garbageFlatMode,
@@ -25,6 +28,7 @@ export function FeesForm({
 }: {
   rooms: FeeRoom[];
   vehiclesByRoom: Record<string, Vehicle[]>;
+  unassigned?: Vehicle[];
   roomOpts: RoomOpt[];
   tenants: Tenant[];
   garbageFlatMode: boolean;
@@ -169,6 +173,11 @@ export function FeesForm({
                             {VEHICLE_TYPE_LABEL[v.vehicle_type as VehicleType]}
                           </span>
                           <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} label="✏️" />
+                          <DeleteButton
+                            action={deleteVehicle.bind(null, v.id)}
+                            confirmText={`ลบรถทะเบียน ${v.plate}?`}
+                            label="🗑"
+                          />
                         </span>
                       ))}
                       {vs.length === 0 && <span className="text-xs text-slate-300">—</span>}
@@ -196,6 +205,34 @@ export function FeesForm({
           </tfoot>
         </table>
       </div>
+
+      {unassigned.length > 0 && (
+        <div className="border-t border-slate-200 p-4">
+          <p className="text-sm font-semibold text-slate-700">
+            🚗 รถที่ยังไม่ระบุห้อง ({unassigned.length})
+          </p>
+          <p className="mt-0.5 text-xs text-slate-400">กด ✏️ เพื่อระบุห้องให้รถคันนั้น</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {unassigned.map((v) => (
+              <span
+                key={v.id}
+                className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1"
+              >
+                <span className="font-medium text-slate-800">{v.plate}</span>
+                <span className="text-[11px] text-slate-400">
+                  {VEHICLE_TYPE_LABEL[v.vehicle_type as VehicleType]}
+                </span>
+                <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} label="✏️" />
+                <DeleteButton
+                  action={deleteVehicle.bind(null, v.id)}
+                  confirmText={`ลบรถทะเบียน ${v.plate}?`}
+                  label="🗑"
+                />
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

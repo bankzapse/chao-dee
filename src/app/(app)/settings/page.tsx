@@ -4,6 +4,7 @@ import { SettingsForm } from "./settings-form";
 import { LineOwnerCard } from "./line-owner-card";
 import { LineOaCard } from "./line-oa-card";
 import { TaxInfoCard } from "./tax-info-card";
+import { GarbageCard } from "./garbage-card";
 import { packageBySlug } from "@/lib/packages";
 import {
   formatBaht,
@@ -44,6 +45,16 @@ export default async function SettingsPage() {
     | "individual";
   const { data: tpRow } = await supabase.from("organizations").select("tax_phone").maybeSingle();
   const tax_phone = (tpRow as { tax_phone?: string } | null)?.tax_phone ?? "";
+  // ค่าขยะ (0043) — แยก query + resilient
+  const { data: gbRow } = await supabase
+    .from("organizations")
+    .select("garbage_mode, garbage_flat")
+    .maybeSingle();
+  const gb = gbRow as { garbage_mode?: string; garbage_flat?: number } | null;
+  const garbage = {
+    garbage_mode: (gb?.garbage_mode === "flat" ? "flat" : "per_room") as "flat" | "per_room",
+    garbage_flat: Number(gb?.garbage_flat ?? 0),
+  };
 
   const pkg = packageBySlug(sub?.package_slug ?? "");
   const st = sub?.status ?? "expired";
@@ -78,6 +89,9 @@ export default async function SettingsPage() {
 
       {/* LINE OA ของหอ (QR ให้ผู้เช่าสแกน) */}
       <LineOaCard lineOaId={lineOaId} orgName={org?.name ?? "หอพัก"} />
+
+      {/* ค่าขยะ — ระบุรายห้อง หรือ เหมาทุกห้อง */}
+      <GarbageCard org={garbage} />
 
       {/* ข้อมูลใบกำกับภาษี (สำหรับค่าบริการ Chao-Dee) */}
       <TaxInfoCard

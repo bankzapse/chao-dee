@@ -15,6 +15,7 @@ function isMissingColumn(msg?: string): boolean {
 function stripNewInvoiceCols<T extends Record<string, unknown>>(row: T) {
   const rest = { ...row };
   delete rest.parking_amount;
+  delete rest.garbage_amount;
   delete rest.occupant_count;
   delete rest.late_fee;
   return rest;
@@ -59,6 +60,19 @@ export async function generateInvoices(period: string): Promise<FormState> {
   (parking.data ?? []).forEach((r: { id: string; parking_fee?: number }) =>
     parkingByRoom.set(r.id, Number(r.parking_fee ?? 0))
   );
+
+  // ค่าขยะ (0043) — query แยก + resilient เผื่อ prod ยังไม่ได้รัน migration
+  const [garbageRooms, orgGarbage] = await Promise.all([
+    supabase.from("rooms").select("id, garbage_fee"),
+    supabase.from("organizations").select("garbage_mode, garbage_flat").maybeSingle(),
+  ]);
+  const garbageByRoom = new Map<string, number>();
+  (garbageRooms.data ?? []).forEach((r: { id: string; garbage_fee?: number }) =>
+    garbageByRoom.set(r.id, Number(r.garbage_fee ?? 0))
+  );
+  const og = orgGarbage.data as { garbage_mode?: string; garbage_flat?: number } | null;
+  const garbageFlatMode = og?.garbage_mode === "flat";
+  const garbageFlat = Number(og?.garbage_flat ?? 0);
 
   // map ค่ามิเตอร์: current (period ที่เลือก) + previous (ล่าสุดก่อนหน้า)
   const meterMap = new Map<
@@ -107,7 +121,9 @@ export async function generateInvoices(period: string): Promise<FormState> {
       const electricAmount = electricUnits * Number(room?.electricity_rate ?? 0);
       const rent = Number(c.rent_amount);
       const parkingAmount = Number(parkingByRoom.get(c.room_id) ?? 0);
-      const total = rent + waterAmount + electricAmount + parkingAmount;
+      // ค่าขยะ: เหมาราคาเดียวทุกห้อง หรือ ระบุรายห้อง
+      const garbageAmount = garbageFlatMode ? garbageFlat : Number(garbageByRoom.get(c.room_id) ?? 0);
+      const total = rent + waterAmount + electricAmount + parkingAmount + garbageAmount;
       return {
         org_id,
         contract_id: c.id,
@@ -124,6 +140,7 @@ export async function generateInvoices(period: string): Promise<FormState> {
         rent_amount: rent,
         late_fee: Number(c.late_fee ?? 0), // ค่าปรับตามสัญญา (บันทึกไว้—ไม่รวมในยอดจนกว่าจะชำระล่าช้า)
         parking_amount: parkingAmount,
+        garbage_amount: garbageAmount,
         other_amount: 0,
         discount: 0,
         total_amount: total,

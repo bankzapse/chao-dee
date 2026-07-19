@@ -16,6 +16,7 @@ function stripNewCols<T extends Record<string, unknown>>(row: T) {
   delete rest.water_mode;
   delete rest.water_flat_per_person;
   delete rest.parking_fee;
+  delete rest.garbage_fee;
   return rest;
 }
 
@@ -33,6 +34,7 @@ function parseRoom(formData: FormData) {
     water_flat_per_person: water_mode === "flat_person" ? money(formData.get("water_flat_per_person")) : 0,
     electricity_rate: money(formData.get("electricity_rate")),
     parking_fee: money(formData.get("parking_fee")),
+    garbage_fee: money(formData.get("garbage_fee")),
     status: (String(formData.get("status") ?? "vacant") as RoomStatus),
     note: String(formData.get("note") ?? "").trim(),
   };

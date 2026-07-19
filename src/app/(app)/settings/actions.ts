@@ -40,6 +40,31 @@ export async function updateOrgSettings(
   return { ok: true };
 }
 
+/** บันทึกวิธีคิดค่าขยะ (ระบุรายห้อง / เหมาทุกห้อง) */
+export async function updateGarbageSettings(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const supabase = await createClient();
+  const org_id = await getOrgId();
+  const mode = String(formData.get("garbage_mode") ?? "per_room") === "flat" ? "flat" : "per_room";
+  const flatRaw = Number(formData.get("garbage_flat") ?? 0);
+  const flat = Number.isFinite(flatRaw) ? Math.max(0, flatRaw) : 0;
+  if (mode === "flat" && flat <= 0) return { error: "กรุณาระบุค่าขยะเหมาให้มากกว่า 0" };
+
+  const { error } = await supabase
+    .from("organizations")
+    .update({ garbage_mode: mode, garbage_flat: flat })
+    .eq("id", org_id);
+  if (error) {
+    if (/schema cache|could not find the .* column/i.test(error.message)) {
+      return { error: "ยังไม่ได้อัปเดตฐานข้อมูล (migration 0043) — กรุณารัน migration ก่อน" };
+    }
+    return { error: error.message };
+  }
+  return { ok: true };
+}
+
 /** บันทึกข้อมูลสำหรับออกใบกำกับภาษี (ข้อมูลผู้ซื้อ = กิจการนี้) */
 export async function updateTaxInfo(
   _prev: FormState,

@@ -138,11 +138,19 @@ function Fields({
           <input name="electricity_rate" type="number" step="0.01" className="field" defaultValue={Number(v?.electricity_rate ?? r?.electricity_rate ?? 0)} />
         </div>
       </div>
-      <div>
-        <label className="label">ค่าจอดรถ/เดือน (บาท)</label>
-        <input name="parking_fee" type="number" step="0.01" className="field" defaultValue={Number(v?.parking_fee ?? r?.parking_fee ?? 0)} placeholder="0 = ไม่มีค่าจอดรถ" />
-        <p className="mt-1 text-xs text-slate-400">ถ้ามากกว่า 0 จะรวมเข้าบิลของห้องนี้อัตโนมัติทุกเดือน</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">ค่าจอดรถ/เดือน (บาท)</label>
+          <input name="parking_fee" type="number" step="0.01" className="field" defaultValue={Number(v?.parking_fee ?? r?.parking_fee ?? 0)} placeholder="0 = ไม่มีค่าจอดรถ" />
+        </div>
+        <div>
+          <label className="label">ค่าขยะ/เดือน (บาท)</label>
+          <input name="garbage_fee" type="number" step="0.01" className="field" defaultValue={Number(v?.garbage_fee ?? r?.garbage_fee ?? 0)} placeholder="0 = ไม่เก็บ" />
+        </div>
       </div>
+      <p className="-mt-1 text-xs text-slate-400">
+        ถ้ามากกว่า 0 จะรวมเข้าบิลของห้องนี้อัตโนมัติทุกเดือน · ค่าขยะใช้เมื่อตั้งโหมด “ระบุรายห้อง” ในหน้าตั้งค่า
+      </p>
       <div>
         <label className="label">สถานะ</label>
         <select name="status" className="field" defaultValue={(v?.status as string) ?? r?.status ?? "vacant"}>

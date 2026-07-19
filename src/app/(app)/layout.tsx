@@ -18,6 +18,7 @@ const MOBILE_NAV = [
   { href: "/maintenance", label: "แจ้งซ่อม" },
   { href: "/parcels", label: "พัสดุ" },
   { href: "/vehicles", label: "ยานพาหนะ" },
+  { href: "/fees", label: "ค่าจอดรถ/ค่าขยะ" },
   { href: "/expenses", label: "ค่าใช้จ่าย" },
   { href: "/settings", label: "ตั้งค่าและการชำระเงิน" },
   { href: "/help", label: "ช่วยเหลือ" },

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatBaht } from "@/lib/format";
-import { saveRoomFees, type RoomFeeRow } from "../actions";
+import { formatBaht, VEHICLE_TYPE_LABEL } from "@/lib/format";
+import type { Vehicle, VehicleType, Tenant } from "@/lib/types";
+import { AddVehicleButton, EditVehicleButton, type RoomOpt } from "../vehicles/vehicle-buttons";
+import { saveRoomFees, type RoomFeeRow } from "../rooms/actions";
 
 export type FeeRoom = {
   id: string;
@@ -15,10 +17,16 @@ export type FeeRoom = {
 
 export function FeesForm({
   rooms,
+  vehiclesByRoom,
+  roomOpts,
+  tenants,
   garbageFlatMode,
   garbageFlat,
 }: {
   rooms: FeeRoom[];
+  vehiclesByRoom: Record<string, Vehicle[]>;
+  roomOpts: RoomOpt[];
+  tenants: Tenant[];
   garbageFlatMode: boolean;
   garbageFlat: number;
 }) {
@@ -36,9 +44,14 @@ export function FeesForm({
   function set(id: string, key: "p" | "g", v: string) {
     setValues((prev) => ({ ...prev, [id]: { ...prev[id], [key]: v } }));
   }
+  /** เติมค่าให้ทุกห้องที่แสดงอยู่ (ตามอาคารที่กรองไว้) */
   function fillAll(key: "p" | "g", v: string) {
     if (v === "") return;
-    setValues((prev) => Object.fromEntries(Object.entries(prev).map(([k, o]) => [k, { ...o, [key]: v }])));
+    setValues((prev) => {
+      const next = { ...prev };
+      rooms.forEach((r) => (next[r.id] = { ...next[r.id], [key]: v }));
+      return next;
+    });
   }
 
   const totalParking = rooms.reduce((s, r) => s + (Number(values[r.id]?.p) || 0), 0);
@@ -63,22 +76,20 @@ export function FeesForm({
 
   return (
     <div className="card overflow-hidden">
-      {/* แถบเครื่องมือ: เติมค่าทุกห้อง + บันทึก */}
+      {/* เติมค่าทุกห้อง (ในอาคารที่เลือก) + บันทึก */}
       <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 p-4">
         <div>
           <label className="label">เติมค่าจอดรถทุกห้อง</label>
           <div className="flex gap-2">
             <input
-              type="number"
-              step="0.01"
-              min="0"
+              type="number" step="0.01" min="0"
               className="field w-28"
               value={fillP}
               onChange={(e) => setFillP(e.target.value)}
               placeholder="เช่น 300"
             />
             <button type="button" className="btn-secondary whitespace-nowrap" onClick={() => fillAll("p", fillP)}>
-              เติมทุกห้อง
+              เติม
             </button>
           </div>
         </div>
@@ -86,32 +97,28 @@ export function FeesForm({
           <label className="label">เติมค่าขยะทุกห้อง</label>
           <div className="flex gap-2">
             <input
-              type="number"
-              step="0.01"
-              min="0"
+              type="number" step="0.01" min="0"
               className="field w-28"
               value={fillG}
               onChange={(e) => setFillG(e.target.value)}
               placeholder="เช่น 30"
             />
             <button type="button" className="btn-secondary whitespace-nowrap" onClick={() => fillAll("g", fillG)}>
-              เติมทุกห้อง
+              เติม
             </button>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          {msg && (
-            <span className={`text-sm ${msg.ok ? "text-emerald-600" : "text-rose-600"}`}>{msg.text}</span>
-          )}
+          {msg && <span className={`text-sm ${msg.ok ? "text-emerald-600" : "text-rose-600"}`}>{msg.text}</span>}
           <button className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? "กำลังบันทึก…" : "💾 บันทึกทั้งหมด"}
+            {saving ? "กำลังบันทึก…" : "💾 บันทึกค่าบริการ"}
           </button>
         </div>
       </div>
 
       {garbageFlatMode && (
         <p className="border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
-          ตอนนี้ตั้งค่าขยะเป็นโหมด <b>เหมาทุกห้อง ({formatBaht(garbageFlat)}/ห้อง)</b> — ระบบจะคิดค่าขยะตามราคาเหมา
+          ค่าขยะตั้งเป็นโหมด <b>เหมาทุกห้อง ({formatBaht(garbageFlat)}/ห้อง)</b> — ระบบคิดตามราคาเหมา
           ไม่ใช้ค่ารายห้องด้านล่าง (เปลี่ยนโหมดได้ที่หน้าตั้งค่า)
         </p>
       )}
@@ -123,42 +130,68 @@ export function FeesForm({
               <th className="px-4 py-3 font-medium">ห้อง</th>
               <th className="px-3 py-3 font-medium">ค่าจอดรถ/เดือน</th>
               <th className="px-3 py-3 font-medium">ค่าขยะ/เดือน</th>
+              <th className="px-3 py-3 font-medium">ยานพาหนะของห้องนี้</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rooms.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2 font-medium text-slate-900">
-                  {r.building_name} · {r.room_number}
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className="field w-32"
-                    value={values[r.id]?.p ?? "0"}
-                    onChange={(e) => set(r.id, "p", e.target.value)}
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className="field w-32"
-                    value={values[r.id]?.g ?? "0"}
-                    onChange={(e) => set(r.id, "g", e.target.value)}
-                  />
-                </td>
-              </tr>
-            ))}
+            {rooms.map((r) => {
+              const vs = vehiclesByRoom[r.id] ?? [];
+              return (
+                <tr key={r.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-2 font-medium text-slate-900">
+                    {r.building_name} · {r.room_number}
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="number" step="0.01" min="0"
+                      className="field w-28"
+                      value={values[r.id]?.p ?? "0"}
+                      onChange={(e) => set(r.id, "p", e.target.value)}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="number" step="0.01" min="0"
+                      className="field w-28"
+                      value={values[r.id]?.g ?? "0"}
+                      onChange={(e) => set(r.id, "g", e.target.value)}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {vs.map((v) => (
+                        <span
+                          key={v.id}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1"
+                        >
+                          <span className="font-medium text-slate-800">{v.plate}</span>
+                          <span className="text-[11px] text-slate-400">
+                            {VEHICLE_TYPE_LABEL[v.vehicle_type as VehicleType]}
+                          </span>
+                          <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} label="✏️" />
+                        </span>
+                      ))}
+                      {vs.length === 0 && <span className="text-xs text-slate-300">—</span>}
+                      <AddVehicleButton
+                        rooms={roomOpts}
+                        tenants={tenants}
+                        defaultRoomId={r.id}
+                        label="+ เพิ่มรถ"
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot className="border-t border-slate-200 bg-slate-50 text-slate-600">
             <tr>
               <td className="px-4 py-3 font-medium">รวม {rooms.length} ห้อง</td>
               <td className="px-3 py-3 font-semibold">{formatBaht(totalParking)}</td>
               <td className="px-3 py-3 font-semibold">{formatBaht(totalGarbage)}</td>
+              <td className="px-3 py-3 text-xs text-slate-400">
+                มีรถ {Object.values(vehiclesByRoom).reduce((s, a) => s + a.length, 0)} คัน
+              </td>
             </tr>
           </tfoot>
         </table>

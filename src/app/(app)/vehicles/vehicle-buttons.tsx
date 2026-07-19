@@ -12,10 +12,12 @@ function Fields({
   v,
   rooms,
   tenants,
+  defaultRoomId,
 }: {
   v?: Vehicle;
   rooms: RoomOpt[];
   tenants: Tenant[];
+  defaultRoomId?: string;
 }) {
   return (
     <>
@@ -52,7 +54,7 @@ function Fields({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label">ห้อง</label>
-          <select name="room_id" className="field" defaultValue={v?.room_id ?? ""}>
+          <select name="room_id" className="field" defaultValue={v?.room_id ?? defaultRoomId ?? ""}>
             <option value="">— ไม่ระบุ —</option>
             {rooms.map((r) => (
               <option key={r.id} value={r.id}>
@@ -84,15 +86,19 @@ function Fields({
 export function AddVehicleButton({
   rooms,
   tenants,
+  defaultRoomId,
+  label = "+ เพิ่มยานพาหนะ",
 }: {
   rooms: RoomOpt[];
   tenants: Tenant[];
+  defaultRoomId?: string;
+  label?: string;
 }) {
   return (
-    <ModalButton label="+ เพิ่มยานพาหนะ" title="เพิ่มยานพาหนะ">
+    <ModalButton label={label} title="เพิ่มยานพาหนะ">
       {(close) => (
         <ActionForm action={createVehicle} onSuccess={close}>
-          <Fields rooms={rooms} tenants={tenants} />
+          <Fields rooms={rooms} tenants={tenants} defaultRoomId={defaultRoomId} />
         </ActionForm>
       )}
     </ModalButton>
@@ -103,13 +109,15 @@ export function EditVehicleButton({
   vehicle,
   rooms,
   tenants,
+  label = "แก้ไข",
 }: {
   vehicle: Vehicle;
   rooms: RoomOpt[];
   tenants: Tenant[];
+  label?: string;
 }) {
   return (
-    <ModalButton label="แก้ไข" title="แก้ไขยานพาหนะ" variant="secondary">
+    <ModalButton label={label} title="แก้ไขยานพาหนะ" variant="secondary">
       {(close) => (
         <ActionForm action={updateVehicle.bind(null, vehicle.id)} onSuccess={close}>
           <Fields v={vehicle} rooms={rooms} tenants={tenants} />

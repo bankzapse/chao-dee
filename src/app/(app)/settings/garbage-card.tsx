@@ -66,8 +66,8 @@ export function GarbageCard({ org }: { org: GarbageInfo }) {
               <input type="hidden" name="garbage_flat" value={org.garbage_flat} />
               <div className="rounded-lg bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
                 ตั้งค่าขยะแยกรายห้องได้ที่หน้า{" "}
-                <a href="/rooms/fees" className="font-semibold text-indigo-600 hover:text-indigo-700">
-                  ค่าจอดรถ / ค่าขยะ รายห้อง →
+                <a href="/fees" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                  ค่าจอดรถ / ค่าขยะ →
                 </a>{" "}
                 (ดึงห้องมาทุกห้อง ห้องที่ไม่เก็บใส่ 0)
               </div>

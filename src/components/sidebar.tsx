@@ -18,6 +18,7 @@ const NAV = [
   { href: "/maintenance", label: "แจ้งซ่อม", icon: "🔧" },
   { href: "/parcels", label: "พัสดุ", icon: "📦" },
   { href: "/vehicles", label: "ยานพาหนะ", icon: "🚗" },
+  { href: "/fees", label: "ค่าจอดรถ/ค่าขยะ", icon: "🅿️" },
   { href: "/expenses", label: "ค่าใช้จ่าย", icon: "💸" },
   { href: "/team", label: "ทีมงาน", icon: "🧑‍🤝‍🧑", manageTeam: true },
   { href: "/renew", label: "ต่ออายุ/อัปเกรด", icon: "⭐" },

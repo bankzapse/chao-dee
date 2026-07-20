@@ -74,7 +74,17 @@ function MoneyAndTerms({ c, rent, setRent }: { c?: Contract; rent: number | ""; 
   );
 }
 
-function AddForm({ rooms, tenants }: { rooms: RoomOption[]; tenants: Tenant[] }) {
+export type DealOption = { lead_id: string; label: string };
+
+function AddForm({
+  rooms,
+  tenants,
+  deals = [],
+}: {
+  rooms: RoomOption[];
+  tenants: Tenant[];
+  deals?: DealOption[];
+}) {
   const [rent, setRent] = useState<number | "">("");
 
   return (
@@ -114,6 +124,22 @@ function AddForm({ rooms, tenants }: { rooms: RoomOption[]; tenants: Tenant[] })
           ))}
         </select>
       </div>
+      {deals.length > 0 && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3">
+          <label className="label">🤝 ผู้เช่ารายนี้มาจาก Chao-Dee หรือไม่?</label>
+          <select name="lead_id" className="field" defaultValue="">
+            <option value="">— ไม่ใช่ / หาเอง —</option>
+            {deals.map((d) => (
+              <option key={d.lead_id} value={d.lead_id}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            ถ้าเลือก ระบบจะบันทึกเป็นดีลนายหน้าและคิดค่านายหน้า 1 เดือนตามสัญญาที่ตกลงไว้
+          </p>
+        </div>
+      )}
       <MoneyAndTerms rent={rent} setRent={setRent} />
     </>
   );
@@ -141,9 +167,11 @@ function EditForm({ contract, roomLabel, tenantName }: { contract: Contract; roo
 export function AddContractButton({
   rooms,
   tenants,
+  deals = [],
 }: {
   rooms: RoomOption[];
   tenants: Tenant[];
+  deals?: DealOption[];
 }) {
   const disabled = rooms.length === 0 || tenants.length === 0;
   if (disabled) return null;
@@ -151,7 +179,7 @@ export function AddContractButton({
     <ModalButton label="+ ทำสัญญาใหม่" title="สร้างสัญญาเช่า">
       {(close) => (
         <ActionForm action={createContract} onSuccess={close} submitLabel="สร้างสัญญา">
-          <AddForm rooms={rooms} tenants={tenants} />
+          <AddForm rooms={rooms} tenants={tenants} deals={deals} />
         </ActionForm>
       )}
     </ModalButton>

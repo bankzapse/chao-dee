@@ -1,9 +1,50 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { money, intMin } from "@/lib/num";
+import { commissionOf, DEFAULT_COMMISSION_RATE } from "@/lib/agency";
 import type { FormState } from "@/components/action-form";
+
+/**
+ * ผูกสัญญาที่เพิ่งสร้างกับดีลนายหน้า → ปิดดีลเป็น "เซ็นสัญญาแล้ว" + คำนวณค่านายหน้า
+ * best-effort: ถ้ายังไม่มีตาราง/ดีล หรือดีลปิดไปแล้ว จะข้ามเงียบ ๆ ไม่กระทบการสร้างสัญญา
+ */
+async function linkAgencyDeal(o: {
+  leadId: string;
+  orgId: string;
+  roomId: string;
+  tenantId: string;
+  rent: number;
+}) {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("agency_deals")
+      .select("id, status, commission_rate, org_id")
+      .eq("lead_id", o.leadId)
+      .maybeSingle();
+    const d = data as { id: string; status: string; commission_rate: number; org_id: string } | null;
+    if (!d || d.org_id !== o.orgId) return;
+    if (["signed", "invoiced", "paid", "cancelled"].includes(d.status)) return; // ปิดไปแล้ว ไม่ทับ
+    const rate = Number(d.commission_rate ?? DEFAULT_COMMISSION_RATE);
+    await admin
+      .from("agency_deals")
+      .update({
+        status: "signed",
+        room_id: o.roomId,
+        tenant_id: o.tenantId,
+        rent_base: o.rent,
+        commission_amount: commissionOf(o.rent, rate),
+        signed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", d.id);
+  } catch {
+    // เงียบไว้ — การสร้างสัญญาต้องไม่ล้มเพราะระบบนายหน้า
+  }
+}
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (ยังไม่ได้รัน migration 0020) */
 function isMissingColumn(msg?: string): boolean {
@@ -36,15 +77,38 @@ export async function createContract(
   const supabase = await createClient();
   const org_id = await getOrgId();
 
-  const row = { org_id, room_id, tenant_id, start_date, end_date, ...extraFields(formData), status: "active" };
+  const lead_id = String(formData.get("lead_id") ?? "").trim() || null;
+  const row = {
+    org_id,
+    room_id,
+    tenant_id,
+    start_date,
+    end_date,
+    ...(lead_id ? { lead_id } : {}),
+    ...extraFields(formData),
+    status: "active",
+  };
   let { error } = await supabase.from("contracts").insert(row);
   if (isMissingColumn(error?.message)) {
-    ({ error } = await supabase.from("contracts").insert(stripNewCols(row)));
+    const { lead_id: _drop, ...noLead } = row as Record<string, unknown>;
+    void _drop;
+    ({ error } = await supabase.from("contracts").insert(stripNewCols(noLead)));
   }
   if (error) return { error: error.message };
 
   // ห้องที่มีสัญญา active → สถานะ "มีผู้เช่า"
   await supabase.from("rooms").update({ status: "occupied" }).eq("id", room_id);
+
+  // ผูกดีลนายหน้า: ถ้าระบุว่ามาจาก Chao-Dee → ปิดดีล + คำนวณค่านายหน้าอัตโนมัติ
+  if (lead_id) {
+    await linkAgencyDeal({
+      leadId: lead_id,
+      orgId: org_id,
+      roomId: room_id,
+      tenantId: tenant_id,
+      rent: Number(extraFields(formData).rent_amount) || 0,
+    });
+  }
   return { ok: true };
 }
 

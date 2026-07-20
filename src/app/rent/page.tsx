@@ -189,6 +189,15 @@ export default async function RentHome({
             หอพัก · คอนโด · อพาร์ตเมนต์ ห้องว่างพร้อมเข้าอยู่ อัปเดตเรียลไทม์ ·
             ติดต่อเจ้าของตรง รับส่วนลดเดือนแรกผ่าน Chao-Dee
           </p>
+          <p className="mt-4 text-sm text-slate-300">
+            หาไม่เจอที่ถูกใจ?{" "}
+            <Link
+              href="/rent/find"
+              className="rounded-full bg-amber-400/15 px-3 py-1.5 font-semibold text-amber-200 ring-1 ring-amber-300/30 hover:bg-amber-400/25"
+            >
+              ✦ ให้เราหาห้องให้ฟรี →
+            </Link>
+          </p>
 
           <form
             action="/rent"

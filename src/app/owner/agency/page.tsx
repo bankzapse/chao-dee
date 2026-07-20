@@ -11,6 +11,7 @@ import {
   IssueInvoiceButton,
   ConfirmPaidButton,
   CancelDealButton,
+  RequestStatusButton,
 } from "./deal-buttons";
 
 export const dynamic = "force-dynamic";
@@ -72,6 +73,27 @@ export default async function OwnerAgencyPage() {
   const newLeads = ((leadRows ?? []) as { id: string; org_id: string; name: string; phone: string; created_at: string }[])
     .filter((l) => !dealLeadIds.has(l.id));
 
+  // คำขอ "ให้เราหาห้องให้" ที่ยังไม่ปิด (resilient เผื่อยังไม่ได้รัน 0045)
+  const reqRes = await admin
+    .from("agency_requests")
+    .select("id, name, phone, province, district, budget_min, budget_max, occupants, move_in, note, status")
+    .neq("status", "closed")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  const openRequests = (reqRes.error ? [] : (reqRes.data ?? [])) as unknown as {
+    id: string;
+    name: string;
+    phone: string;
+    province: string;
+    district: string;
+    budget_min: number;
+    budget_max: number;
+    occupants: number;
+    move_in: string | null;
+    note: string;
+    status: string;
+  }[];
+
   const openDeals = deals.filter((d) => !["paid", "cancelled"].includes(d.status));
   const pendingCash = deals
     .filter((d) => d.status === "invoiced")
@@ -112,6 +134,44 @@ export default async function OwnerAgencyPage() {
                   </span>
                 </div>
                 <CreateDealButton leadId={l.id} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* คำขอ "ให้เราหาห้องให้" จากผู้เช่า */}
+      {openRequests.length > 0 && (
+        <div className="mt-6 card overflow-hidden">
+          <div className="border-b border-slate-200 bg-amber-50 px-4 py-2.5">
+            <h2 className="text-sm font-semibold text-amber-900">
+              ✦ คำขอ “ให้เราหาห้องให้” ({openRequests.length})
+            </h2>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {openRequests.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+                <div className="min-w-0">
+                  <span className="font-medium text-slate-900">{r.name || "-"}</span>
+                  <span className="ml-2 text-slate-500">{r.phone}</span>
+                  <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
+                    {r.status === "new" ? "ใหม่" : r.status === "contacted" ? "ติดต่อแล้ว" : "จับคู่แล้ว"}
+                  </span>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    {[r.province, r.district].filter(Boolean).join(" · ") || "ไม่ระบุทำเล"}
+                    {Number(r.budget_max) > 0
+                      ? ` · งบ ${formatBaht(Number(r.budget_min))}–${formatBaht(Number(r.budget_max))}`
+                      : ""}
+                    {` · ${r.occupants} คน`}
+                    {r.move_in ? ` · เข้าอยู่ ${formatDate(r.move_in)}` : ""}
+                  </p>
+                  {r.note && <p className="mt-0.5 text-xs text-slate-500">“{r.note}”</p>}
+                </div>
+                <div className="flex items-center gap-3">
+                  {r.status === "new" && <RequestStatusButton requestId={r.id} to="contacted" label="ติดต่อแล้ว" />}
+                  {r.status !== "matched" && <RequestStatusButton requestId={r.id} to="matched" label="จับคู่ได้" />}
+                  <RequestStatusButton requestId={r.id} to="closed" label="ปิด" />
+                </div>
               </div>
             ))}
           </div>

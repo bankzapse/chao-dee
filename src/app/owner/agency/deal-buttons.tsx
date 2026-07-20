@@ -13,6 +13,7 @@ import {
   issueCommissionInvoice,
   confirmCommissionPaid,
   cancelDeal,
+  setRequestStatus,
 } from "./actions";
 
 function TxButton({
@@ -107,6 +108,24 @@ export function ConfirmPaidButton({ dealId }: { dealId: string }) {
       label="✓ ยืนยันรับเงิน"
       className="text-sm font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
       confirm="ยืนยันว่าได้รับค่านายหน้าแล้ว?"
+    />
+  );
+}
+
+export function RequestStatusButton({
+  requestId,
+  to,
+  label,
+}: {
+  requestId: string;
+  to: "contacted" | "matched" | "closed";
+  label: string;
+}) {
+  return (
+    <TxButton
+      onRun={() => setRequestStatus(requestId, to)}
+      label={label}
+      className="text-xs font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
     />
   );
 }

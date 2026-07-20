@@ -8,6 +8,53 @@ import { rateLimitDb } from "@/lib/rate-limit-db";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { newLeadEmail } from "@/lib/email-templates";
 
+/** คำขอ "ให้เราหาห้องให้" จากผู้เช่า → เข้ากล่องงานทีมนายหน้าใน Console */
+export async function submitHousingRequest(
+  _prev: { ok?: boolean; error?: string },
+  formData: FormData
+): Promise<{ ok?: boolean; error?: string }> {
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(`hreq:${ip}`, 5, 10 * 60_000).ok) {
+    return { error: "ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่" };
+  }
+  if (!(await rateLimitDb(`hreq:${ip}`, 5, 10 * 60_000)).ok) {
+    return { error: "ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่" };
+  }
+
+  const g = (k: string, max: number) => String(formData.get(k) ?? "").trim().slice(0, max);
+  const name = g("name", 100);
+  const phone = g("phone", 30);
+  if (!name || !phone) return { error: "กรุณากรอกชื่อและเบอร์ติดต่อ" };
+  if (!/^[0-9+\-\s()]{6,20}$/.test(phone)) return { error: "เบอร์ติดต่อไม่ถูกต้อง" };
+
+  const num = (k: string) => {
+    const n = Number(formData.get(k) ?? 0);
+    return Number.isFinite(n) ? Math.max(0, n) : 0;
+  };
+  const moveIn = g("move_in", 10);
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("agency_requests").insert({
+    name,
+    phone,
+    province: g("province", 100),
+    district: g("district", 100),
+    budget_min: num("budget_min"),
+    budget_max: num("budget_max"),
+    occupants: Math.max(1, Math.floor(num("occupants")) || 1),
+    move_in: /^\d{4}-\d{2}-\d{2}$/.test(moveIn) ? moveIn : null,
+    note: g("note", 1000),
+    status: "new",
+  });
+  if (error) {
+    if (/schema cache|does not exist|could not find/i.test(error.message)) {
+      return { error: "ระบบยังไม่พร้อมรับคำขอ กรุณาลองใหม่ภายหลัง" };
+    }
+    return { error: "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง" };
+  }
+  return { ok: true };
+}
+
 /** ผู้เช่าติดต่อผ่านหน้าประกาศ /rent → บันทึก lead + แจ้งเจ้าของทาง LINE */
 export async function submitLead(
   listingId: string,

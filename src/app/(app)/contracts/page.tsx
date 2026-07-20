@@ -13,6 +13,7 @@ import {
   EditContractButton,
   CloseContractButton,
   type RoomOption,
+  type DealOption,
 } from "./contract-buttons";
 import { ContractDocsButton } from "./contract-docs";
 import { deleteContract } from "./actions";
@@ -38,6 +39,22 @@ export default async function ContractsPage() {
     ]);
 
   const list = (contracts ?? []) as unknown as ContractRow[];
+
+  // ดีลนายหน้าที่ยังเปิดอยู่ (ใช้ผูก attribution ตอนทำสัญญา) — resilient เผื่อยังไม่ได้รัน 0044
+  const { data: dealRows } = await supabase
+    .from("agency_deals")
+    .select("lead_id, lead_name, lead_phone, status")
+    .in("status", ["new", "contacted", "viewing"]);
+  const dealOptions: DealOption[] = ((dealRows ?? []) as {
+    lead_id: string | null;
+    lead_name: string;
+    lead_phone: string;
+  }[])
+    .filter((d) => d.lead_id)
+    .map((d) => ({
+      lead_id: d.lead_id as string,
+      label: `${d.lead_name || "ผู้สนใจเช่า"}${d.lead_phone ? ` · ${d.lead_phone}` : ""}`,
+    }));
 
   // นับจำนวนไฟล์เอกสารของแต่ละสัญญาจาก storage (folder: contracts/{id})
   const docCount = new Map<string, number>();
@@ -82,7 +99,7 @@ export default async function ContractsPage() {
         title="สัญญาเช่า"
         subtitle="จัดการสัญญาเช่าได้ไม่จำกัด"
         action={
-          <AddContractButton rooms={roomOptions} tenants={(tenants ?? []) as Tenant[]} />
+          <AddContractButton rooms={roomOptions} tenants={(tenants ?? []) as Tenant[]} deals={dealOptions} />
         }
       />
 
@@ -95,7 +112,7 @@ export default async function ContractsPage() {
               : "เริ่มสร้างสัญญาเช่าแรกของคุณ"
           }
           action={
-            <AddContractButton rooms={roomOptions} tenants={(tenants ?? []) as Tenant[]} />
+            <AddContractButton rooms={roomOptions} tenants={(tenants ?? []) as Tenant[]} deals={dealOptions} />
           }
         />
       ) : (

@@ -129,9 +129,17 @@ export default async function AgencyPage() {
                           <PayCommissionButton dealId={d.id} amount={Number(d.commission_amount)} />
                         )
                       ) : d.status === "paid" ? (
-                        <p className="text-right text-xs text-emerald-600">
-                          ✓ ชำระแล้ว {d.paid_at ? formatDate(d.paid_at) : ""}
-                        </p>
+                        <div className="text-right">
+                          <p className="text-xs text-emerald-600">
+                            ✓ ชำระแล้ว {d.paid_at ? formatDate(d.paid_at) : ""}
+                          </p>
+                          <a
+                            href={`/agency/receipt/${d.id}`}
+                            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                          >
+                            🧾 ใบเสร็จ
+                          </a>
+                        </div>
                       ) : (
                         <p className="text-right text-xs text-slate-300">—</p>
                       )}

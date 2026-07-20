@@ -84,9 +84,56 @@ export async function GET(req: Request) {
     }
   }
 
+  // 3) เตือนค่านายหน้าค้างชำระเกินกำหนด (วางบิลเกิน 15 วันแล้วยังไม่ชำระ)
+  let commissionReminded = 0;
+  try {
+    const dueBefore = new Date(now.getTime() - 15 * 86400000).toISOString();
+    const { data: overdue } = await admin
+      .from("agency_deals")
+      .select("id, org_id, commission_amount, invoiced_at, organizations(name)")
+      .eq("status", "invoiced")
+      .lt("invoiced_at", dueBefore)
+      .limit(200);
+
+    for (const d of (overdue ?? []) as unknown as {
+      org_id: string;
+      commission_amount: number;
+      organizations: { name?: string } | { name?: string }[] | null;
+    }[]) {
+      const o = Array.isArray(d.organizations) ? d.organizations[0] : d.organizations;
+      const name = o?.name ?? "หอพักของคุณ";
+      const amount = Number(d.commission_amount);
+      if (isEmailConfigured()) {
+        const { data: owner } = await admin
+          .from("profiles")
+          .select("email")
+          .eq("org_id", d.org_id)
+          .eq("role", "owner")
+          .maybeSingle();
+        const email = (owner as { email?: string } | null)?.email;
+        if (email) {
+          const res = await sendEmail({
+            to: email,
+            subject: `ค่านายหน้าค้างชำระ — ${name}`,
+            html: emailShell(
+              "ค่านายหน้าค้างชำระ",
+              `ค่านายหน้าของ <b>${name}</b> ยอด <b>${amount.toLocaleString()} บาท</b> เกินกำหนดชำระแล้ว
+               กรุณาชำระและแนบสลิปในระบบ`,
+              { label: "ไปที่ดีลนายหน้า", url: "https://chao-dee.com/agency" }
+            ),
+          });
+          if (res.ok) commissionReminded++;
+        }
+      }
+    }
+  } catch {
+    // ยังไม่ได้ migrate 0044 หรือมีปัญหา — ข้าม
+  }
+
   return NextResponse.json({
     ok: true,
     expired: expired?.length ?? 0,
     reminded,
+    commissionReminded,
   });
 }

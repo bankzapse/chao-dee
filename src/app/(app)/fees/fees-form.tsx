@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatBaht, VEHICLE_TYPE_LABEL } from "@/lib/format";
 import type { Vehicle, VehicleType, Tenant } from "@/lib/types";
-import { AddVehicleButton, EditVehicleButton, type RoomOpt } from "../vehicles/vehicle-buttons";
+import { AddVehicleButton, EditVehicleButton, type RoomOpt } from "./vehicle-buttons";
 import { DeleteButton } from "@/components/action-form";
-import { deleteVehicle } from "../vehicles/actions";
+import { deleteVehicle } from "./vehicle-actions";
 import { saveRoomFees, type RoomFeeRow } from "../rooms/actions";
 
 export type FeeRoom = {

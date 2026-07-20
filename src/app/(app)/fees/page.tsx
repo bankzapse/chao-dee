@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
 import type { Building, Vehicle, Tenant } from "@/lib/types";
-import type { RoomOpt } from "../vehicles/vehicle-buttons";
+import type { RoomOpt } from "./vehicle-buttons";
 import { FeesForm, type FeeRoom } from "./fees-form";
 
 export const dynamic = "force-dynamic";

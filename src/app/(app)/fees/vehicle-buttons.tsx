@@ -2,7 +2,7 @@
 
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
-import { createVehicle, updateVehicle } from "./actions";
+import { createVehicle, updateVehicle } from "./vehicle-actions";
 import { VEHICLE_TYPE_LABEL } from "@/lib/format";
 import type { Vehicle, VehicleType, Tenant } from "@/lib/types";
 

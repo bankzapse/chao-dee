@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { href: "/owner/audit", label: "บันทึกกิจกรรม", icon: "📝", perm: "audit", group: "chaodee" },
   { href: "/owner/admins", label: "จัดการแอดมิน", icon: "🛡️", ownerOnly: true, group: "chaodee" },
   { href: "/owner/listings", label: "โปรโมทประกาศ", icon: "⭐", perm: "promotions", group: "rent" },
+  { href: "/owner/agency", label: "ดีลนายหน้า", icon: "🤝", perm: "agency", group: "rent" },
 ];
 
 const GROUPS: { key: NavItem["group"]; label: string }[] = [

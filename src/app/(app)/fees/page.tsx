@@ -25,11 +25,18 @@ export default async function FeesPage({
   const { building } = await searchParams;
   const supabase = await createClient();
 
+  const { data: buildings } = await supabase.from("buildings").select("*").order("name");
+  const buildingList = (buildings ?? []) as Building[];
+
+  // ดูทีละอาคารเสมอ — รวมทุกอาคารไว้หน้าเดียวแล้วสับสน
+  // ไม่ได้เลือก (หรือเลือกอาคารที่ไม่มีอยู่) → ใช้อาคารแรก
+  const selected = buildingList.find((b) => b.id === building)?.id ?? buildingList[0]?.id ?? "";
+
   const sel = "id, room_number, floor, building_id, parking_fee, garbage_fee, buildings(name)";
   const selLite = "id, room_number, floor, building_id, parking_fee, buildings(name)";
   const build = (s: string) => {
     let q = supabase.from("rooms").select(s).order("floor").order("room_number");
-    if (building) q = q.eq("building_id", building);
+    if (selected) q = q.eq("building_id", selected);
     return q;
   };
   // resilient: ถ้ายังไม่ได้รัน 0043 (garbage_fee) ให้ถอยไป select แบบไม่มีคอลัมน์นั้น
@@ -38,13 +45,11 @@ export default async function FeesPage({
     res = (await build(selLite)) as typeof res;
   }
 
-  const [{ data: buildings }, { data: vehicles }, { data: tenants }, { data: allRooms }] =
-    await Promise.all([
-      supabase.from("buildings").select("*").order("name"),
-      supabase.from("vehicles").select("*"),
-      supabase.from("tenants").select("*").order("full_name"),
-      supabase.from("rooms").select("id, room_number, buildings(name)").order("room_number"),
-    ]);
+  const [{ data: vehicles }, { data: tenants }, { data: allRooms }] = await Promise.all([
+    supabase.from("vehicles").select("*"),
+    supabase.from("tenants").select("*").order("full_name"),
+    supabase.from("rooms").select("id, room_number, buildings(name)").order("room_number"),
+  ]);
 
   const rows = (res.data ?? []) as unknown as Row[];
   const rooms: FeeRoom[] = rows.map((r) => {
@@ -83,33 +88,39 @@ export default async function FeesPage({
     return { id: r.id, label: `${b?.name ?? "-"} · ${r.room_number}` };
   });
 
-  const buildingList = (buildings ?? []) as Building[];
-
   // โหมดค่าขยะ (resilient)
   const { data: gbRow } = await supabase
     .from("organizations")
     .select("garbage_mode, garbage_flat")
     .maybeSingle();
   const gb = gbRow as { garbage_mode?: string; garbage_flat?: number } | null;
+  const scope = buildingList.find((b) => b.id === selected)?.name ?? "ทุกอาคาร";
 
   return (
     <div>
       <PageHeader
         title="ค่าจอดรถ / ค่าขยะ"
-        subtitle="ตั้งค่าบริการรายเดือนของแต่ละห้อง + จัดการยานพาหนะในห้องเดียวกัน (ไม่เก็บให้ใส่ 0)"
+        subtitle={`${scope} · ตั้งค่าบริการรายเดือนของแต่ละห้อง + จัดการยานพาหนะในห้องเดียวกัน (ไม่เก็บให้ใส่ 0)`}
       />
 
       {buildingList.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-2">
-          <FilterChip href="/fees" label="ทุกอาคาร" active={!building} />
           {buildingList.map((b) => (
-            <FilterChip key={b.id} href={`/fees?building=${b.id}`} label={b.name} active={building === b.id} />
+            <FilterChip
+              key={b.id}
+              href={`/fees?building=${b.id}`}
+              label={b.name}
+              active={selected === b.id}
+            />
           ))}
         </div>
       )}
 
       {rooms.length === 0 ? (
-        <EmptyState title="ยังไม่มีห้องพัก" description="เพิ่มห้องพักก่อน จึงจะตั้งค่าจอดรถ/ค่าขยะได้" />
+        <EmptyState
+          title={`ยังไม่มีห้องพักใน${scope}`}
+          description="เพิ่มห้องพักก่อน จึงจะตั้งค่าจอดรถ/ค่าขยะได้"
+        />
       ) : (
         <FeesForm
           rooms={rooms}

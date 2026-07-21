@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
+import { NavProgress } from "@/components/nav-progress";
 import { signOut } from "@/app/login/actions";
 
 const MOBILE_NAV = [
@@ -83,6 +85,9 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50">
+      <Suspense fallback={null}>
+        <NavProgress />
+      </Suspense>
       <Sidebar orgName={orgName} canManageTeam={canManageTeam} openMaintenance={openMaintenance ?? 0} />
 
       <div className="flex min-w-0 flex-1 flex-col">

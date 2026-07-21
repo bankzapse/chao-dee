@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { getAdminContext } from "@/lib/admin";
 import { OwnerSidebar } from "@/components/owner-sidebar";
+import { NavProgress } from "@/components/nav-progress";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signOut } from "@/app/login/actions";
 
@@ -19,6 +21,9 @@ export default async function OwnerLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-100">
+      <Suspense fallback={null}>
+        <NavProgress />
+      </Suspense>
       <OwnerSidebar pendingCount={pendingCount ?? 0} role={ctx.role} perms={ctx.perms} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="no-print sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-8">

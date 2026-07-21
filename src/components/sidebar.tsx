@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
+import { LinkSpinner } from "@/components/nav";
 
 const NAV = [
   { href: "/reports", label: "แดชบอร์ด / รายงาน", icon: "📊" },
@@ -67,6 +68,7 @@ export function Sidebar({
             >
               <span className="text-base">{item.icon}</span>
               <span className="flex-1">{item.label}</span>
+              <LinkSpinner />
               {item.href === "/maintenance" && openMaintenance > 0 && (
                 <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
                   {openMaintenance}

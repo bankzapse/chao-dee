@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
+import { FilterChip } from "@/components/nav";
 import type { Building, Vehicle, Tenant } from "@/lib/types";
 import type { RoomOpt } from "./vehicle-buttons";
 import { FeesForm, type FeeRoom } from "./fees-form";
@@ -145,18 +145,5 @@ export default async function FeesPage({
         />
       )}
     </div>
-  );
-}
-
-function FilterChip({ href, label, active }: { href: string; label: string; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-        active ? "bg-indigo-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-      }`}
-    >
-      {label}
-    </Link>
   );
 }

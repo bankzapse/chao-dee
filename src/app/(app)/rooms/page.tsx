@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
+import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
 import { formatBaht, ROOM_STATUS_LABEL, ROOM_STATUS_STYLE } from "@/lib/format";
 import type { Building, Room, RoomStatus } from "@/lib/types";
@@ -162,28 +162,5 @@ export default async function RoomsPage({
         </>
       )}
     </div>
-  );
-}
-
-function FilterChip({
-  href,
-  label,
-  active,
-}: {
-  href: string;
-  label: string;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-        active
-          ? "bg-indigo-600 text-white"
-          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-      }`}
-    >
-      {label}
-    </Link>
   );
 }

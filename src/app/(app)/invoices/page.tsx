@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, StatCard, Badge } from "@/components/ui";
+import { FilterChip, PendingLink } from "@/components/nav";
 import { PeriodSelect } from "@/components/period-select";
 import { DeleteButton } from "@/components/action-form";
 import { GenerateButton, RecalcButton } from "./generate-button";
@@ -172,12 +172,12 @@ export default async function InvoicesPage({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-3">
-                        <Link
+                        <PendingLink
                           href={`/invoices/${i.id}`}
                           className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
                         >
                           เปิดบิล →
-                        </Link>
+                        </PendingLink>
                         <DeleteButton
                           action={deleteInvoice.bind(null, i.id)}
                           confirmText={`ลบบิลห้อง ${i.rooms?.room_number ?? "-"} รอบ ${formatPeriod(
@@ -194,18 +194,5 @@ export default async function InvoicesPage({
         </section>
       )}
     </div>
-  );
-}
-
-function FilterChip({ href, label, active }: { href: string; label: string; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-        active ? "bg-indigo-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-      }`}
-    >
-      {label}
-    </Link>
   );
 }

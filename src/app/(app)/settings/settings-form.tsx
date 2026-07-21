@@ -55,6 +55,10 @@ export function SettingsForm({ org }: { org: Org }) {
                   sub="โอนเข้าเลขบัญชี"
                 />
               </div>
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                บิลผู้เช่าจะแสดง<b>เฉพาะช่องทางที่เลือก</b>เท่านั้น (แสดงสองทางพร้อมกันทำให้ผู้เช่าลังเล
+                และเงินเข้าคนละที่จนกระทบยอดยาก) — อีกช่องทางกรอกเก็บไว้ได้ ไว้สลับมาใช้ทีหลัง
+              </p>
               <input type="hidden" name="payment_method" value={method} />
             </div>
 
@@ -143,16 +147,17 @@ export function SettingsForm({ org }: { org: Org }) {
 
       {/* พรีวิวสิ่งที่ผู้เช่าจะเห็นในบิล */}
       <div className="card flex flex-col items-center gap-5 p-6">
-        <div className="flex flex-col items-center">
+        {/* ตัวที่ไม่ได้เลือกจะจางลง ให้เห็นชัดว่าผู้เช่าไม่ได้เห็นอันนั้น */}
+        <div className={`flex flex-col items-center ${method === "promptpay" ? "" : "opacity-40"}`}>
           <p className={`mb-2 text-sm font-medium ${method === "promptpay" ? "text-indigo-600" : "text-slate-500"}`}>
-            QR พร้อมเพย์ {method === "promptpay" && "· ใช้ในบิล"}
+            QR พร้อมเพย์ {method === "promptpay" ? "· ผู้เช่าเห็นอันนี้" : "· ไม่แสดงในบิล"}
           </p>
           <PromptPayQR promptpayId={ppId} size={150} />
         </div>
         <div className="w-full border-t border-slate-100" />
-        <div className="flex w-full flex-col items-center">
+        <div className={`flex w-full flex-col items-center ${method === "bank" ? "" : "opacity-40"}`}>
           <p className={`mb-2 text-sm font-medium ${method === "bank" ? "text-indigo-600" : "text-slate-500"}`}>
-            บัญชีธนาคาร {method === "bank" && "· ใช้ในบิล"}
+            บัญชีธนาคาร {method === "bank" ? "· ผู้เช่าเห็นอันนี้" : "· ไม่แสดงในบิล"}
           </p>
           {bankNo ? (
             <div className="text-center">

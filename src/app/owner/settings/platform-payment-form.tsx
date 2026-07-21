@@ -54,6 +54,9 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
                 />
               </div>
               <input type="hidden" name="payment_method" value={method} />
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                หน้าต่ออายุจะแสดง<b>เฉพาะช่องทางที่เลือก</b>เท่านั้น — อีกช่องทางกรอกเก็บไว้ได้ ไว้สลับมาใช้ทีหลัง
+              </p>
             </div>
 
             <div>
@@ -180,16 +183,17 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
 
         {/* พรีวิวสิ่งที่ลูกค้าจะเห็นตอนจ่ายค่าสมาชิก */}
         <div className="card flex h-fit flex-col items-center gap-5 p-6">
-          <div className="flex flex-col items-center">
+          {/* ตัวที่ไม่ได้เลือกจะจางลง ให้เห็นชัดว่าลูกค้าไม่ได้เห็นอันนั้น */}
+          <div className={`flex flex-col items-center ${method === "promptpay" ? "" : "opacity-40"}`}>
             <p className={`mb-2 text-sm font-medium ${method === "promptpay" ? "text-indigo-600" : "text-slate-500"}`}>
-              QR พร้อมเพย์ {method === "promptpay" && "· ใช้จริง"}
+              QR พร้อมเพย์ {method === "promptpay" ? "· ลูกค้าเห็นอันนี้" : "· ไม่แสดง"}
             </p>
             <PromptPayQR promptpayId={pp} size={150} />
           </div>
           <div className="w-full border-t border-slate-100" />
-          <div className="flex w-full flex-col items-center">
+          <div className={`flex w-full flex-col items-center ${method === "bank" ? "" : "opacity-40"}`}>
             <p className={`mb-2 text-sm font-medium ${method === "bank" ? "text-indigo-600" : "text-slate-500"}`}>
-              บัญชีธนาคาร {method === "bank" && "· ใช้จริง"}
+              บัญชีธนาคาร {method === "bank" ? "· ลูกค้าเห็นอันนี้" : "· ไม่แสดง"}
             </p>
             {bankNo ? (
               <div className="text-center">

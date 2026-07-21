@@ -73,6 +73,9 @@ function BankTransferDetails({
  *
  * ทางออกสำหรับคนที่อยากได้คิวอาร์ของบัญชีจริงๆ: bankQrUrl — รูป QR รับเงิน
  * ที่เจ้าของบันทึกจากแอปธนาคารมาอัปโหลดเอง (ไม่บังคับ)
+ *
+ * แสดง "ช่องทางเดียว" ตามที่ตั้งไว้เท่านั้น — โชว์ทั้งสองทางทำให้ผู้เช่าลังเลว่าจ่ายทางไหนดี
+ * และเงินเข้าคนละที่ทำให้กระทบยอดยาก จะสลับไปอีกทางก็ต่อเมื่อทางที่เลือกยังไม่ได้กรอกข้อมูล
  */
 export function PaymentBox({
   method = "promptpay",
@@ -94,39 +97,28 @@ export function PaymentBox({
     return <p className="py-6 text-center text-xs text-slate-400">ยังไม่ได้ตั้งค่าช่องทางรับเงิน</p>;
   }
 
-  // เลือกบัญชีธนาคาร (หรือไม่มีพร้อมเพย์ให้ใช้)
-  if ((method === "bank" && hasBank) || !hasPP) {
+  // ใช้ตามที่ตั้งไว้ — สลับไปอีกทางเฉพาะตอนทางที่เลือกยังไม่ได้กรอกข้อมูล
+  const useBank = method === "bank" ? hasBank : !hasPP;
+
+  if (useBank) {
     return (
       <div className="flex w-full flex-col items-center gap-3">
         <BankTransferDetails bank={bank!} amount={amount} qrUrl={bankQrUrl} />
-        {hasPP ? (
-          <div className="flex w-full flex-col items-center gap-2 border-t border-slate-200 pt-3">
-            <p className="text-xs font-medium text-slate-500">หรือสแกนจ่ายด้วยพร้อมเพย์</p>
-            <PromptPayQR promptpayId={promptpayId} amount={amount} size={168} />
-          </div>
-        ) : (
-          !bankQrUrl && (
-            <p className="text-center text-[11px] text-slate-400">
-              เลขบัญชีธนาคารสร้างคิวอาร์สำหรับสแกนจ่ายไม่ได้
-              <br />
-              กรุณาโอนโดยกรอกเลขบัญชีข้างต้น
-            </p>
-          )
+        {!bankQrUrl && (
+          <p className="text-center text-[11px] text-slate-400">
+            เลขบัญชีธนาคารสร้างคิวอาร์สำหรับสแกนจ่ายไม่ได้
+            <br />
+            กรุณาโอนโดยกรอกเลขบัญชีข้างต้น
+          </p>
         )}
       </div>
     );
   }
 
-  // พร้อมเพย์ (สแกนจ่ายได้ทันที) + เลขบัญชีสำรองถ้ามี
   return (
     <div className="flex w-full flex-col items-center gap-2">
       <PromptPayQR promptpayId={promptpayId} amount={amount} size={168} />
       {amount ? <p className="text-base font-bold text-slate-900">{formatBaht(amount)}</p> : null}
-      {hasBank && (
-        <div className="mt-1 w-full border-t border-slate-200 pt-3">
-          <BankTransferDetails bank={bank!} qrUrl={bankQrUrl} />
-        </div>
-      )}
     </div>
   );
 }

@@ -94,6 +94,7 @@ function AiReadButton({
 export type MeterRoom = {
   id: string;
   room_number: string;
+  building_id: string;
   building_name: string;
   water_rate: number;
   water_mode: "unit" | "flat_person";
@@ -129,6 +130,16 @@ export function MetersForm({
   );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string>("");
+  // กรองอาคาร "ฝั่ง client" เท่านั้น — rooms prop ยังครบทุกอาคารเสมอ
+  // จึงสลับอาคารได้โดยค่าที่กรอกค้างไว้ไม่หาย และกดบันทึกครั้งเดียวได้ทุกอาคาร
+  const [buildingFilter, setBuildingFilter] = useState<string>("all");
+
+  const buildings = Array.from(
+    new Map(rooms.map((r) => [r.building_id, r.building_name])).entries()
+  ).sort((a, z) => a[1].localeCompare(z[1], "th"));
+
+  const visibleRooms =
+    buildingFilter === "all" ? rooms : rooms.filter((r) => r.building_id === buildingFilter);
 
   function set(roomId: string, key: "w" | "e", v: string) {
     setValues((prev) => ({ ...prev, [roomId]: { ...prev[roomId], [key]: v } }));
@@ -137,34 +148,71 @@ export function MetersForm({
   async function save() {
     setSaving(true);
     setMsg("");
-    const rows: MeterRow[] = rooms
-      .filter((r) => {
-        const hasWater = r.water_mode !== "flat_person" && values[r.id].w !== "";
-        return hasWater || values[r.id].e !== "";
-      })
-      .map((r) => ({
+    // วนทุกห้อง (ไม่ใช่แค่ที่แสดงอยู่) — บันทึกครบทุกอาคารในคลิกเดียว ค่าที่กรอกไว้จึงไม่ตกหล่น
+    const saved = rooms.filter((r) => {
+      const v = values[r.id] ?? { w: "", e: "" };
+      const hasWater = r.water_mode !== "flat_person" && v.w !== "";
+      return hasWater || v.e !== "";
+    });
+    const rows: MeterRow[] = saved.map((r) => {
+      const v = values[r.id] ?? { w: "", e: "" };
+      return {
         room_id: r.id,
         // ห้องเหมาจ่ายน้ำ ไม่บันทึกมิเตอร์น้ำ (คิดตอนออกบิลตามจำนวนผู้พัก)
-        water_value: r.water_mode === "flat_person" ? 0 : Number(values[r.id].w) || 0,
-        electric_value: Number(values[r.id].e) || 0,
-      }));
+        water_value: r.water_mode === "flat_person" ? 0 : Number(v.w) || 0,
+        electric_value: Number(v.e) || 0,
+      };
+    });
     const res = await saveMeterReadings(period, defaultDate, rows);
     setSaving(false);
     if (res?.error) setMsg("เกิดข้อผิดพลาด: " + res.error);
     else {
-      setMsg(`บันทึกแล้ว ${rows.length} ห้อง`);
+      // สรุปแยกรายอาคาร เพื่อให้เห็นว่าอาคารไหนบันทึกไปกี่ห้อง
+      const perBuilding = new Map<string, number>();
+      saved.forEach((r) => perBuilding.set(r.building_name, (perBuilding.get(r.building_name) ?? 0) + 1));
+      const detail =
+        perBuilding.size > 1
+          ? ` (${[...perBuilding.entries()].map(([n, c]) => `${n} ${c}`).join(" · ")})`
+          : "";
+      setMsg(`บันทึกแล้ว ${rows.length} ห้อง${detail}`);
       router.refresh();
     }
   }
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-end gap-3 border-b border-slate-200 p-4">
-        {msg && <span className="text-sm text-emerald-600">{msg}</span>}
-        <button className="btn-primary" onClick={save} disabled={saving}>
-          {saving ? "กำลังบันทึก…" : "💾 บันทึกค่ามิเตอร์"}
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+        {buildings.length > 1 ? (
+          <div className="flex flex-wrap gap-2">
+            <BuildingTab
+              active={buildingFilter === "all"}
+              onClick={() => setBuildingFilter("all")}
+              label={`ทุกอาคาร (${rooms.length})`}
+            />
+            {buildings.map(([id, name]) => (
+              <BuildingTab
+                key={id}
+                active={buildingFilter === id}
+                onClick={() => setBuildingFilter(id)}
+                label={`${name} (${rooms.filter((r) => r.building_id === id).length})`}
+              />
+            ))}
+          </div>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-3">
+          {msg && <span className="text-sm text-emerald-600">{msg}</span>}
+          <button className="btn-primary" onClick={save} disabled={saving}>
+            {saving ? "กำลังบันทึก…" : "💾 บันทึกค่ามิเตอร์"}
+          </button>
+        </div>
       </div>
+      {buildings.length > 1 && (
+        <p className="border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500">
+          สลับอาคารได้อิสระ — ค่าที่กรอกค้างไว้จะไม่หาย และกด “บันทึกค่ามิเตอร์” ครั้งเดียวบันทึกให้ทุกอาคาร
+        </p>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -180,9 +228,10 @@ export function MetersForm({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rooms.map((r) => {
-              const w = values[r.id].w === "" ? null : Number(values[r.id].w);
-              const e = values[r.id].e === "" ? null : Number(values[r.id].e);
+            {visibleRooms.map((r) => {
+              const v = values[r.id] ?? { w: "", e: "" };
+              const w = v.w === "" ? null : Number(v.w);
+              const e = v.e === "" ? null : Number(v.e);
               const wu =
                 w != null && r.prev_water != null ? Math.max(0, w - r.prev_water) : null;
               const eu =
@@ -209,7 +258,7 @@ export function MetersForm({
                             type="number"
                             step="0.01"
                             className="field w-24"
-                            value={values[r.id].w}
+                            value={v.w}
                             onChange={(ev) => set(r.id, "w", ev.target.value)}
                           />
                           <AiReadButton
@@ -239,7 +288,7 @@ export function MetersForm({
                         type="number"
                         step="0.01"
                         className="field w-24"
-                        value={values[r.id].e}
+                        value={v.e}
                         onChange={(ev) => set(r.id, "e", ev.target.value)}
                       />
                       <AiReadButton
@@ -267,5 +316,27 @@ export function MetersForm({
         </table>
       </div>
     </div>
+  );
+}
+
+function BuildingTab({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+        active ? "bg-indigo-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

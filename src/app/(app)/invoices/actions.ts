@@ -9,7 +9,7 @@ import type { PaymentMethod } from "@/lib/types";
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (prod ยังไม่ได้รัน migration ใหม่) */
 function isMissingColumn(msg?: string): boolean {
-  return Boolean(msg && /schema cache|could not find the .* column/i.test(msg));
+  return Boolean(msg && /schema cache|could not find the .* column|does not exist/i.test(msg));
 }
 /** ตัดคอลัมน์ใหม่ออกจากแถวบิล (เผื่อ prod ยังไม่ได้รัน migration) */
 function stripNewInvoiceCols<T extends Record<string, unknown>>(row: T) {
@@ -21,41 +21,49 @@ function stripNewInvoiceCols<T extends Record<string, unknown>>(row: T) {
   return rest;
 }
 
-/** ออกบิลอัตโนมัติสำหรับทุกห้องที่มีสัญญา active ในรอบเดือนที่เลือก (ข้ามห้องที่ออกบิลไปแล้ว) */
-export async function generateInvoices(period: string): Promise<FormState> {
-  if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบบิลไม่ถูกต้อง (ต้องเป็น YYYY-MM)" };
-  const supabase = await createClient();
-  const org_id = await getOrgId();
+type ContractLike = {
+  id: string;
+  room_id: string;
+  tenant_id: string;
+  rent_amount: number;
+  occupant_count?: number;
+  late_fee?: number;
+  rooms?: unknown;
+};
 
-  // ดึงสัญญา active — resilient: ถ้า prod ยังไม่มีคอลัมน์ 0020 ให้ถอยไป select แบบเดิม (กันบิลหยุดเงียบ)
-  let contractsRes = await supabase
+/** ดึงสัญญา active — resilient: ถ้า prod ยังไม่มีคอลัมน์ 0020 ให้ถอยไป select แบบเดิม */
+async function loadActiveContracts(supabase: Awaited<ReturnType<typeof createClient>>) {
+  let res = await supabase
     .from("contracts")
     .select(
       "id, room_id, tenant_id, rent_amount, occupant_count, late_fee, rooms(water_rate, water_mode, water_flat_per_person, electricity_rate)"
     )
     .eq("status", "active");
-  if (isMissingColumn(contractsRes.error?.message)) {
-    contractsRes = (await supabase
+  if (isMissingColumn(res.error?.message)) {
+    res = (await supabase
       .from("contracts")
       .select("id, room_id, tenant_id, rent_amount, rooms(water_rate, electricity_rate)")
-      .eq("status", "active")) as typeof contractsRes;
+      .eq("status", "active")) as typeof res;
   }
-  const contracts = contractsRes.data;
+  return (res.data ?? []) as unknown as ContractLike[];
+}
 
-  const [{ data: readings }, { data: existing }, parking] =
-    await Promise.all([
-      supabase
-        .from("meter_readings")
-        .select("room_id, period, water_value, electric_value")
-        .lte("period", period),
-      supabase.from("invoices").select("room_id").eq("period", period),
-      // ค่าจอดรถต่อห้อง — query แยกเพื่อไม่พังทั้ง query ถ้า prod ยังไม่มีคอลัมน์ parking_fee
-      supabase.from("rooms").select("id, parking_fee"),
-    ]);
+/** โหลดข้อมูลประกอบการคิดบิล (ใช้ร่วมกันทั้งออกบิลใหม่และคำนวณยอดใหม่) */
+async function loadBillingCtx(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  period: string
+) {
+  const [{ data: readings }, { data: existing }, parking] = await Promise.all([
+    supabase
+      .from("meter_readings")
+      .select("room_id, period, water_value, electric_value")
+      .lte("period", period),
+    // บิลที่ออกแล้วรอบนี้ — ไม่นับใบที่ยกเลิก (void) เพื่อให้ออกใบใหม่แทนได้
+    supabase.from("invoices").select("room_id").eq("period", period).neq("status", "void"),
+    // ค่าจอดรถต่อห้อง — query แยกเพื่อไม่พังทั้ง query ถ้า prod ยังไม่มีคอลัมน์ parking_fee
+    supabase.from("rooms").select("id, parking_fee"),
+  ]);
 
-  const existingRooms = new Set((existing ?? []).map((e) => e.room_id));
-
-  // แผนที่ ห้อง → ค่าจอดรถ/เดือน (ว่างถ้ายังไม่ได้รัน migration 0023)
   const parkingByRoom = new Map<string, number>();
   (parking.data ?? []).forEach((r: { id: string; parking_fee?: number }) =>
     parkingByRoom.set(r.id, Number(r.parking_fee ?? 0))
@@ -71,8 +79,6 @@ export async function generateInvoices(period: string): Promise<FormState> {
     garbageByRoom.set(r.id, Number(r.garbage_fee ?? 0))
   );
   const og = orgGarbage.data as { garbage_mode?: string; garbage_flat?: number } | null;
-  const garbageFlatMode = og?.garbage_mode === "flat";
-  const garbageFlat = Number(og?.garbage_flat ?? 0);
 
   // map ค่ามิเตอร์: current (period ที่เลือก) + previous (ล่าสุดก่อนหน้า)
   const meterMap = new Map<
@@ -89,41 +95,76 @@ export async function generateInvoices(period: string): Promise<FormState> {
     meterMap.set(r.room_id, entry);
   });
 
+  return {
+    meterMap,
+    parkingByRoom,
+    garbageByRoom,
+    garbageFlatMode: og?.garbage_mode === "flat",
+    garbageFlat: Number(og?.garbage_flat ?? 0),
+    existingRooms: new Set((existing ?? []).map((e) => e.room_id)),
+  };
+}
+
+type BillingCtx = Awaited<ReturnType<typeof loadBillingCtx>>;
+
+/** คิดค่าใช้จ่ายของห้องหนึ่งในรอบบิล (charges = ยอดก่อนบวก other/หัก discount) */
+function computeCharges(c: ContractLike, ctx: BillingCtx) {
+  const room = c.rooms as {
+    water_rate: number;
+    water_mode: "unit" | "flat_person";
+    water_flat_per_person: number;
+    electricity_rate: number;
+  } | null;
+  const m = ctx.meterMap.get(c.room_id);
+  const occupants = Math.max(1, Number(c.occupant_count ?? 1));
+
+  // ค่าน้ำ: เหมาจ่าย/คน หรือ ตามหน่วยมิเตอร์
+  const flatPerson = room?.water_mode === "flat_person";
+  const waterUnits = flatPerson ? 0 : m?.cur && m?.prev ? Math.max(0, m.cur.w - m.prev.w) : 0;
+  const waterAmount = flatPerson
+    ? Number(room?.water_flat_per_person ?? 0) * occupants
+    : waterUnits * Number(room?.water_rate ?? 0);
+
+  const electricUnits = m?.cur && m?.prev ? Math.max(0, m.cur.e - m.prev.e) : 0;
+  const electricAmount = electricUnits * Number(room?.electricity_rate ?? 0);
+  const rent = Number(c.rent_amount);
+  const parkingAmount = Number(ctx.parkingByRoom.get(c.room_id) ?? 0);
+  // ค่าขยะ: เหมาราคาเดียวทุกห้อง หรือ ระบุรายห้อง
+  const garbageAmount = ctx.garbageFlatMode
+    ? ctx.garbageFlat
+    : Number(ctx.garbageByRoom.get(c.room_id) ?? 0);
+
+  return {
+    occupants,
+    flatPerson,
+    waterUnits,
+    waterAmount,
+    electricUnits,
+    electricAmount,
+    rent,
+    parkingAmount,
+    garbageAmount,
+    charges: rent + waterAmount + electricAmount + parkingAmount + garbageAmount,
+  };
+}
+
+/** ออกบิลอัตโนมัติสำหรับทุกห้องที่มีสัญญา active ในรอบเดือนที่เลือก (ข้ามห้องที่ออกบิลไปแล้ว) */
+export async function generateInvoices(period: string): Promise<FormState> {
+  if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบบิลไม่ถูกต้อง (ต้องเป็น YYYY-MM)" };
+  const supabase = await createClient();
+  const org_id = await getOrgId();
+
+  const contracts = await loadActiveContracts(supabase);
+  const ctx = await loadBillingCtx(supabase, period);
+
   const today = new Date();
   const issue = today.toISOString().slice(0, 10);
   const due = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10);
 
   const rows = (contracts ?? [])
-    .filter((c) => !existingRooms.has(c.room_id))
+    .filter((c) => !ctx.existingRooms.has(c.room_id))
     .map((c) => {
-      const room = c.rooms as unknown as {
-        water_rate: number;
-        water_mode: "unit" | "flat_person";
-        water_flat_per_person: number;
-        electricity_rate: number;
-      } | null;
-      const m = meterMap.get(c.room_id);
-      const occupants = Math.max(1, Number(c.occupant_count ?? 1));
-
-      // ค่าน้ำ: เหมาจ่าย/คน หรือ ตามหน่วยมิเตอร์
-      const flatPerson = room?.water_mode === "flat_person";
-      const waterUnits = flatPerson
-        ? 0
-        : m?.cur && m?.prev
-          ? Math.max(0, m.cur.w - m.prev.w)
-          : 0;
-      const waterAmount = flatPerson
-        ? Number(room?.water_flat_per_person ?? 0) * occupants
-        : waterUnits * Number(room?.water_rate ?? 0);
-
-      const electricUnits =
-        m?.cur && m?.prev ? Math.max(0, m.cur.e - m.prev.e) : 0;
-      const electricAmount = electricUnits * Number(room?.electricity_rate ?? 0);
-      const rent = Number(c.rent_amount);
-      const parkingAmount = Number(parkingByRoom.get(c.room_id) ?? 0);
-      // ค่าขยะ: เหมาราคาเดียวทุกห้อง หรือ ระบุรายห้อง
-      const garbageAmount = garbageFlatMode ? garbageFlat : Number(garbageByRoom.get(c.room_id) ?? 0);
-      const total = rent + waterAmount + electricAmount + parkingAmount + garbageAmount;
+      const ch = computeCharges(c as ContractLike, ctx);
       return {
         org_id,
         contract_id: c.id,
@@ -132,18 +173,18 @@ export async function generateInvoices(period: string): Promise<FormState> {
         period,
         issue_date: issue,
         due_date: due,
-        water_units: waterUnits,
-        water_amount: waterAmount,
-        occupant_count: flatPerson ? occupants : 0,
-        electric_units: electricUnits,
-        electric_amount: electricAmount,
-        rent_amount: rent,
+        water_units: ch.waterUnits,
+        water_amount: ch.waterAmount,
+        occupant_count: ch.flatPerson ? ch.occupants : 0,
+        electric_units: ch.electricUnits,
+        electric_amount: ch.electricAmount,
+        rent_amount: ch.rent,
         late_fee: Number(c.late_fee ?? 0), // ค่าปรับตามสัญญา (บันทึกไว้—ไม่รวมในยอดจนกว่าจะชำระล่าช้า)
-        parking_amount: parkingAmount,
-        garbage_amount: garbageAmount,
+        parking_amount: ch.parkingAmount,
+        garbage_amount: ch.garbageAmount,
         other_amount: 0,
         discount: 0,
-        total_amount: total,
+        total_amount: ch.charges,
         paid_amount: 0,
         status: "unpaid" as const,
       };
@@ -158,6 +199,63 @@ export async function generateInvoices(period: string): Promise<FormState> {
     ({ error } = await supabase.from("invoices").insert(rows.map(stripNewInvoiceCols)));
   }
   if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * คำนวณยอดบิลใหม่จากค่าปัจจุบันของห้อง (ค่าเช่า/น้ำ/ไฟ/จอดรถ/ขยะ)
+ * ใช้เมื่อแก้ค่าขยะ/ค่าจอดรถ "หลัง" ออกบิลไปแล้ว — เดิมต้องลบบิลทิ้งแล้วออกใหม่
+ * ทำเฉพาะบิลที่ยัง "ค้างชำระ" เท่านั้น (บิลที่จ่ายบางส่วน/จ่ายแล้ว ไม่แตะ เพื่อไม่ให้ยอดกับสถานะเพี้ยน)
+ */
+export async function recalcInvoices(period: string): Promise<FormState> {
+  if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบบิลไม่ถูกต้อง (ต้องเป็น YYYY-MM)" };
+  const supabase = await createClient();
+
+  const { data: invs } = await supabase
+    .from("invoices")
+    .select("id, room_id, other_amount, discount")
+    .eq("period", period)
+    .eq("status", "unpaid");
+  if (!invs || invs.length === 0) {
+    return { error: "ไม่มีบิลที่ยังค้างชำระในรอบนี้ให้คำนวณใหม่" };
+  }
+
+  const contracts = await loadActiveContracts(supabase);
+  const byRoom = new Map((contracts ?? []).map((c) => [c.room_id, c]));
+  const ctx = await loadBillingCtx(supabase, period);
+
+  let updated = 0;
+  for (const inv of invs as { id: string; room_id: string; other_amount: number; discount: number }[]) {
+    const c = byRoom.get(inv.room_id);
+    if (!c) continue;
+    const ch = computeCharges(c as ContractLike, ctx);
+    const extra = Number(inv.other_amount ?? 0) - Number(inv.discount ?? 0);
+
+    const full = {
+      water_units: ch.waterUnits,
+      water_amount: ch.waterAmount,
+      occupant_count: ch.flatPerson ? ch.occupants : 0,
+      electric_units: ch.electricUnits,
+      electric_amount: ch.electricAmount,
+      rent_amount: ch.rent,
+      parking_amount: ch.parkingAmount,
+      garbage_amount: ch.garbageAmount,
+      total_amount: Math.max(0, ch.charges + extra),
+    };
+
+    let { error } = await supabase.from("invoices").update(full).eq("id", inv.id);
+    if (isMissingColumn(error?.message)) {
+      // prod ยังไม่มีคอลัมน์ใหม่ → ตัดออก และคิดยอดโดยไม่รวมค่าที่เก็บไม่ได้ (กันยอดไม่ตรงรายการ)
+      const lite = stripNewInvoiceCols(full);
+      lite.total_amount = Math.max(0, ch.rent + ch.waterAmount + ch.electricAmount + extra);
+      ({ error } = await supabase.from("invoices").update(lite).eq("id", inv.id));
+    }
+    if (!error) updated++;
+  }
+
+  if (updated === 0) {
+    return { error: "คำนวณใหม่ไม่สำเร็จ — ไม่พบสัญญาที่ยังใช้งานอยู่ของห้องในบิลรอบนี้" };
+  }
   return { ok: true };
 }
 

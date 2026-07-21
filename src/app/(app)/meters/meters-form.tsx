@@ -130,16 +130,16 @@ export function MetersForm({
   );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string>("");
-  // กรองอาคาร "ฝั่ง client" เท่านั้น — rooms prop ยังครบทุกอาคารเสมอ
-  // จึงสลับอาคารได้โดยค่าที่กรอกค้างไว้ไม่หาย และกดบันทึกครั้งเดียวได้ทุกอาคาร
-  const [buildingFilter, setBuildingFilter] = useState<string>("all");
-
   const buildings = Array.from(
     new Map(rooms.map((r) => [r.building_id, r.building_name])).entries()
   ).sort((a, z) => a[1].localeCompare(z[1], "th"));
 
-  const visibleRooms =
-    buildingFilter === "all" ? rooms : rooms.filter((r) => r.building_id === buildingFilter);
+  // กรองอาคาร "ฝั่ง client" เท่านั้น — rooms prop ยังครบทุกอาคารเสมอ
+  // จึงสลับอาคารได้โดยค่าที่กรอกค้างไว้ไม่หาย และกดบันทึกครั้งเดียวได้ทุกอาคาร
+  // จดทีละอาคารเสมอ (ไม่มีตัวเลือก "ทุกอาคาร") — เอามารวมกันแล้วจดสลับห้องกัน
+  const [buildingFilter, setBuildingFilter] = useState<string>(buildings[0]?.[0] ?? "");
+
+  const visibleRooms = rooms.filter((r) => r.building_id === buildingFilter);
 
   function set(roomId: string, key: "w" | "e", v: string) {
     setValues((prev) => ({ ...prev, [roomId]: { ...prev[roomId], [key]: v } }));
@@ -184,11 +184,6 @@ export function MetersForm({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
         {buildings.length > 1 ? (
           <div className="flex flex-wrap gap-2">
-            <BuildingTab
-              active={buildingFilter === "all"}
-              onClick={() => setBuildingFilter("all")}
-              label={`ทุกอาคาร (${rooms.length})`}
-            />
             {buildings.map(([id, name]) => (
               <BuildingTab
                 key={id}

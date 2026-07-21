@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { cropQrFromImage } from "@/lib/crop-qr";
 
 const MAX_BYTES = 3 * 1024 * 1024;
 
@@ -25,19 +26,31 @@ export function QrImageUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [note, setNote] = useState("");
 
-  async function upload(file: File) {
+  async function upload(original: File) {
     setErr("");
-    if (!file.type.startsWith("image/")) {
+    setNote("");
+    if (!original.type.startsWith("image/")) {
       setErr("ไฟล์ต้องเป็นรูปภาพ (jpg / png)");
       return;
     }
-    if (file.size > MAX_BYTES) {
+    if (original.size > MAX_BYTES) {
       setErr("ไฟล์ใหญ่เกิน 3 MB — ลองย่อรูปก่อน");
       return;
     }
     setBusy(true);
     try {
+      // ตัดเอาเฉพาะ QR ออกจากสกรีนช็อต — หาไม่เจอก็ใช้รูปเดิม
+      let file = original;
+      try {
+        const cropped = await cropQrFromImage(original);
+        if (cropped) file = cropped;
+        else setNote("ไม่พบ QR ในรูป — อัปโหลดรูปเต็มให้แทน (ลองถ่าย/ครอปให้เห็น QR ชัดขึ้น)");
+      } catch {
+        setNote("ตัดรูปอัตโนมัติไม่สำเร็จ — อัปโหลดรูปเต็มให้แทน");
+      }
+
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "png";
       const path = `bank/${crypto.randomUUID()}.${ext}`;
@@ -105,13 +118,16 @@ export function QrImageUpload({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? "กำลังอัปโหลด…" : "📤 อัปโหลดรูป QR"}
+          {busy ? "กำลังตัดรูป…" : "📤 อัปโหลดรูป QR"}
         </button>
       )}
 
       {err && <p className="mt-1 text-xs text-rose-600">{err}</p>}
+      {note && <p className="mt-1 text-xs text-amber-600">{note}</p>}
       <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
         เปิดแอปธนาคาร → เมนูรับเงิน/QR รับเงิน → บันทึกรูป แล้วนำมาอัปโหลดที่นี่
+        <br />
+        <b>อัปโหลดสกรีนช็อตทั้งหน้าจอได้เลย</b> ระบบจะตัดเอาเฉพาะส่วน QR ให้อัตโนมัติ
         <br />
         ถ้าไม่ใส่ ระบบจะแสดงเป็นเลขบัญชีให้คัดลอกไปโอนแทน
       </p>

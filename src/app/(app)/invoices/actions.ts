@@ -6,6 +6,7 @@ import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import type { FormState } from "@/components/action-form";
 import type { PaymentMethod } from "@/lib/types";
+import { money } from "@/lib/num";
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (prod ยังไม่ได้รัน migration ใหม่) */
 function isMissingColumn(msg?: string): boolean {
@@ -257,6 +258,120 @@ export async function recalcInvoices(period: string): Promise<FormState> {
     return { error: "คำนวณใหม่ไม่สำเร็จ — ไม่พบสัญญาที่ยังใช้งานอยู่ของห้องในบิลรอบนี้" };
   }
   return { ok: true };
+}
+
+/**
+ * ซิงก์ยอดรวมของบิลใบหนึ่งให้ตรงกับรายการจริง
+ * other_amount = ผลรวม invoice_items เสมอ (คอลัมน์นี้ยังใช้อยู่ในบิลผู้เช่า/คำนวณใหม่)
+ * total_amount = ค่าเช่า+น้ำ+ไฟ+จอดรถ+ขยะ+อื่นๆ − ส่วนลด, แล้วปรับสถานะตามยอดที่ชำระแล้ว
+ */
+async function syncInvoiceTotal(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invoiceId: string
+): Promise<string | null> {
+  const [{ data: inv }, { data: items }] = await Promise.all([
+    supabase.from("invoices").select("*").eq("id", invoiceId).single(),
+    supabase.from("invoice_items").select("amount").eq("invoice_id", invoiceId),
+  ]);
+  if (!inv) return "ไม่พบบิล";
+
+  const other = (items ?? []).reduce((s, it) => s + Number(it.amount ?? 0), 0);
+  const total = Math.max(
+    0,
+    Number(inv.rent_amount ?? 0) +
+      Number(inv.water_amount ?? 0) +
+      Number(inv.electric_amount ?? 0) +
+      Number(inv.parking_amount ?? 0) +
+      Number(inv.garbage_amount ?? 0) +
+      other -
+      Number(inv.discount ?? 0)
+  );
+  const paid = Number(inv.paid_amount ?? 0);
+  // ใบที่ยกเลิกแล้วคงสถานะ void ไว้ ไม่ให้ยอดไปพลิกสถานะเอง
+  const status =
+    inv.status === "void" ? "void" : paid <= 0 ? "unpaid" : paid >= total ? "paid" : "partial";
+
+  const { error } = await supabase
+    .from("invoices")
+    .update({ other_amount: other, total_amount: total, status })
+    .eq("id", invoiceId);
+  return error?.message ?? null;
+}
+
+/** แก้ไขยอดในบิลด้วยมือ (ค่าเช่า/น้ำ/ไฟ/จอดรถ/ขยะ/ส่วนลด/ครบกำหนด) */
+export async function updateInvoice(
+  id: string,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const due_date = String(formData.get("due_date") ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(due_date)) return { error: "กรุณาระบุวันครบกำหนดให้ถูกต้อง" };
+
+  const supabase = await createClient();
+  const { data: cur } = await supabase.from("invoices").select("status").eq("id", id).single();
+  if (!cur) return { error: "ไม่พบบิล" };
+  if (cur.status === "void") return { error: "บิลนี้ถูกยกเลิกแล้ว แก้ไขไม่ได้" };
+
+  const patch = {
+    due_date,
+    rent_amount: money(formData.get("rent_amount")),
+    water_amount: money(formData.get("water_amount")),
+    water_units: money(formData.get("water_units")),
+    electric_amount: money(formData.get("electric_amount")),
+    electric_units: money(formData.get("electric_units")),
+    parking_amount: money(formData.get("parking_amount")),
+    garbage_amount: money(formData.get("garbage_amount")),
+    discount: money(formData.get("discount")),
+    note: String(formData.get("note") ?? "").trim(),
+  };
+
+  let { error } = await supabase.from("invoices").update(patch).eq("id", id);
+  if (isMissingColumn(error?.message)) {
+    ({ error } = await supabase.from("invoices").update(stripNewInvoiceCols(patch)).eq("id", id));
+  }
+  if (error) return { error: error.message };
+
+  const syncErr = await syncInvoiceTotal(supabase, id);
+  if (syncErr) return { error: syncErr };
+  return { ok: true };
+}
+
+/** เพิ่มรายการค่าใช้จ่ายอื่นๆ ในบิล (ค่าปรับ, ค่าส่วนกลาง, ค่าซ่อม ฯลฯ) */
+export async function addInvoiceItem(
+  invoiceId: string,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const description = String(formData.get("description") ?? "").trim();
+  const amount = money(formData.get("amount"));
+  if (!description) return { error: "กรุณาระบุรายการ" };
+  if (amount <= 0) return { error: "จำนวนเงินต้องมากกว่า 0" };
+
+  const supabase = await createClient();
+  const { data: cur } = await supabase.from("invoices").select("status").eq("id", invoiceId).single();
+  if (!cur) return { error: "ไม่พบบิล" };
+  if (cur.status === "void") return { error: "บิลนี้ถูกยกเลิกแล้ว เพิ่มรายการไม่ได้" };
+
+  const { error } = await supabase
+    .from("invoice_items")
+    .insert({ invoice_id: invoiceId, description, amount });
+  if (error) return { error: error.message };
+
+  const syncErr = await syncInvoiceTotal(supabase, invoiceId);
+  if (syncErr) return { error: syncErr };
+  return { ok: true };
+}
+
+/** ลบรายการค่าใช้จ่ายอื่นๆ แล้วปรับยอดรวมให้ */
+export async function deleteInvoiceItem(itemId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: item } = await supabase
+    .from("invoice_items")
+    .select("invoice_id")
+    .eq("id", itemId)
+    .maybeSingle();
+  await supabase.from("invoice_items").delete().eq("id", itemId);
+  if (item?.invoice_id) await syncInvoiceTotal(supabase, item.invoice_id);
 }
 
 export async function recordPayment(

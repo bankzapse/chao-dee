@@ -8,6 +8,8 @@ import {
   PrintButton,
   RecordPaymentButton,
   SendInvoiceLineButton,
+  EditInvoiceButton,
+  AddInvoiceItemButton,
 } from "./invoice-actions";
 import { DeleteButton } from "@/components/action-form";
 import {
@@ -19,8 +21,8 @@ import {
   INVOICE_STATUS_STYLE,
   PAYMENT_METHOD_LABEL,
 } from "@/lib/format";
-import type { Invoice, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types";
-import { deletePayment } from "../actions";
+import type { Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod } from "@/lib/types";
+import { deletePayment, deleteInvoiceItem } from "../actions";
 
 export default async function InvoiceDetailPage({
   params,
@@ -46,6 +48,14 @@ export default async function InvoiceDetailPage({
       .eq("invoice_id", id)
       .order("paid_at", { ascending: true }),
   ]);
+
+  // ค่าใช้จ่ายอื่นๆ รายบรรทัด (invoice_items)
+  const { data: itemRows } = await supabase
+    .from("invoice_items")
+    .select("*")
+    .eq("invoice_id", id)
+    .order("created_at", { ascending: true });
+  const items = (itemRows ?? []) as InvoiceItem[];
 
   if (!invoice) notFound();
 
@@ -106,7 +116,10 @@ export default async function InvoiceDetailPage({
   // แสดงทุกรายการเสมอ ถ้าไม่มีค่าให้ขึ้น "-" เพื่อให้ผู้เช่าเห็นว่าไม่ได้ถูกเก็บ (ไม่ใช่ตกหล่น)
   rows.push({ label: "ค่าจอดรถ", detail: "", amount: Number(inv.parking_amount) });
   rows.push({ label: "ค่าขยะ", detail: "", amount: Number(inv.garbage_amount) });
-  rows.push({ label: "ค่าใช้จ่ายอื่นๆ", detail: "", amount: Number(inv.other_amount) });
+  // ไม่มีรายการย่อย → แสดงยอดรวมอื่นๆ แถวเดียว (บิลเก่าที่ยังไม่ได้แยกรายการ)
+  if (items.length === 0) {
+    rows.push({ label: "ค่าใช้จ่ายอื่นๆ", detail: "", amount: Number(inv.other_amount) });
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -118,6 +131,12 @@ export default async function InvoiceDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <PrintButton />
           <SendInvoiceLineButton invoiceId={inv.id} />
+          {inv.status !== "void" && (
+            <>
+              <EditInvoiceButton inv={inv} />
+              <AddInvoiceItemButton invoiceId={inv.id} />
+            </>
+          )}
           {inv.status !== "void" && outstanding > 0 && (
             <RecordPaymentButton
               invoiceId={inv.id}
@@ -182,6 +201,26 @@ export default async function InvoiceDetailPage({
                 </td>
                 <td className={`py-2 text-right ${r.amount > 0 ? "text-slate-900" : "text-slate-400"}`}>
                   {r.amount > 0 ? formatBaht(r.amount) : "-"}
+                </td>
+              </tr>
+            ))}
+            {items.map((it) => (
+              <tr key={it.id}>
+                <td className="py-2 text-slate-700">
+                  {it.description}
+                  <span className="ml-2 text-xs text-slate-400">(ค่าใช้จ่ายอื่นๆ)</span>
+                </td>
+                <td className="py-2 text-right text-slate-900">
+                  <span className="inline-flex items-center gap-3">
+                    {formatBaht(it.amount)}
+                    <span className="no-print">
+                      <DeleteButton
+                        action={deleteInvoiceItem.bind(null, it.id)}
+                        confirmText={`ลบรายการ "${it.description}" ออกจากบิล?`}
+                        label="✕"
+                      />
+                    </span>
+                  </span>
                 </td>
               </tr>
             ))}

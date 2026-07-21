@@ -42,6 +42,13 @@ export default async function PublicBillPage({
     tenants: { full_name: string } | null;
   };
 
+  const { data: itemRows } = await supabase
+    .from("invoice_items")
+    .select("description, amount")
+    .eq("invoice_id", id)
+    .order("created_at", { ascending: true });
+  const items = (itemRows ?? []) as { description: string; amount: number }[];
+
   const { data: org } = await supabase
     .from("organizations")
     .select("name, promptpay_id, promptpay_name, invoice_note")
@@ -79,7 +86,12 @@ export default async function PublicBillPage({
   // แสดงทุกรายการเสมอ ถ้าไม่มีค่าให้ขึ้น "-" เพื่อให้ผู้เช่าเห็นว่าไม่ได้ถูกเก็บ (ไม่ใช่ตกหล่น)
   rows.push({ label: "ค่าจอดรถ", amount: Number(inv.parking_amount) });
   rows.push({ label: "ค่าขยะ", amount: Number(inv.garbage_amount) });
-  rows.push({ label: "ค่าใช้จ่ายอื่นๆ", amount: Number(inv.other_amount) });
+  if (items.length > 0) {
+    // ค่าใช้จ่ายอื่นๆ แยกเป็นรายบรรทัด ผู้เช่าจะได้รู้ว่าโดนเก็บอะไร
+    items.forEach((it) => rows.push({ label: it.description, amount: Number(it.amount) }));
+  } else {
+    rows.push({ label: "ค่าใช้จ่ายอื่นๆ", amount: Number(inv.other_amount) });
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { formatPeriod } from "@/lib/format";
 
 export function PeriodSelect({
@@ -14,13 +14,17 @@ export function PeriodSelect({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // คงพารามิเตอร์อื่นไว้ (เช่น อาคารที่เลือก) ไม่ให้หายตอนสลับรอบเดือน
+  function go(next: string) {
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.set(paramName, next);
+    router.push(`${pathname}?${sp.toString()}`);
+  }
 
   return (
-    <select
-      className="field w-auto"
-      value={value}
-      onChange={(e) => router.push(`${pathname}?${paramName}=${e.target.value}`)}
-    >
+    <select className="field w-auto" value={value} onChange={(e) => go(e.target.value)}>
       {periods.map((p) => (
         <option key={p} value={p}>
           {formatPeriod(p)}

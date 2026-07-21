@@ -48,7 +48,10 @@ export default async function FeesPage({
   const [{ data: vehicles }, { data: tenants }, { data: allRooms }] = await Promise.all([
     supabase.from("vehicles").select("*"),
     supabase.from("tenants").select("*").order("full_name"),
-    supabase.from("rooms").select("id, room_number, buildings(name)").order("room_number"),
+    supabase
+      .from("rooms")
+      .select("id, room_number, building_id, buildings(name)")
+      .order("room_number"),
   ]);
 
   const rows = (res.data ?? []) as unknown as Row[];
@@ -79,14 +82,23 @@ export default async function FeesPage({
     (vehiclesByRoom[v.room_id] ??= []).push(v);
   });
 
-  const roomOpts: RoomOpt[] = ((allRooms ?? []) as unknown as {
+  const everyRoom = (allRooms ?? []) as unknown as {
     id: string;
     room_number: string;
+    building_id: string;
     buildings: { name: string } | { name: string }[] | null;
-  }[]).map((r) => {
+  }[];
+
+  const roomOpts: RoomOpt[] = everyRoom.map((r) => {
     const b = Array.isArray(r.buildings) ? r.buildings[0] : r.buildings;
     return { id: r.id, label: `${b?.name ?? "-"} · ${r.room_number}` };
   });
+
+  // จำนวนห้องของแต่ละอาคาร (โชว์บนชิป)
+  const countByBuilding = new Map<string, number>();
+  everyRoom.forEach((r) =>
+    countByBuilding.set(r.building_id, (countByBuilding.get(r.building_id) ?? 0) + 1)
+  );
 
   // โหมดค่าขยะ (resilient)
   const { data: gbRow } = await supabase
@@ -109,7 +121,7 @@ export default async function FeesPage({
             <FilterChip
               key={b.id}
               href={`/fees?building=${b.id}`}
-              label={b.name}
+              label={`${b.name} (${countByBuilding.get(b.id) ?? 0})`}
               active={selected === b.id}
             />
           ))}

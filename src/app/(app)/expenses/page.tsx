@@ -31,9 +31,19 @@ export default async function ExpensesPage({
     .select("*, buildings(name)")
     .order("expense_date", { ascending: false });
   if (selected) q = q.eq("building_id", selected);
-  const { data: expenses } = await q;
+
+  const [{ data: expenses }, { data: allIds }] = await Promise.all([
+    q,
+    // ดึงแค่ building_id ของทุกรายการ ไว้นับจำนวนโชว์บนชิป
+    supabase.from("building_expenses").select("building_id"),
+  ]);
 
   const list = (expenses ?? []) as unknown as ExpenseRow[];
+
+  const countByBuilding = new Map<string, number>();
+  ((allIds ?? []) as { building_id: string }[]).forEach((e) =>
+    countByBuilding.set(e.building_id, (countByBuilding.get(e.building_id) ?? 0) + 1)
+  );
 
   const now = new Date();
   const isThisMonth = (d: string) => {
@@ -60,7 +70,7 @@ export default async function ExpensesPage({
             <FilterChip
               key={b.id}
               href={`/expenses?building=${b.id}`}
-              label={b.name}
+              label={`${b.name} (${countByBuilding.get(b.id) ?? 0})`}
               active={selected === b.id}
             />
           ))}

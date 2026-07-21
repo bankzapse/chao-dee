@@ -52,6 +52,13 @@ export default async function InvoicesPage({
     buildingList.find((b) => b.id === building)?.id ?? buildingList[0]?.id ?? "";
   const list = selected ? all.filter((i) => i.rooms?.building_id === selected) : all;
 
+  // จำนวนบิลของแต่ละอาคาร (โชว์บนชิป จะได้รู้ว่าอาคารไหนออกบิลไปแล้วกี่ใบ)
+  const countByBuilding = new Map<string, number>();
+  all.forEach((i) => {
+    const id = i.rooms?.building_id;
+    if (id) countByBuilding.set(id, (countByBuilding.get(id) ?? 0) + 1);
+  });
+
   const sumBilled = (rows: InvoiceRow[]) =>
     rows.filter((i) => i.status !== "void").reduce((s, i) => s + Number(i.total_amount), 0);
   const sumPaid = (rows: InvoiceRow[]) => rows.reduce((s, i) => s + Number(i.paid_amount), 0);
@@ -88,7 +95,7 @@ export default async function InvoicesPage({
             <FilterChip
               key={b.id}
               href={`/invoices?period=${period}&building=${b.id}`}
-              label={b.name}
+              label={`${b.name} (${countByBuilding.get(b.id) ?? 0})`}
               active={selected === b.id}
             />
           ))}

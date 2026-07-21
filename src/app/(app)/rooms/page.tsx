@@ -30,9 +30,19 @@ export default async function RoomsPage({
     .order("room_number");
   if (building) query = query.eq("building_id", building);
 
-  const { data: rooms } = await query;
+  const [{ data: rooms }, { data: allIds }] = await Promise.all([
+    query,
+    // ดึงแค่ building_id ของทุกห้อง ไว้นับจำนวนโชว์บนชิป
+    supabase.from("rooms").select("building_id"),
+  ]);
   const list = (rooms ?? []) as unknown as RoomRow[];
   const buildingList = (buildings ?? []) as Building[];
+
+  const countByBuilding = new Map<string, number>();
+  ((allIds ?? []) as { building_id: string }[]).forEach((r) =>
+    countByBuilding.set(r.building_id, (countByBuilding.get(r.building_id) ?? 0) + 1)
+  );
+  const totalRooms = ((allIds ?? []) as unknown[]).length;
 
   // จัดกลุ่มห้องตามชั้น (คง order ที่ query มาแล้ว)
   const byFloor = new Map<number, RoomRow[]>();
@@ -69,12 +79,12 @@ export default async function RoomsPage({
         <>
           {/* filter อาคาร */}
           <div className="mb-4 flex flex-wrap gap-2">
-            <FilterChip href="/rooms" label="ทั้งหมด" active={!building} />
+            <FilterChip href="/rooms" label={`ทั้งหมด (${totalRooms})`} active={!building} />
             {buildingList.map((b) => (
               <FilterChip
                 key={b.id}
                 href={`/rooms?building=${b.id}`}
-                label={b.name}
+                label={`${b.name} (${countByBuilding.get(b.id) ?? 0})`}
                 active={building === b.id}
               />
             ))}

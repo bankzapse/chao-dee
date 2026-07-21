@@ -76,12 +76,10 @@ export default async function PublicBillPage({
     { label: "ค่าน้ำ", amount: Number(inv.water_amount) },
     { label: "ค่าไฟฟ้า", amount: Number(inv.electric_amount) },
   ];
-  if (Number(inv.parking_amount) > 0)
-    rows.push({ label: "ค่าจอดรถ", amount: Number(inv.parking_amount) });
-  if (Number(inv.garbage_amount) > 0)
-    rows.push({ label: "ค่าขยะ", amount: Number(inv.garbage_amount) });
-  if (Number(inv.other_amount) > 0)
-    rows.push({ label: "ค่าใช้จ่ายอื่นๆ", amount: Number(inv.other_amount) });
+  // แสดงทุกรายการเสมอ ถ้าไม่มีค่าให้ขึ้น "-" เพื่อให้ผู้เช่าเห็นว่าไม่ได้ถูกเก็บ (ไม่ใช่ตกหล่น)
+  rows.push({ label: "ค่าจอดรถ", amount: Number(inv.parking_amount) });
+  rows.push({ label: "ค่าขยะ", amount: Number(inv.garbage_amount) });
+  rows.push({ label: "ค่าใช้จ่ายอื่นๆ", amount: Number(inv.other_amount) });
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8">
@@ -120,16 +118,20 @@ export default async function PublicBillPage({
             <div className="divide-y divide-slate-100 border-y border-slate-100">
               {rows.map((r, i) => (
                 <div key={i} className="flex justify-between py-2 text-sm">
-                  <span className="text-slate-600">{r.label}</span>
-                  <span className="text-slate-900">{formatBaht(r.amount)}</span>
+                  <span className={r.amount > 0 ? "text-slate-600" : "text-slate-400"}>{r.label}</span>
+                  <span className={r.amount > 0 ? "text-slate-900" : "text-slate-400"}>
+                    {r.amount > 0 ? formatBaht(r.amount) : "-"}
+                  </span>
                 </div>
               ))}
-              {Number(inv.discount) > 0 && (
-                <div className="flex justify-between py-2 text-sm">
-                  <span className="text-emerald-600">ส่วนลด</span>
-                  <span className="text-emerald-600">-{formatBaht(inv.discount)}</span>
-                </div>
-              )}
+              <div className="flex justify-between py-2 text-sm">
+                <span className={Number(inv.discount) > 0 ? "text-emerald-600" : "text-slate-400"}>
+                  ส่วนลด
+                </span>
+                <span className={Number(inv.discount) > 0 ? "text-emerald-600" : "text-slate-400"}>
+                  {Number(inv.discount) > 0 ? `-${formatBaht(inv.discount)}` : "-"}
+                </span>
+              </div>
             </div>
 
             {/* ยอดรวม */}

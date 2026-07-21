@@ -103,12 +103,10 @@ export default async function InvoiceDetailPage({
       amount: Number(inv.electric_amount),
     },
   ];
-  if (Number(inv.parking_amount) > 0)
-    rows.push({ label: "ค่าจอดรถ", detail: "", amount: Number(inv.parking_amount) });
-  if (Number(inv.garbage_amount) > 0)
-    rows.push({ label: "ค่าขยะ", detail: "", amount: Number(inv.garbage_amount) });
-  if (Number(inv.other_amount) > 0)
-    rows.push({ label: "ค่าใช้จ่ายอื่นๆ", detail: "", amount: Number(inv.other_amount) });
+  // แสดงทุกรายการเสมอ ถ้าไม่มีค่าให้ขึ้น "-" เพื่อให้ผู้เช่าเห็นว่าไม่ได้ถูกเก็บ (ไม่ใช่ตกหล่น)
+  rows.push({ label: "ค่าจอดรถ", detail: "", amount: Number(inv.parking_amount) });
+  rows.push({ label: "ค่าขยะ", detail: "", amount: Number(inv.garbage_amount) });
+  rows.push({ label: "ค่าใช้จ่ายอื่นๆ", detail: "", amount: Number(inv.other_amount) });
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -176,21 +174,29 @@ export default async function InvoiceDetailPage({
           <tbody className="divide-y divide-slate-100">
             {rows.map((r, idx) => (
               <tr key={idx}>
-                <td className="py-2 text-slate-700">
+                <td className={`py-2 ${r.amount > 0 ? "text-slate-700" : "text-slate-400"}`}>
                   {r.label}
-                  {r.detail && <span className="ml-2 text-xs text-slate-400">({r.detail})</span>}
+                  {r.amount > 0 && r.detail && (
+                    <span className="ml-2 text-xs text-slate-400">({r.detail})</span>
+                  )}
                 </td>
-                <td className="py-2 text-right text-slate-900">{formatBaht(r.amount)}</td>
+                <td className={`py-2 text-right ${r.amount > 0 ? "text-slate-900" : "text-slate-400"}`}>
+                  {r.amount > 0 ? formatBaht(r.amount) : "-"}
+                </td>
               </tr>
             ))}
-            {Number(inv.discount) > 0 && (
-              <tr>
-                <td className="py-2 text-emerald-600">ส่วนลด</td>
-                <td className="py-2 text-right text-emerald-600">
-                  -{formatBaht(inv.discount)}
-                </td>
-              </tr>
-            )}
+            <tr>
+              <td className={`py-2 ${Number(inv.discount) > 0 ? "text-emerald-600" : "text-slate-400"}`}>
+                ส่วนลด
+              </td>
+              <td
+                className={`py-2 text-right ${
+                  Number(inv.discount) > 0 ? "text-emerald-600" : "text-slate-400"
+                }`}
+              >
+                {Number(inv.discount) > 0 ? `-${formatBaht(inv.discount)}` : "-"}
+              </td>
+            </tr>
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-slate-200">

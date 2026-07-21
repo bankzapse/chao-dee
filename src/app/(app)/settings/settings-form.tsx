@@ -2,8 +2,7 @@
 
 import { ActionForm } from "@/components/action-form";
 import { PromptPayQR } from "@/components/promptpay-qr";
-import { QRCodeImg } from "@/components/qr-code";
-import { bankQrText, type PaymentMethod } from "@/components/payment-box";
+import { type PaymentMethod } from "@/components/payment-box";
 import { THAI_BANKS } from "@/lib/banks";
 import { updateOrgSettings } from "./actions";
 import { useState } from "react";
@@ -25,8 +24,6 @@ export function SettingsForm({ org }: { org: Org }) {
   const [bankName, setBankName] = useState(org.bank_name);
   const [bankNo, setBankNo] = useState(org.bank_account_no);
   const [bankAccName, setBankAccName] = useState(org.bank_account_name);
-
-  const bankText = bankQrText({ bank_name: bankName, bank_account_no: bankNo, bank_account_name: bankAccName });
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
@@ -138,7 +135,7 @@ export function SettingsForm({ org }: { org: Org }) {
         </div>
       </div>
 
-      {/* พรีวิว QR ทั้งสองแบบ */}
+      {/* พรีวิวสิ่งที่ผู้เช่าจะเห็นในบิล */}
       <div className="card flex flex-col items-center gap-5 p-6">
         <div className="flex flex-col items-center">
           <p className={`mb-2 text-sm font-medium ${method === "promptpay" ? "text-indigo-600" : "text-slate-500"}`}>
@@ -147,19 +144,27 @@ export function SettingsForm({ org }: { org: Org }) {
           <PromptPayQR promptpayId={ppId} size={150} />
         </div>
         <div className="w-full border-t border-slate-100" />
-        <div className="flex flex-col items-center">
+        <div className="flex w-full flex-col items-center">
           <p className={`mb-2 text-sm font-medium ${method === "bank" ? "text-indigo-600" : "text-slate-500"}`}>
-            QR บัญชีธนาคาร {method === "bank" && "· ใช้ในบิล"}
+            บัญชีธนาคาร {method === "bank" && "· ใช้ในบิล"}
           </p>
           {bankNo ? (
-            <>
-              <QRCodeImg text={bankText} size={150} />
-              <p className="mt-1 text-center text-[11px] text-slate-400">สแกนเพื่อดูเลขบัญชี</p>
-            </>
+            <div className="text-center">
+              {bankName && <p className="text-sm font-medium text-slate-700">{bankName}</p>}
+              <p className="text-lg font-bold tracking-wide text-slate-900">{bankNo}</p>
+              {bankAccName && <p className="text-xs text-slate-500">{bankAccName}</p>}
+            </div>
           ) : (
-            <p className="py-8 text-center text-xs text-slate-400">กรอกเลขบัญชีเพื่อสร้าง QR</p>
+            <p className="py-4 text-center text-xs text-slate-400">กรอกเลขบัญชีเพื่อแสดงในบิล</p>
           )}
         </div>
+        <p className="rounded-lg bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
+          <b>คิวอาร์ที่แอปธนาคารสแกนจ่ายได้ ต้องเป็นพร้อมเพย์เท่านั้น</b> — มาตรฐาน Thai QR
+          อ้างอิงได้แค่ เบอร์มือถือ / เลขบัตรประชาชน / เลขผู้เสียภาษี 13 หลัก
+          เลขบัญชีธนาคารเปล่าๆ แปลงเป็นคิวอาร์สแกนจ่ายไม่ได้ ระบบจึงแสดงเป็นเลขบัญชีให้ผู้เช่าคัดลอกไปโอนแทน
+          <br />
+          อยากให้ผู้เช่าสแกนจ่ายได้ → ผูกพร้อมเพย์กับบัญชีนี้ที่แอปธนาคาร แล้วกรอกเลขพร้อมเพย์ด้านซ้าย
+        </p>
       </div>
     </div>
   );

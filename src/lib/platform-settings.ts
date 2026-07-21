@@ -8,6 +8,7 @@ export type PlatformPayment = {
   bank_name: string;
   bank_account_no: string;
   bank_account_name: string;
+  bank_qr_url: string;
   tax_name: string;
   tax_id: string;
   tax_address: string;
@@ -29,6 +30,7 @@ export async function getPlatformPayment(): Promise<PlatformPayment> {
     bank_name: "",
     bank_account_no: "",
     bank_account_name: "",
+    bank_qr_url: "",
     tax_name: "",
     tax_id: "",
     tax_address: "",
@@ -74,6 +76,13 @@ export async function getPlatformPayment(): Promise<PlatformPayment> {
       .eq("id", 1)
       .maybeSingle();
     if (phoneRow) base.tax_phone = (phoneRow.tax_phone as string) ?? "";
+    // รูป QR บัญชีธนาคารที่อัปโหลดเอง (0046) — อ่านแยก เผื่อ prod ยังไม่ได้รัน migration
+    const { data: qrRow } = await admin
+      .from("platform_settings")
+      .select("bank_qr_url")
+      .eq("id", 1)
+      .maybeSingle();
+    if (qrRow) base.bank_qr_url = (qrRow.bank_qr_url as string) ?? "";
     return base;
   } catch {
     return empty;

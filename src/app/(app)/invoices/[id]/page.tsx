@@ -69,6 +69,8 @@ export default async function InvoiceDetailPage({
     bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
     bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
   };
+  const { data: qrRow } = await supabase.from("organizations").select("bank_qr_url").maybeSingle();
+  const bankQrUrl = (qrRow as { bank_qr_url?: string } | null)?.bank_qr_url ?? "";
   const { data: pmRow } = await supabase.from("organizations").select("payment_method").maybeSingle();
   const paymentMethod = ((pmRow as { payment_method?: string } | null)?.payment_method ?? "promptpay") as
     | "promptpay"
@@ -270,6 +272,7 @@ export default async function InvoiceDetailPage({
               method={paymentMethod}
               promptpayId={org?.promptpay_id ?? ""}
               bank={bank}
+              bankQrUrl={bankQrUrl}
               amount={outstanding}
             />
           </div>

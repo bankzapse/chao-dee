@@ -35,6 +35,9 @@ export default async function SettingsPage() {
     bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
     bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
   };
+  // รูป QR บัญชีธนาคารที่อัปโหลดเอง (0046)
+  const { data: qrRow } = await supabase.from("organizations").select("bank_qr_url").maybeSingle();
+  const bank_qr_url = (qrRow as { bank_qr_url?: string } | null)?.bank_qr_url ?? "";
   const { data: pmRow } = await supabase.from("organizations").select("payment_method").maybeSingle();
   const payment_method = ((pmRow as { payment_method?: string } | null)?.payment_method ?? "promptpay") as
     | "promptpay"
@@ -113,6 +116,7 @@ export default async function SettingsPage() {
           invoice_note: org?.invoice_note ?? "",
           payment_method,
           ...bank,
+          bank_qr_url,
         }}
       />
     </div>

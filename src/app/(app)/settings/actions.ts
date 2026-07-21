@@ -24,10 +24,19 @@ export async function updateOrgSettings(
     bank_account_no: String(formData.get("bank_account_no") ?? "").trim(),
     bank_account_name: String(formData.get("bank_account_name") ?? "").trim(),
   };
+  // รูป QR ที่อัปโหลดเอง (0046) — แยกชั้น resilient เพราะเป็นคอลัมน์ใหม่กว่า
+  const bank_qr_url = String(formData.get("bank_qr_url") ?? "").trim();
+  const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
 
-  let { error } = await supabase.from("organizations").update({ ...base, ...bank }).eq("id", org_id);
+  let { error } = await supabase
+    .from("organizations")
+    .update({ ...base, ...bank, bank_qr_url })
+    .eq("id", org_id);
+  if (missingCol(error?.message)) {
+    ({ error } = await supabase.from("organizations").update({ ...base, ...bank }).eq("id", org_id));
+  }
   // resilient: ถ้ายังไม่ได้รัน migration 0033 (คอลัมน์บัญชีธนาคาร) → บันทึกเฉพาะส่วนเดิม
-  if (error && /schema cache|could not find the .* column/i.test(error.message)) {
+  if (missingCol(error?.message)) {
     ({ error } = await supabase.from("organizations").update(base).eq("id", org_id));
   }
   if (error) return { error: error.message };

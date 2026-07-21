@@ -66,6 +66,12 @@ export default async function PublicBillPage({
     bank_account_no: (bankRow as { bank_account_no?: string } | null)?.bank_account_no ?? "",
     bank_account_name: (bankRow as { bank_account_name?: string } | null)?.bank_account_name ?? "",
   };
+  const { data: qrRow } = await supabase
+    .from("organizations")
+    .select("bank_qr_url")
+    .eq("id", inv.org_id)
+    .maybeSingle();
+  const bankQrUrl = (qrRow as { bank_qr_url?: string } | null)?.bank_qr_url ?? "";
   const { data: pmRow } = await supabase
     .from("organizations")
     .select("payment_method")
@@ -176,6 +182,7 @@ export default async function PublicBillPage({
                   method={paymentMethod}
                   promptpayId={org?.promptpay_id ?? ""}
                   bank={bank}
+                  bankQrUrl={bankQrUrl}
                   amount={outstanding}
                 />
                 <p className="mt-1 text-center text-xs text-slate-500">

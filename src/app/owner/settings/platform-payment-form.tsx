@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ActionForm } from "@/components/action-form";
 import { PromptPayQR } from "@/components/promptpay-qr";
+import { QrImageUpload } from "@/components/qr-image-upload";
 import { type PaymentMethod } from "@/components/payment-box";
 import { THAI_BANKS } from "@/lib/banks";
 import { savePlatformPayment } from "../actions";
@@ -14,6 +15,7 @@ type Pay = {
   bank_name: string;
   bank_account_no: string;
   bank_account_name: string;
+  bank_qr_url: string;
   tax_name: string;
   tax_id: string;
   tax_address: string;
@@ -27,6 +29,7 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
   const [bankName, setBankName] = useState(pay.bank_name);
   const [bankNo, setBankNo] = useState(pay.bank_account_no);
   const [bankAccName, setBankAccName] = useState(pay.bank_account_name);
+  const [bankQr, setBankQr] = useState(pay.bank_qr_url);
 
   return (
     <ActionForm action={savePlatformPayment} submitLabel="บันทึกการตั้งค่า">
@@ -109,6 +112,9 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
                   placeholder="บจก. ..."
                 />
               </div>
+              <div className="mt-3">
+                <QrImageUpload name="bank_qr_url" value={bankQr} onChange={setBankQr} />
+              </div>
             </div>
 
             {/* ข้อมูลใบกำกับภาษีของบริษัท */}
@@ -187,6 +193,16 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
             </p>
             {bankNo ? (
               <div className="text-center">
+                {bankQr && (
+                  <div className="mb-2 flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={bankQr}
+                      alt="QR บัญชีธนาคาร"
+                      className="h-36 w-36 rounded-lg bg-white object-contain p-2 ring-1 ring-slate-200"
+                    />
+                  </div>
+                )}
                 {bankName && <p className="text-sm font-medium text-slate-700">{bankName}</p>}
                 <p className="text-lg font-bold tracking-wide text-slate-900">{bankNo}</p>
                 {bankAccName && <p className="text-xs text-slate-500">{bankAccName}</p>}
@@ -196,11 +212,11 @@ export function PlatformPaymentForm({ pay }: { pay: Pay }) {
             )}
           </div>
           <p className="rounded-lg bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
-            <b>คิวอาร์ที่แอปธนาคารสแกนจ่ายได้ ต้องเป็นพร้อมเพย์เท่านั้น</b> — มาตรฐาน Thai QR
-            อ้างอิงได้แค่ เบอร์มือถือ / เลขบัตรประชาชน / เลขผู้เสียภาษี 13 หลัก
-            เลขบัญชีธนาคารเปล่าๆ แปลงเป็นคิวอาร์สแกนจ่ายไม่ได้ ระบบจึงแสดงเป็นเลขบัญชีให้คัดลอกไปโอนแทน
+            <b>ระบบสร้างคิวอาร์จากเลขบัญชีธนาคารให้ไม่ได้</b> — มาตรฐาน Thai QR อ้างอิงได้แค่
+            พร้อมเพย์ (เบอร์มือถือ / เลขบัตรประชาชน / เลขผู้เสียภาษี 13 หลัก)
             <br />
-            นิติบุคคลผูกพร้อมเพย์ด้วย <b>เลขผู้เสียภาษี 13 หลัก</b> ได้ที่ธนาคาร แล้วนำมากรอกด้านซ้าย
+            <b>อยากให้สแกนจ่ายได้</b> — <b>1)</b> นิติบุคคลผูกพร้อมเพย์ด้วย เลขผู้เสียภาษี 13 หลัก
+            ที่ธนาคาร แล้วกรอกด้านซ้าย หรือ <b>2)</b> อัปโหลดรูป QR รับเงินจากแอปธนาคาร
           </p>
         </div>
       </div>

@@ -442,10 +442,16 @@ export async function savePlatformPayment(_prev: FormState, formData: FormData):
     tax_branch: g("tax_branch") || "สำนักงานใหญ่",
   };
   const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
-  let { error } = await admin
-    .from("platform_settings")
-    .upsert({ ...base, ...extNoPhone, tax_phone: g("tax_phone") }, { onConflict: "id" });
-  // resilient: ตัดคอลัมน์ใหม่ที่ prod ยังไม่มีออกทีละชั้น (0036 → 0035 → เดิม)
+  let { error } = await admin.from("platform_settings").upsert(
+    { ...base, ...extNoPhone, tax_phone: g("tax_phone"), bank_qr_url: g("bank_qr_url") },
+    { onConflict: "id" }
+  );
+  // resilient: ตัดคอลัมน์ใหม่ที่ prod ยังไม่มีออกทีละชั้น (0046 → 0036 → 0035 → เดิม)
+  if (missingCol(error?.message)) {
+    ({ error } = await admin
+      .from("platform_settings")
+      .upsert({ ...base, ...extNoPhone, tax_phone: g("tax_phone") }, { onConflict: "id" }));
+  }
   if (missingCol(error?.message)) {
     ({ error } = await admin.from("platform_settings").upsert({ ...base, ...extNoPhone }, { onConflict: "id" }));
   }

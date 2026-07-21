@@ -76,6 +76,7 @@ export default async function RenewPage() {
               bank_account_no: pay.bank_account_no,
               bank_account_name: pay.bank_account_name,
             }}
+            bankQrUrl={pay.bank_qr_url}
             defaultSlug={sub?.package_slug}
             packages={await getEffectivePackages()}
           />

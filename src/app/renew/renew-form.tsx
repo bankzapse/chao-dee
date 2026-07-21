@@ -15,12 +15,14 @@ export function RenewForm({
   platformPromptPay,
   paymentMethod = "promptpay",
   bank,
+  bankQrUrl = "",
   defaultSlug,
   packages = PACKAGES,
 }: {
   platformPromptPay: string;
   paymentMethod?: PaymentMethod;
   bank?: BankInfo;
+  bankQrUrl?: string;
   defaultSlug?: string;
   packages?: Package[];
 }) {
@@ -253,7 +255,13 @@ export function RenewForm({
 
           {/* ช่องทางชำระเงินตามที่บริษัทตั้งไว้ */}
           <div className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4">
-            <PaymentBox method={paymentMethod} promptpayId={platformPromptPay} bank={bank} amount={amount} />
+            <PaymentBox
+              method={paymentMethod}
+              promptpayId={platformPromptPay}
+              bank={bank}
+              bankQrUrl={bankQrUrl}
+              amount={amount}
+            />
           </div>
 
           {/* แนบสลิป (บังคับ) */}

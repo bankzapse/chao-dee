@@ -32,18 +32,15 @@ export default async function FeesPage({
   // ไม่ได้เลือก (หรือเลือกอาคารที่ไม่มีอยู่) → ใช้อาคารแรก
   const selected = buildingList.find((b) => b.id === building)?.id ?? buildingList[0]?.id ?? "";
 
-  const sel = "id, room_number, floor, building_id, parking_fee, garbage_fee, buildings(name)";
-  const selLite = "id, room_number, floor, building_id, parking_fee, buildings(name)";
-  const build = (s: string) => {
-    let q = supabase.from("rooms").select(s).order("floor").order("room_number");
-    if (selected) q = q.eq("building_id", selected);
-    return q;
-  };
-  // resilient: ถ้ายังไม่ได้รัน 0043 (garbage_fee) ให้ถอยไป select แบบไม่มีคอลัมน์นั้น
-  let res = await build(sel);
-  if (res.error && /schema cache|could not find the .* column/i.test(res.error.message)) {
-    res = (await build(selLite)) as typeof res;
-  }
+  // ห้ามมี fallback ที่ตัด garbage_fee ออก — ฟอร์มจะอ่านได้ 0 แล้วกดบันทึกทีเดียว
+  // ทับค่าขยะของทุกห้องในอาคารเป็น 0 (การอ่านพลาดกลายเป็นการเขียนทับข้อมูลทิ้ง)
+  let q = supabase
+    .from("rooms")
+    .select("id, room_number, floor, building_id, parking_fee, garbage_fee, buildings(name)")
+    .order("floor")
+    .order("room_number");
+  if (selected) q = q.eq("building_id", selected);
+  const res = await q;
 
   const [{ data: vehicles }, { data: tenants }, { data: allRooms }] = await Promise.all([
     supabase.from("vehicles").select("*"),

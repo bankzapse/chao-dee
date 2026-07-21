@@ -1,9 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ModalButton } from "@/components/modal";
-import { ActionForm } from "@/components/action-form";
+import { ActionForm, type FormState } from "@/components/action-form";
 import {
   recordPayment,
   updateSubscription,
@@ -146,28 +146,38 @@ function TxButton({
   className,
   confirm,
 }: {
-  onRun: () => Promise<void>;
+  onRun: () => Promise<void | FormState>;
   label: string;
   className: string;
   confirm?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [err, setErr] = useState("");
   return (
-    <button
-      className={`inline-flex items-center gap-1.5 ${className}`}
-      disabled={pending}
-      onClick={() =>
-        start(async () => {
-          if (confirm && !window.confirm(confirm)) return;
-          await onRun();
-          router.refresh();
-        })
-      }
-    >
-      {pending && <Spinner className="!h-3.5 !w-3.5" />}
-      {pending ? "กำลังทำรายการ…" : label}
-    </button>
+    <span className="inline-flex items-center gap-2">
+      {err && <span className="text-xs text-rose-600">{err}</span>}
+      <button
+        className={`inline-flex items-center gap-1.5 ${className}`}
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            if (confirm && !window.confirm(confirm)) return;
+            setErr("");
+            // การชำระเงินเป็นเรื่องเงิน ถ้าล้มเหลวต้องเห็น ไม่ใช่รีเฟรชแล้วเงียบ
+            const res = await onRun();
+            if (res?.error) {
+              setErr(res.error);
+              return;
+            }
+            router.refresh();
+          })
+        }
+      >
+        {pending && <Spinner className="!h-3.5 !w-3.5" />}
+        {pending ? "กำลังทำรายการ…" : label}
+      </button>
+    </span>
   );
 }
 

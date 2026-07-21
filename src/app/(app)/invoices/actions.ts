@@ -7,21 +7,12 @@ import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import type { FormState } from "@/components/action-form";
 import type { PaymentMethod } from "@/lib/types";
 import { money } from "@/lib/num";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (prod ยังไม่ได้รัน migration ใหม่) */
 function isMissingColumn(msg?: string): boolean {
   return Boolean(msg && /schema cache|could not find the .* column|does not exist/i.test(msg));
 }
-/** ตัดคอลัมน์ใหม่ออกจากแถวบิล (เผื่อ prod ยังไม่ได้รัน migration) */
-function stripNewInvoiceCols<T extends Record<string, unknown>>(row: T) {
-  const rest = { ...row };
-  delete rest.parking_amount;
-  delete rest.garbage_amount;
-  delete rest.occupant_count;
-  delete rest.late_fee;
-  return rest;
-}
-
 type ContractLike = {
   id: string;
   room_id: string;
@@ -195,11 +186,10 @@ export async function generateInvoices(period: string): Promise<FormState> {
     return { error: "ไม่มีบิลใหม่ให้ออก (ทุกห้องที่มีสัญญาออกบิลรอบนี้แล้ว หรือยังไม่มีสัญญา active)" };
   }
 
-  let { error } = await supabase.from("invoices").insert(rows);
-  if (isMissingColumn(error?.message)) {
-    ({ error } = await supabase.from("invoices").insert(rows.map(stripNewInvoiceCols)));
-  }
-  if (error) return { error: error.message };
+  // ไม่มี fallback ตัดคอลัมน์แล้ว — ของเดิมตัด parking/garbage ออกแต่ไม่ลด total_amount
+  // บิลจึงเก็บเงินมากกว่าผลรวมรายการที่พิมพ์ให้ผู้เช่าเห็น
+  const { error } = await supabase.from("invoices").insert(rows);
+  if (error) return { error: dbErrorMessage(error.message) };
   return { ok: true };
 }
 
@@ -226,6 +216,7 @@ export async function recalcInvoices(period: string): Promise<FormState> {
   const ctx = await loadBillingCtx(supabase, period);
 
   let updated = 0;
+  const failed: string[] = [];
   for (const inv of invs as { id: string; room_id: string; other_amount: number; discount: number }[]) {
     const c = byRoom.get(inv.room_id);
     if (!c) continue;
@@ -244,18 +235,21 @@ export async function recalcInvoices(period: string): Promise<FormState> {
       total_amount: Math.max(0, ch.charges + extra),
     };
 
-    let { error } = await supabase.from("invoices").update(full).eq("id", inv.id);
-    if (isMissingColumn(error?.message)) {
-      // prod ยังไม่มีคอลัมน์ใหม่ → ตัดออก และคิดยอดโดยไม่รวมค่าที่เก็บไม่ได้ (กันยอดไม่ตรงรายการ)
-      const lite = stripNewInvoiceCols(full);
-      lite.total_amount = Math.max(0, ch.rent + ch.waterAmount + ch.electricAmount + extra);
-      ({ error } = await supabase.from("invoices").update(lite).eq("id", inv.id));
-    }
-    if (!error) updated++;
+    // ไม่มี fallback ตัดคอลัมน์แล้ว — ของเดิมคิดยอดใหม่โดยไม่รวมค่าจอดรถ/ค่าขยะ
+    // ทำให้บิลใบเดียวกันได้ยอดคนละแบบขึ้นกับว่า error ตรง regex ไหม แต่ยังบอกว่าสำเร็จ
+    const { error } = await supabase.from("invoices").update(full).eq("id", inv.id);
+    if (error) failed.push(inv.room_id);
+    else updated++;
   }
 
   if (updated === 0) {
     return { error: "คำนวณใหม่ไม่สำเร็จ — ไม่พบสัญญาที่ยังใช้งานอยู่ของห้องในบิลรอบนี้" };
+  }
+  // สำเร็จบางส่วนต้องบอกด้วย ไม่งั้นเจ้าของเข้าใจว่าคำนวณครบทุกใบแล้ว
+  if (failed.length > 0) {
+    return {
+      error: `คำนวณใหม่สำเร็จ ${updated} ใบ แต่ล้มเหลว ${failed.length} ใบ — กรุณาลองใหม่อีกครั้ง`,
+    };
   }
   return { ok: true };
 }
@@ -325,11 +319,8 @@ export async function updateInvoice(
     note: String(formData.get("note") ?? "").trim(),
   };
 
-  let { error } = await supabase.from("invoices").update(patch).eq("id", id);
-  if (isMissingColumn(error?.message)) {
-    ({ error } = await supabase.from("invoices").update(stripNewInvoiceCols(patch)).eq("id", id));
-  }
-  if (error) return { error: error.message };
+  const { error } = await supabase.from("invoices").update(patch).eq("id", id);
+  if (error) return { error: dbErrorMessage(error.message) };
 
   const syncErr = await syncInvoiceTotal(supabase, id);
   if (syncErr) return { error: syncErr };
@@ -363,15 +354,25 @@ export async function addInvoiceItem(
 }
 
 /** ลบรายการค่าใช้จ่ายอื่นๆ แล้วปรับยอดรวมให้ */
-export async function deleteInvoiceItem(itemId: string): Promise<void> {
+export async function deleteInvoiceItem(itemId: string): Promise<FormState> {
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("invoice_items")
     .select("invoice_id")
     .eq("id", itemId)
     .maybeSingle();
-  await supabase.from("invoice_items").delete().eq("id", itemId);
-  if (item?.invoice_id) await syncInvoiceTotal(supabase, item.invoice_id);
+  const { data, error } = await supabase
+    .from("invoice_items")
+    .delete()
+    .eq("id", itemId)
+    .select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  if (item?.invoice_id) {
+    const syncErr = await syncInvoiceTotal(supabase, item.invoice_id);
+    if (syncErr) return { error: syncErr };
+  }
+  return { ok: true };
 }
 
 export async function recordPayment(
@@ -398,9 +399,12 @@ export async function recordPayment(
   return { ok: true };
 }
 
-export async function deletePayment(id: string): Promise<void> {
+export async function deletePayment(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("payments").delete().eq("id", id);
+  const { data, error } = await supabase.from("payments").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }
 
 /** ส่งบิลไปยังผู้เช่าผ่าน LINE */
@@ -443,14 +447,25 @@ export async function sendInvoiceViaLine(
   return { ok: true };
 }
 
-export async function voidInvoice(id: string): Promise<void> {
+export async function voidInvoice(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("invoices").update({ status: "void" }).eq("id", id);
+  const { data, error } = await supabase
+    .from("invoices")
+    .update({ status: "void" })
+    .eq("id", id)
+    .select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }
 
-export async function deleteInvoice(id: string): Promise<void> {
+export async function deleteInvoice(id: string): Promise<FormState> {
   const supabase = await createClient();
   // ลบรายการชำระที่ผูกกับบิลก่อน แล้วจึงลบบิล (กัน FK ค้าง)
-  await supabase.from("payments").delete().eq("invoice_id", id);
-  await supabase.from("invoices").delete().eq("id", id);
+  const pay = await supabase.from("payments").delete().eq("invoice_id", id);
+  if (pay.error) return { error: dbErrorMessage(pay.error.message) };
+  const { data, error } = await supabase.from("invoices").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }

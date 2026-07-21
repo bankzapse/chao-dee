@@ -68,32 +68,51 @@ export function ActionForm({
   );
 }
 
-/** ปุ่มลบพร้อมยืนยัน — ใช้กับ server action ที่รับ id */
+/**
+ * ปุ่มลบพร้อมยืนยัน — ใช้กับ server action ที่รับ id
+ *
+ * action คืน { error } ได้ เพื่อบอกว่าลบไม่สำเร็จ (เช่น ไม่มีสิทธิ์ / ติด FK)
+ * เดิม action คืน void เฉยๆ ลบไม่สำเร็จก็เงียบ ผู้ใช้เห็นแถวยังอยู่แต่ไม่รู้ว่าทำไม
+ */
 export function DeleteButton({
   action,
   confirmText = "ยืนยันการลบรายการนี้?",
   label = "ลบ",
 }: {
-  action: () => Promise<void>;
+  action: () => Promise<void | FormState>;
   confirmText?: string;
   label?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [err, setErr] = useState("");
   return (
-    <button
-      className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
-      disabled={pending}
-      onClick={() => {
-        if (!confirm(confirmText)) return;
-        start(async () => {
-          await action();
-          router.refresh();
-        });
-      }}
-    >
-      {pending && <Spinner className="!h-3.5 !w-3.5" />}
-      {pending ? "กำลังลบ…" : label}
-    </button>
+    <span className="inline-flex items-center gap-2">
+      {err && <span className="text-xs text-rose-600">{err}</span>}
+      <button
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
+        disabled={pending}
+        onClick={() => {
+          if (!confirm(confirmText)) return;
+          setErr("");
+          start(async () => {
+            try {
+              const res = await action();
+              if (res?.error) {
+                setErr(res.error);
+                return;
+              }
+            } catch {
+              setErr("ลบไม่สำเร็จ ลองใหม่อีกครั้ง");
+              return;
+            }
+            router.refresh();
+          });
+        }}
+      >
+        {pending && <Spinner className="!h-3.5 !w-3.5" />}
+        {pending ? "กำลังลบ…" : label}
+      </button>
+    </span>
   );
 }

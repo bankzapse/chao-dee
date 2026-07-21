@@ -59,9 +59,12 @@ export default async function InvoicesPage({
     if (id) countByBuilding.set(id, (countByBuilding.get(id) ?? 0) + 1);
   });
 
+  // ต้องตัดบิลที่ยกเลิกออกทั้งยอดออกบิลและยอดที่ชำระ
+  // ถ้าตัดข้างเดียว บิลที่จ่ายครบแล้วค่อยยกเลิก จะทำให้ "ค้างชำระ" ติดลบ
+  const live = (rows: InvoiceRow[]) => rows.filter((i) => i.status !== "void");
   const sumBilled = (rows: InvoiceRow[]) =>
-    rows.filter((i) => i.status !== "void").reduce((s, i) => s + Number(i.total_amount), 0);
-  const sumPaid = (rows: InvoiceRow[]) => rows.reduce((s, i) => s + Number(i.paid_amount), 0);
+    live(rows).reduce((s, i) => s + Number(i.total_amount), 0);
+  const sumPaid = (rows: InvoiceRow[]) => live(rows).reduce((s, i) => s + Number(i.paid_amount), 0);
 
   const totalBilled = sumBilled(list);
   const totalPaid = sumPaid(list);

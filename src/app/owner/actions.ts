@@ -44,16 +44,27 @@ export async function recordPayment(
 }
 
 /** ยืนยันการชำระ → เปิดสิทธิ์ (active) + ต่ออายุตามรอบ */
-export async function verifyPayment(paymentId: string): Promise<void> {
+export async function verifyPayment(paymentId: string): Promise<FormState> {
   const { userId: adminId } = await requirePerm("payments");
   const admin = createAdminClient();
 
-  const { data: pay } = await admin
+  // อ้างสิทธิ์รายการแบบ atomic: เปลี่ยน pending → verified ในคำสั่งเดียว
+  // ถ้าไม่กันไว้ กดปุ่มยืนยันสองครั้งจะต่ออายุซ้ำจากวันหมดอายุที่เพิ่งขยายไป = แถมฟรีอีกเดือน
+  // (ใช้ค่า enum ที่มีอยู่จริงเท่านั้น — sub_payment_status มีแค่ pending/verified/rejected)
+  const { data: claimed, error: claimErr } = await admin
     .from("subscription_payments")
-    .select("*")
+    .update({
+      status: "verified",
+      verified_by: adminId,
+      verified_at: new Date().toISOString(),
+    })
     .eq("id", paymentId)
-    .single();
-  if (!pay) return;
+    .eq("status", "pending")
+    .select("*");
+  if (claimErr) return { error: claimErr.message };
+  const pay = claimed?.[0];
+  // ไม่โดนแถวไหน = ถูกอนุมัติ/ปฏิเสธไปแล้ว หรือมีคนกดพร้อมกัน
+  if (!pay) return { error: "รายการนี้ถูกดำเนินการไปแล้ว (กรุณารีเฟรชหน้า)" };
 
   const { data: sub } = await admin
     .from("subscriptions")
@@ -76,19 +87,18 @@ export async function verifyPayment(paymentId: string): Promise<void> {
     if (typeof no === "string") taxInvoiceNo = no;
   }
 
-  await admin
+  const detailRes = await admin
     .from("subscription_payments")
     .update({
-      status: "verified",
-      verified_by: adminId,
-      verified_at: new Date().toISOString(),
       period_start: periodStart,
       period_end: newExpiry.toISOString().slice(0, 10),
       tax_invoice_no: taxInvoiceNo,
     })
     .eq("id", paymentId);
+  if (detailRes.error) return { error: detailRes.error.message };
 
-  await admin.from("subscriptions").upsert(
+  // ถ้าอันนี้พลาด ลูกค้าจ่ายเงินแล้วแต่ยังใช้งานไม่ได้ — ต้องบอก ไม่ใช่เงียบ
+  const subRes = await admin.from("subscriptions").upsert(
     {
       org_id: pay.org_id,
       status: "active",
@@ -100,6 +110,9 @@ export async function verifyPayment(paymentId: string): Promise<void> {
     },
     { onConflict: "org_id" }
   );
+  if (subRes.error) {
+    return { error: "บันทึกการชำระแล้ว แต่เปิดสิทธิ์ให้ลูกค้าไม่สำเร็จ: " + subRes.error.message };
+  }
 
   if (pay.promo_code) await incrementPromoUse(pay.promo_code);
 
@@ -131,29 +144,33 @@ export async function verifyPayment(paymentId: string): Promise<void> {
       });
     }
   }
+  return { ok: true };
 }
 
-export async function rejectPayment(paymentId: string): Promise<void> {
+export async function rejectPayment(paymentId: string): Promise<FormState> {
   const { userId: adminId } = await requirePerm("payments");
   const admin = createAdminClient();
-  const { data: pay } = await admin
-    .from("subscription_payments")
-    .select("org_id, amount")
-    .eq("id", paymentId)
-    .maybeSingle();
-  await admin
+  // ปฏิเสธได้เฉพาะรายการที่ยังรอตรวจสอบ — ของเดิมปฏิเสธรายการที่ "ยืนยันแล้ว" ได้
+  // ทำให้ยอดหายจากรายงานรายได้ แต่ลูกค้ายังใช้งานได้เต็มสิทธิ์ (บัญชีกับสิทธิ์ไม่ตรงกัน)
+  const { data: rejected, error: rejErr } = await admin
     .from("subscription_payments")
     .update({ status: "rejected" })
-    .eq("id", paymentId);
+    .eq("id", paymentId)
+    .eq("status", "pending")
+    .select("org_id, amount");
+  if (rejErr) return { error: rejErr.message };
+  const pay = rejected?.[0];
+  if (!pay) return { error: "รายการนี้ถูกดำเนินการไปแล้ว (กรุณารีเฟรชหน้า)" };
+
   await logAudit({
-    org_id: pay?.org_id ?? null,
+    org_id: pay.org_id,
     actor_id: adminId,
     action: "ปฏิเสธการชำระเงิน",
-    meta: { amount: pay ? Number(pay.amount) : null, payment_id: paymentId },
+    meta: { amount: Number(pay.amount), payment_id: paymentId },
   });
 
   // อีเมลแจ้งเจ้าของหอ (best-effort)
-  if (pay?.org_id && isEmailConfigured()) {
+  if (pay.org_id && isEmailConfigured()) {
     const { data: owner } = await admin
       .from("profiles")
       .select("email")
@@ -166,6 +183,7 @@ export async function rejectPayment(paymentId: string): Promise<void> {
       await sendEmail({ to: owner.email, subject: tpl.subject, html: tpl.html });
     }
   }
+  return { ok: true };
 }
 
 /** ออกเลขที่ใบกำกับภาษีให้การชำระที่ยืนยันแล้ว (ออกด้วยมือจาก Console) */

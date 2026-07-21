@@ -6,6 +6,7 @@ import { getOrgId } from "@/lib/auth";
 import { checkLimit } from "@/lib/limits";
 import { toLocalThai } from "@/lib/phone";
 import type { FormState } from "@/components/action-form";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 function isMissingColumn(msg?: string): boolean {
   return Boolean(msg && /schema cache|could not find the .* column/i.test(msg));
@@ -67,9 +68,13 @@ export async function updateTenant(
   return { ok: true };
 }
 
-export async function deleteTenant(id: string): Promise<void> {
+export async function deleteTenant(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("tenants").delete().eq("id", id);
+  // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
+  const { data, error } = await supabase.from("tenants").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }
 
 /** สร้างรหัสเชื่อมบัญชี LINE 6 หลักให้ผู้เช่า แล้วคืนรหัสไปแสดง */

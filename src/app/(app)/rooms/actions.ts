@@ -5,6 +5,7 @@ import { checkLimit } from "@/lib/limits";
 import { money, intMin, intClamp } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
 import type { RoomStatus } from "@/lib/types";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (ยังไม่ได้รัน migration 0020) */
 function isMissingColumn(msg?: string): boolean {
@@ -32,16 +33,6 @@ export async function saveRoomFees(rows: RoomFeeRow[]): Promise<FormState> {
     return { error: bad.error.message };
   }
   return { ok: true };
-}
-
-/** ตัดคอลัมน์ของ migration 0020 ออก (เผื่อ prod ยังไม่ได้รัน) */
-function stripNewCols<T extends Record<string, unknown>>(row: T) {
-  const rest = { ...row };
-  delete rest.water_mode;
-  delete rest.water_flat_per_person;
-  delete rest.parking_fee;
-  delete rest.garbage_fee;
-  return rest;
 }
 
 function parseRoom(formData: FormData) {
@@ -76,10 +67,7 @@ export async function createRoom(
   if (limit) return { ...limit, values: data };
 
   const supabase = await createClient();
-  let { error } = await supabase.from("rooms").insert(data);
-  if (isMissingColumn(error?.message)) {
-    ({ error } = await supabase.from("rooms").insert(stripNewCols(data)));
-  }
+  const { error } = await supabase.from("rooms").insert(data);
   if (error) {
     if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้", values: data };
     return { error: error.message, values: data };
@@ -124,10 +112,7 @@ export async function createRoomsBulk(
   }));
 
   const supabase = await createClient();
-  let { error } = await supabase.from("rooms").insert(rows);
-  if (isMissingColumn(error?.message)) {
-    ({ error } = await supabase.from("rooms").insert(rows.map(stripNewCols)));
-  }
+  const { error } = await supabase.from("rooms").insert(rows);
   if (error) {
     if (error.code === "23505")
       return { error: "มีเลขห้องซ้ำกับที่มีอยู่แล้วในอาคารนี้ — ลองเปลี่ยนเลขเริ่มต้น/prefix", values };
@@ -145,10 +130,9 @@ export async function updateRoom(
   if (!data.room_number) return { error: "กรุณาระบุเลขห้อง", values: data };
 
   const supabase = await createClient();
-  let { error } = await supabase.from("rooms").update(data).eq("id", id);
-  if (isMissingColumn(error?.message)) {
-    ({ error } = await supabase.from("rooms").update(stripNewCols(data)).eq("id", id));
-  }
+  // ไม่มี fallback ตัดคอลัมน์แล้ว — ของเดิมตัด water_mode/water_flat_per_person ทิ้ง
+  // ห้องเหมาจ่ายจึงถูกบันทึกด้วย water_rate=0 และไม่มีค่าเหมา → คิดค่าน้ำได้ 0 บาทตลอดไป
+  const { error } = await supabase.from("rooms").update(data).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: "เลขห้องนี้มีอยู่แล้วในอาคารนี้", values: data };
     return { error: error.message, values: data };
@@ -156,7 +140,11 @@ export async function updateRoom(
   return { ok: true };
 }
 
-export async function deleteRoom(id: string): Promise<void> {
+export async function deleteRoom(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("rooms").delete().eq("id", id);
+  // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
+  const { data, error } = await supabase.from("rooms").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }

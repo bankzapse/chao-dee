@@ -22,6 +22,7 @@ const MOBILE_NAV = [
   { href: "/fees", label: "ค่าจอดรถ/ค่าขยะ" },
   { href: "/agency", label: "ดีลนายหน้า" },
   { href: "/expenses", label: "ค่าใช้จ่าย" },
+  { href: "/renew", label: "ต่ออายุ/อัปเกรด" },
   { href: "/settings", label: "ตั้งค่าและการชำระเงิน" },
   { href: "/help", label: "ช่วยเหลือ" },
 ];

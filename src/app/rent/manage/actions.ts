@@ -13,15 +13,41 @@ async function syncPhotos(
   supabase: Awaited<ReturnType<typeof createClient>>,
   listingId: string,
   formData: FormData
-) {
-  if (formData.get("photos_ready") !== "1") return; // ยังโหลดรูปเดิมไม่เสร็จ — ข้าม กันรูปหาย
+): Promise<string | null> {
+  if (formData.get("photos_ready") !== "1") return null; // ยังโหลดรูปเดิมไม่เสร็จ — ข้าม กันรูปหาย
   const urls = parsePhotoUrls(formData);
-  await supabase.from("listing_photos").delete().eq("listing_id", listingId);
+
+  // ใส่รูปใหม่ "ก่อน" แล้วค่อยลบของเดิม — ถ้าใส่พลาดรูปเดิมยังอยู่ครบ
+  // ของเดิมลบก่อนแล้วค่อยใส่ และไม่เช็ค error เลย: insert พลาดครั้งเดียว = รูปหายถาวร
+  // แต่ระบบยังบอกว่าบันทึกสำเร็จ
   if (urls.length) {
-    await supabase
+    const ins = await supabase
       .from("listing_photos")
-      .insert(urls.map((url, i) => ({ listing_id: listingId, url, sort: i })));
+      .insert(urls.map((url, i) => ({ listing_id: listingId, url, sort: i + 1000 })));
+    if (ins.error) return "บันทึกรูปไม่สำเร็จ: " + ins.error.message + " (รูปเดิมยังอยู่ครบ)";
   }
+
+  const del = await supabase
+    .from("listing_photos")
+    .delete()
+    .eq("listing_id", listingId)
+    .lt("sort", 1000);
+  if (del.error) return "ลบรูปเดิมไม่สำเร็จ: " + del.error.message;
+
+  // ไล่ลำดับใหม่ให้เริ่มจาก 0 ตามที่ผู้ใช้จัดไว้
+  const fix = await supabase
+    .from("listing_photos")
+    .select("id, sort")
+    .eq("listing_id", listingId)
+    .order("sort");
+  if (fix.data) {
+    await Promise.all(
+      fix.data.map((row, i) =>
+        supabase.from("listing_photos").update({ sort: i }).eq("id", row.id)
+      )
+    );
+  }
+  return null;
 }
 
 function tableMissing(msg?: string): boolean {
@@ -77,7 +103,8 @@ export async function saveStandaloneListing(
       .eq("id", listingId)
       .eq("org_id", org_id);
     if (error) return { error: tableMissing(error.message) ? NOT_READY : error.message, values: { ...data } };
-    await syncPhotos(supabase, listingId, formData);
+    const photoErr = await syncPhotos(supabase, listingId, formData);
+    if (photoErr) return { error: photoErr };
     return { ok: true };
   }
 
@@ -96,6 +123,7 @@ export async function saveStandaloneListing(
     ...data,
   });
   if (error) return { error: tableMissing(error.message) ? NOT_READY : error.message, values: { ...data } };
-  await syncPhotos(supabase, id, formData);
+  const photoErr = await syncPhotos(supabase, id, formData);
+  if (photoErr) return { error: photoErr };
   return { ok: true };
 }

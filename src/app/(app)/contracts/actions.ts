@@ -6,6 +6,7 @@ import { getOrgId } from "@/lib/auth";
 import { money, intMin } from "@/lib/num";
 import { commissionOf, DEFAULT_COMMISSION_RATE } from "@/lib/agency";
 import type { FormState } from "@/components/action-form";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 /**
  * ผูกสัญญาที่เพิ่งสร้างกับดีลนายหน้า → ปิดดีลเป็น "เซ็นสัญญาแล้ว" + คำนวณค่านายหน้า
@@ -158,9 +159,13 @@ export async function closeContract(
   await supabase.from("rooms").update({ status: "vacant" }).eq("id", room_id);
 }
 
-export async function deleteContract(id: string): Promise<void> {
+export async function deleteContract(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("contracts").delete().eq("id", id);
+  // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
+  const { data, error } = await supabase.from("contracts").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }
 
 // ───────── เอกสารสัญญา (เก็บใน storage โดยตรง — ไม่ต้องมีตาราง/migration) ─────────

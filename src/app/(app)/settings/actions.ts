@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import type { FormState } from "@/components/action-form";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 export async function updateOrgSettings(
   _prev: FormState,
@@ -24,27 +25,28 @@ export async function updateOrgSettings(
     bank_account_no: String(formData.get("bank_account_no") ?? "").trim(),
     bank_account_name: String(formData.get("bank_account_name") ?? "").trim(),
   };
-  // รูป QR ที่อัปโหลดเอง (0046) — แยกชั้น resilient เพราะเป็นคอลัมน์ใหม่กว่า
   const bank_qr_url = String(formData.get("bank_qr_url") ?? "").trim();
-  const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
 
-  let { error } = await supabase
+  // ไม่มี fallback ตัดคอลัมน์แล้ว — ของเดิมเงียบๆ ทิ้งข้อมูลบัญชี/รูป QR ที่ผู้ใช้เพิ่งกรอก
+  // แล้วบอกว่าบันทึกสำเร็จ
+  const { error } = await supabase
     .from("organizations")
     .update({ ...base, ...bank, bank_qr_url })
     .eq("id", org_id);
-  if (missingCol(error?.message)) {
-    ({ error } = await supabase.from("organizations").update({ ...base, ...bank }).eq("id", org_id));
-  }
-  // resilient: ถ้ายังไม่ได้รัน migration 0033 (คอลัมน์บัญชีธนาคาร) → บันทึกเฉพาะส่วนเดิม
-  if (missingCol(error?.message)) {
-    ({ error } = await supabase.from("organizations").update(base).eq("id", org_id));
-  }
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
 
   // ช่องทางรับเงินหลัก (0035) — บันทึกแยก + ไม่ล้มถ้า prod ยังไม่มีคอลัมน์
+  // ต้องเช็ค error — ของเดิมเขียนพลาดก็ยังบอกว่าบันทึกสำเร็จ
+  // เจ้าของสลับเป็น "บัญชีธนาคาร" แล้วบิลยังโชว์พร้อมเพย์ โดยไม่มีอะไรเตือน
   const method = String(formData.get("payment_method") ?? "promptpay");
   if (method === "promptpay" || method === "bank") {
-    await supabase.from("organizations").update({ payment_method: method }).eq("id", org_id);
+    const { data, error: mErr } = await supabase
+      .from("organizations")
+      .update({ payment_method: method })
+      .eq("id", org_id)
+      .select("id");
+    if (mErr) return { error: dbErrorMessage(mErr.message) };
+    if (!data?.length) return { error: NO_ROWS_MESSAGE };
   }
   return { ok: true };
 }
@@ -98,19 +100,14 @@ export async function updateTaxInfo(
   if (!tax_phone) return { error: "กรุณากรอกเบอร์โทรติดต่อ" };
 
   const entity = { tax_entity_type: isIndiv ? "individual" : "juristic" };
-  const missingCol = (m?: string) => !!m && /schema cache|could not find the .* column/i.test(m);
 
-  // resilient แบบชั้น: full(+phone 0038) → +entity(0037) → base เดิม
-  let { error } = await supabase
+  // ไม่มี fallback ตัดคอลัมน์แล้ว — ของเดิมตัด tax_entity_type ทิ้งทั้งที่ tax_branch
+  // ถูกล้างเป็น "" ไปแล้วตอนเลือกบุคคลธรรมดา → กลายเป็นนิติบุคคลที่ไม่มีสาขา
+  // ซึ่งออกใบกำกับภาษีตาม ม.86/4 ไม่ถูกต้อง
+  const { error } = await supabase
     .from("organizations")
     .update({ ...base, ...entity, tax_phone })
     .eq("id", org_id);
-  if (missingCol(error?.message)) {
-    ({ error } = await supabase.from("organizations").update({ ...base, ...entity }).eq("id", org_id));
-  }
-  if (missingCol(error?.message)) {
-    ({ error } = await supabase.from("organizations").update(base).eq("id", org_id));
-  }
-  if (error) return { error: error.message };
+  if (error) return { error: dbErrorMessage(error.message) };
   return { ok: true };
 }

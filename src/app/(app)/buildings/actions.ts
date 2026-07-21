@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { checkLimit } from "@/lib/limits";
 import type { FormState } from "@/components/action-form";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 /** true ถ้า error เกิดจากคอลัมน์ยังไม่มี (ยังไม่ได้รัน migration) */
 function isMissingColumn(msg?: string): boolean {
@@ -63,7 +64,11 @@ export async function updateBuilding(
   return { ok: true };
 }
 
-export async function deleteBuilding(id: string): Promise<void> {
+export async function deleteBuilding(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("buildings").delete().eq("id", id);
+  // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
+  const { data, error } = await supabase.from("buildings").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }

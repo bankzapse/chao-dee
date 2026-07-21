@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { money } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
+import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 export async function createExpense(
   _prev: FormState,
@@ -30,7 +31,11 @@ export async function createExpense(
   return { ok: true };
 }
 
-export async function deleteExpense(id: string): Promise<void> {
+export async function deleteExpense(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("building_expenses").delete().eq("id", id);
+  // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
+  const { data, error } = await supabase.from("building_expenses").delete().eq("id", id).select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }

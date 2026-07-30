@@ -83,7 +83,9 @@ export async function setLiffSession(sub: string, tenantId: string | null): Prom
     httpOnly: true,
     secure: true,
     sameSite: "none", // LIFF เปิดใน webview ของ LINE = cross-site
-    path: "/liff",
+    // path "/" เพราะทั้งหน้า /liff/* และ API /api/liff/* + หน้าบิล /bill/* ต้องอ่าน cookie นี้
+    // (เดิม "/liff" ทำให้ /api/liff/link, /api/liff/maintenance, /bill ไม่ได้รับ cookie → เซสชันหลุด)
+    path: "/",
     maxAge: MAX_AGE,
   });
 }

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatBaht, formatDate } from "@/lib/format";
 import { COMPANY } from "@/lib/company";
 import { commissionBreakdown, WHT_RATE } from "@/lib/agency";
+import { Check } from "lucide-react";
 import { PrintButton } from "@/components/qr-code";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -65,7 +66,7 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
         <Link href="/agency" className="text-sm text-slate-500 hover:text-slate-700">
           ← กลับดีลนายหน้า
         </Link>
-        <PrintButton label="🖨️ พิมพ์ / บันทึก PDF" />
+        <PrintButton label="พิมพ์ / บันทึก PDF" />
       </div>
 
       <div className="print-area card p-10">
@@ -156,8 +157,8 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
           </div>
         </div>
 
-        <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
-          ✓ ชำระเงินเรียบร้อยแล้ว
+        <div className="mt-8 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 print:bg-white">
+          <Check className="h-4 w-4" strokeWidth={2.5} /> ชำระเงินเรียบร้อยแล้ว
         </div>
         {usedWht > 0 && (
           <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 print:bg-white">

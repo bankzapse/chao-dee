@@ -1,3 +1,4 @@
+import { FileText, ReceiptText, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge, StatCard } from "@/components/ui";
 import { formatBaht, formatDate } from "@/lib/format";
@@ -152,21 +153,21 @@ export default async function AgencyPage() {
                           )}
                           <a
                             href={`/agency/invoice/${d.id}`}
-                            className="block text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                            className="flex items-center justify-end gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
                           >
-                            🧾 ใบแจ้งหนี้
+                            <FileText className="h-3.5 w-3.5" strokeWidth={2} /> ใบแจ้งหนี้
                           </a>
                         </div>
                       ) : d.status === "paid" ? (
                         <div className="space-y-0.5 text-right">
-                          <p className="text-xs text-emerald-600">
-                            ✓ ชำระแล้ว {d.paid_at ? formatDate(d.paid_at) : ""}
+                          <p className="flex items-center justify-end gap-1 text-xs text-emerald-600">
+                            <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> ชำระแล้ว {d.paid_at ? formatDate(d.paid_at) : ""}
                           </p>
                           <a
                             href={`/agency/receipt/${d.id}`}
-                            className="block text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                            className="flex items-center justify-end gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
                           >
-                            🧾 ใบเสร็จ
+                            <ReceiptText className="h-3.5 w-3.5" strokeWidth={2} /> ใบเสร็จ
                           </a>
                           <a
                             href={`/agency/invoice/${d.id}`}

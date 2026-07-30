@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PaymentBox } from "@/components/payment-box";
 import { type BankInfo } from "@/components/bank-info";
@@ -170,7 +171,7 @@ export default async function PublicBillPage({
             {/* สถานะ / QR */}
             {paid ? (
               <div className="mt-5 rounded-xl bg-emerald-50 p-4 text-center">
-                <p className="text-2xl">✅</p>
+                <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500" strokeWidth={2} />
                 <p className="mt-1 font-semibold text-emerald-700">
                   {INVOICE_STATUS_LABEL.paid}
                 </p>

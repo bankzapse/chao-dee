@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Handshake, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/components/spinner";
 import { formatBaht } from "@/lib/format";
@@ -16,16 +17,25 @@ export function AcceptAgencyCard() {
 
   return (
     <div className="card p-6">
-      <h2 className="text-lg font-semibold text-slate-900">🤝 เปิดใช้บริการนายหน้าจัดหาผู้เช่า</h2>
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+        <Handshake className="h-5 w-5 text-indigo-600" strokeWidth={2} /> เปิดใช้บริการนายหน้าจัดหาผู้เช่า
+      </h2>
       <p className="mt-2 text-sm text-slate-600">
         ให้ทีม Chao-Dee ช่วยหาผู้เช่าให้ห้องว่างของคุณ — คิดค่านายหน้า{" "}
         <b>เท่ากับค่าเช่า 1 เดือน</b> เฉพาะเมื่อ<b>ปิดดีลสำเร็จ</b> (ผู้เช่าเซ็นสัญญาและชำระเงินก้อนแรกแล้ว)
         ไม่มีค่าใช้จ่ายล่วงหน้า
       </p>
-      <ul className="mt-3 space-y-1 text-sm text-slate-600">
-        <li>✓ ไม่ปิดดีล ไม่เสียค่านายหน้า</li>
-        <li>✓ ฐานคิดจากค่าเช่าห้องเท่านั้น (ไม่รวมน้ำ/ไฟ/ส่วนกลาง/มัดจำ)</li>
-        <li>✓ ผู้เช่าออกภายใน 15 วัน คืน 100% · ภายใน 30 วัน คืน 50%</li>
+      <ul className="mt-3 space-y-1.5 text-sm text-slate-600">
+        {[
+          "ไม่ปิดดีล ไม่เสียค่านายหน้า",
+          "ฐานคิดจากค่าเช่าห้องเท่านั้น (ไม่รวมน้ำ/ไฟ/ส่วนกลาง/มัดจำ)",
+          "ผู้เช่าออกภายใน 15 วัน คืน 100% · ภายใน 30 วัน คืน 50%",
+        ].map((t) => (
+          <li key={t} className="flex items-start gap-2">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2.5} />
+            <span>{t}</span>
+          </li>
+        ))}
       </ul>
 
       <label className="mt-5 flex items-start gap-2 text-sm text-slate-700">

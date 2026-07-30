@@ -88,6 +88,8 @@ export async function setLiffSession(sub: string, tenantId: string | null): Prom
     path: "/",
     maxAge: MAX_AGE,
   });
+  // ลบ cookie เก่า path="/liff" ที่ค้างจากเวอร์ชันก่อนหน้า (กัน cookie ซ้ำชื่อคนละ path → อ่านตัวเก่าที่ tenantId ค้าง)
+  jar.set(COOKIE, "", { httpOnly: true, secure: true, sameSite: "none", path: "/liff", maxAge: 0 });
 }
 
 export async function readLiffSession(): Promise<LiffSession | null> {

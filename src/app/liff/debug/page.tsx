@@ -18,7 +18,8 @@ export default async function LiffDebug({
   const sess = await readLiffSession();
   if (!sess) return <LiffInit liffId={process.env.NEXT_PUBLIC_LIFF_ID ?? ""} />;
 
-  const { phone } = await searchParams;
+  // default เบอร์ทดสอบไว้ เพื่อเปิดผ่าน liff.line.me ได้โดยไม่ต้องมี query string (LINE ไม่ชอบ)
+  const { phone = "0892616445" } = await searchParams;
   const admin = createAdminClient();
 
   const { data: bySub } = await admin

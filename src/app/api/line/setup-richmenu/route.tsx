@@ -8,12 +8,15 @@ export const runtime = "nodejs";
 const LINE_API = "https://api.line.me/v2/bot";
 const LINE_DATA_API = "https://api-data.line.me/v2/bot";
 
-// 6 ปุ่ม (2 แถว x 3 คอลัมน์, 2500x1686) → ส่งข้อความให้ webhook ประมวลผล
+// 6 ปุ่ม (2 แถว x 3 คอลัมน์, 2500x1686)
+// ปุ่มที่มี path → เปิดหน้า LIFF (webview) · ที่มี text → ส่งข้อความให้ webhook ตอบ
+// ถ้ายังไม่ได้ตั้ง NEXT_PUBLIC_LIFF_ID ปุ่ม LIFF จะ fallback เป็นส่งข้อความแทน
+// path = ต่อท้าย LIFF endpoint (ตั้งเป็น chao-dee.com/liff) → "/bills" เปิด /liff/bills
 const BUTTONS = [
-  { label: "บิล / ยอดค้าง", emoji: "🧾", text: "บิล", bg: "#6366f1" },
-  { label: "แจ้งซ่อม", emoji: "🔧", text: "แจ้งซ่อม", bg: "#f59e0b" },
-  { label: "พัสดุ", emoji: "📦", text: "พัสดุ", bg: "#10b981" },
-  { label: "ข้อมูลห้อง", emoji: "🏠", text: "ข้อมูลห้อง", bg: "#06b6d4" },
+  { label: "บิล / ยอดค้าง", emoji: "🧾", path: "/bills", text: "บิล", bg: "#6366f1" },
+  { label: "แจ้งซ่อม", emoji: "🔧", path: "/maintenance", text: "แจ้งซ่อม", bg: "#f59e0b" },
+  { label: "พัสดุ", emoji: "📦", path: "/parcels", text: "พัสดุ", bg: "#10b981" },
+  { label: "ข้อมูลห้อง", emoji: "🏠", path: "/room", text: "ข้อมูลห้อง", bg: "#06b6d4" },
   { label: "วิธีชำระเงิน", emoji: "💳", text: "ชำระเงิน", bg: "#8b5cf6" },
   { label: "ติดต่อผู้ดูแล", emoji: "☎️", text: "ติดต่อ", bg: "#f43f5e" },
 ];
@@ -112,6 +115,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "ยังไม่ได้ตั้งค่า LINE (LINE_CHANNEL_ACCESS_TOKEN)" }, { status: 400 });
   }
   const token = lineToken();
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
 
   // 0) ลบ rich menu เก่าทั้งหมด (กันสะสมตอนรันซ้ำ)
   try {
@@ -146,7 +150,11 @@ export async function POST(req: Request) {
         width: Math.round(CW),
         height: Math.round(CH),
       },
-      action: { type: "message", text: b.text },
+      // เปิด LIFF ถ้าตั้งค่า LIFF ID ไว้ ไม่งั้นถอยไปส่งข้อความ (คำสั่งเดิมยังทำงาน)
+      action:
+        b.path && liffId
+          ? { type: "uri", uri: `https://liff.line.me/${liffId}${b.path}` }
+          : { type: "message", text: b.text },
     })),
   };
   const createRes = await fetch(`${LINE_API}/richmenu`, {

@@ -133,6 +133,16 @@ export default async function MaintenancePage() {
                       {m.description && (
                         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{m.description}</p>
                       )}
+                      {m.photo_url && (
+                        <a href={m.photo_url} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={m.photo_url}
+                            alt="รูปแจ้งซ่อมจากผู้เช่า"
+                            className="mt-2 h-28 w-28 rounded-lg object-cover ring-1 ring-slate-200"
+                          />
+                        </a>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

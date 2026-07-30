@@ -268,6 +268,7 @@ export type MaintenanceRequest = {
   description: string;
   status: MaintenanceStatus;
   source: string;
+  photo_url: string;
   created_at: string;
   updated_at: string;
 };

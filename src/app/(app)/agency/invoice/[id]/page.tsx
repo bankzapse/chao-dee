@@ -143,25 +143,30 @@ export default async function CommissionInvoicePage({ params }: { params: Promis
           <div className="mt-8 rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-800 print:bg-white">
             <p className="font-semibold">วิธีชำระค่านายหน้า</p>
             <ol className="mt-1.5 list-decimal space-y-0.5 pl-5">
-              {promptpay ? (
-                <li>
-                  โอนยอด <span className="font-semibold">{formatBaht(tax.total)}</span> ผ่าน PromptPay{" "}
-                  <span className="font-semibold">{promptpay}</span> ({COMPANY.name})
-                </li>
-              ) : (
-                <li>โอนยอด {formatBaht(tax.total)} ให้ {COMPANY.name}</li>
-              )}
+              <li>
+                โอนยอด <span className="font-semibold">{formatBaht(tax.total)}</span>
+                {promptpay && (
+                  <>
+                    {" "}
+                    ผ่าน PromptPay <span className="font-semibold">{promptpay}</span>
+                  </>
+                )}{" "}
+                ({COMPANY.name})
+              </li>
               <li>แนบสลิปในหน้า “ดีลนายหน้า” เพื่อให้ทีมงานตรวจสอบและยืนยัน</li>
             </ol>
           </div>
         )}
 
         {tax.wht > 0 && (
-          <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 print:bg-white">
-            ผู้จ่ายที่เป็นนิติบุคคลหักภาษี ณ ที่จ่าย {WHT_RATE}% ได้ = {formatBaht(tax.wht)} (โอนสุทธิ {formatBaht(tax.net)})
-            <br />
-            กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
-          </p>
+          <div className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 print:bg-white">
+            <p className="font-medium text-slate-600">ผู้จ่ายที่เป็นนิติบุคคลเลือกได้</p>
+            <p className="mt-0.5">
+              (A) จ่ายเต็ม {formatBaht(tax.total)} &nbsp;·&nbsp; (B) หัก ณ ที่จ่าย {WHT_RATE}% ({formatBaht(tax.wht)}) → โอนสุทธิ{" "}
+              {formatBaht(tax.net)}
+            </p>
+            <p className="mt-0.5">หากเลือก (B) กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}</p>
+          </div>
         )}
         {!COMPANY.vatRegistered && (
           <p className="mt-2 text-center text-xs text-slate-400">

@@ -85,11 +85,29 @@ export function DisableAgencyButton() {
   );
 }
 
-/** ปุ่มแนบสลิปชำระค่านายหน้า */
-export function PayCommissionButton({ dealId, amount }: { dealId: string; amount: number }) {
+/**
+ * ปุ่มแนบสลิปชำระค่านายหน้า
+ * นิติบุคคลเลือกได้: (A) จ่ายเต็ม หรือ (B) หัก ณ ที่จ่าย 3% → โอนสุทธิ + ออกหนังสือรับรอง
+ */
+export function PayCommissionButton({
+  dealId,
+  total,
+  net,
+  wht,
+  isJuristic,
+}: {
+  dealId: string;
+  total: number;
+  net: number;
+  wht: number;
+  isJuristic: boolean;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
+  const canWithhold = isJuristic && wht > 0;
+  const [withhold, setWithhold] = useState(false);
+  const amount = withhold ? net : total;
 
   async function upload(file: File) {
     setBusy(true);
@@ -103,7 +121,7 @@ export function PayCommissionButton({ dealId, amount }: { dealId: string; amount
         setMsg({ text: "อัปโหลดสลิปไม่สำเร็จ: " + up.error.message });
         return;
       }
-      const res = await submitCommissionPayment(dealId, path);
+      const res = await submitCommissionPayment(dealId, path, withhold);
       if (res.error) setMsg({ text: res.error });
       else {
         setMsg({ ok: true, text: "ส่งสลิปแล้ว รอทีมงานยืนยัน" });
@@ -115,7 +133,36 @@ export function PayCommissionButton({ dealId, amount }: { dealId: string; amount
   }
 
   return (
-    <div className="text-right">
+    <div className="flex flex-col items-end gap-1.5">
+      {canWithhold && (
+        <div className="w-full max-w-[230px] space-y-1 rounded-lg bg-slate-50 p-2 text-left text-[11px] text-slate-600">
+          <label className="flex items-start gap-1.5">
+            <input
+              type="radio"
+              name={`paymode-${dealId}`}
+              checked={!withhold}
+              onChange={() => setWithhold(false)}
+              className="mt-0.5"
+            />
+            <span>
+              จ่ายเต็ม <b>{formatBaht(total)}</b>
+            </span>
+          </label>
+          <label className="flex items-start gap-1.5">
+            <input
+              type="radio"
+              name={`paymode-${dealId}`}
+              checked={withhold}
+              onChange={() => setWithhold(true)}
+              className="mt-0.5"
+            />
+            <span>
+              หัก ณ ที่จ่าย 3% ({formatBaht(wht)}) → โอนสุทธิ <b>{formatBaht(net)}</b>
+              <span className="block text-slate-400">ยืนยันจะออกหนังสือรับรองให้ Chao-Dee</span>
+            </span>
+          </label>
+        </div>
+      )}
       <label className="btn-primary inline-flex cursor-pointer items-center gap-2 text-xs">
         {busy && <Spinner className="!h-3.5 !w-3.5" />}
         {busy ? "กำลังส่ง…" : `แนบสลิป ${formatBaht(amount)}`}
@@ -131,9 +178,7 @@ export function PayCommissionButton({ dealId, amount }: { dealId: string; amount
           }}
         />
       </label>
-      {msg && (
-        <p className={`mt-1 text-xs ${msg.ok ? "text-emerald-600" : "text-rose-600"}`}>{msg.text}</p>
-      )}
+      {msg && <p className={`text-xs ${msg.ok ? "text-emerald-600" : "text-rose-600"}`}>{msg.text}</p>}
     </div>
   );
 }

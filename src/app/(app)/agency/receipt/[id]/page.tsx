@@ -14,13 +14,17 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
   const { id } = await params;
   const supabase = await createClient();
 
-  // RLS: เห็นเฉพาะดีลของกิจการตัวเอง
-  const { data } = await supabase
-    .from("agency_deals")
-    .select("id, status, lead_name, rent_base, commission_amount, signed_at, paid_at, created_at")
-    .eq("id", id)
-    .maybeSingle();
-  const d = data as {
+  // RLS: เห็นเฉพาะดีลของกิจการตัวเอง — resilient เผื่อ prod ยังไม่ได้รัน 0049 (คอลัมน์ wht/net)
+  const cols = "id, status, lead_name, rent_base, commission_amount, signed_at, paid_at, net_amount, wht_amount";
+  let res = await supabase.from("agency_deals").select(cols).eq("id", id).maybeSingle();
+  if (res.error) {
+    res = await supabase
+      .from("agency_deals")
+      .select("id, status, lead_name, rent_base, commission_amount, signed_at, paid_at")
+      .eq("id", id)
+      .maybeSingle();
+  }
+  const d = res.data as {
     id: string;
     status: string;
     lead_name: string;
@@ -28,6 +32,8 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
     commission_amount: number;
     signed_at: string | null;
     paid_at: string | null;
+    net_amount?: number;
+    wht_amount?: number;
   } | null;
   if (!d || d.status !== "paid") notFound();
 
@@ -44,12 +50,14 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
   } | null) ?? {};
   const no = `AGC-${String(d.id).slice(0, 8).toUpperCase()}`;
 
-  // แยกภาษี: commission_amount = ฐานค่าบริการ, บวก VAT ถ้าจด, หัก ณ ที่จ่ายถ้าผู้จ่ายนิติบุคคล
+  // ฐาน + VAT คิดจาก commission_amount (deterministic) — ส่วนหัก ณ ที่จ่าย ใช้ snapshot ตอนจ่ายจริง
   const tax = commissionBreakdown(d.commission_amount, {
     vatRegistered: COMPANY.vatRegistered,
     vatRate: COMPANY.vatRate,
-    isJuristic: (o.tax_entity_type ?? "juristic") === "juristic",
+    isJuristic: false, // ฐาน/VAT ไม่ขึ้นกับ WHT — WHT ดึงจาก snapshot ด้านล่าง
   });
+  const usedWht = Number(d.wht_amount ?? 0); // >0 = ตอนจ่ายเลือกหัก ณ ที่จ่าย (แบบ B)
+  const usedNet = Number(d.net_amount ?? 0) > 0 ? Number(d.net_amount) : tax.total; // เก่า/แบบ A = จ่ายเต็ม
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -124,21 +132,36 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
                 <span>{formatBaht(tax.vat)}</span>
               </div>
             )}
-            <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
-              <span>รวมทั้งสิ้น</span>
-              <span>{formatBaht(tax.total)}</span>
-            </div>
+            {usedWht > 0 ? (
+              <>
+                <div className="flex justify-between border-t border-slate-200 pt-1.5 font-semibold text-slate-900">
+                  <span>รวม</span>
+                  <span>{formatBaht(tax.total)}</span>
+                </div>
+                <div className="flex justify-between text-rose-600">
+                  <span>หัก ณ ที่จ่าย {WHT_RATE}%</span>
+                  <span>-{formatBaht(usedWht)}</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
+                  <span>ยอดสุทธิที่รับ</span>
+                  <span>{formatBaht(usedNet)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
+                <span>รวมทั้งสิ้น</span>
+                <span>{formatBaht(tax.total)}</span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
           ✓ ชำระเงินเรียบร้อยแล้ว
         </div>
-        {tax.wht > 0 && (
+        {usedWht > 0 && (
           <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 print:bg-white">
-            ผู้จ่ายที่เป็นนิติบุคคลหักภาษี ณ ที่จ่าย {WHT_RATE}% ได้ = {formatBaht(tax.wht)} (โอนสุทธิ {formatBaht(tax.net)})
-            <br />
-            กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
+            หักภาษี ณ ที่จ่าย {WHT_RATE}% ({formatBaht(usedWht)}) — โปรดออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
           </p>
         )}
         {!COMPANY.vatRegistered && (

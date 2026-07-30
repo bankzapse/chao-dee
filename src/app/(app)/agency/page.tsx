@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge, StatCard } from "@/components/ui";
 import { formatBaht, formatDate } from "@/lib/format";
-import { DEAL_STATUS_LABEL, DEAL_STATUS_STYLE, type DealStatus } from "@/lib/agency";
+import { DEAL_STATUS_LABEL, DEAL_STATUS_STYLE, commissionBreakdown, type DealStatus } from "@/lib/agency";
+import { COMPANY } from "@/lib/company";
 import { AcceptAgencyCard, DisableAgencyButton, PayCommissionButton } from "./agency-client";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +27,16 @@ export default async function AgencyPage() {
   // สถานะการเปิดใช้บริการ (resilient เผื่อยังไม่ได้รัน 0044)
   const { data: orgRow, error: orgErr } = await supabase
     .from("organizations")
-    .select("agency_enabled, agency_agreed_at")
+    .select("agency_enabled, agency_agreed_at, tax_entity_type")
     .maybeSingle();
   const notMigrated = Boolean(orgErr);
-  const org = orgRow as { agency_enabled?: boolean; agency_agreed_at?: string } | null;
+  const org = orgRow as {
+    agency_enabled?: boolean;
+    agency_agreed_at?: string;
+    tax_entity_type?: string;
+  } | null;
   const enabled = Boolean(org?.agency_enabled);
+  const isJuristic = (org?.tax_entity_type ?? "juristic") === "juristic";
 
   if (notMigrated) {
     return (
@@ -127,7 +133,22 @@ export default async function AgencyPage() {
                           {d.slip_path ? (
                             <p className="text-xs text-amber-600">ส่งสลิปแล้ว · รอยืนยัน</p>
                           ) : (
-                            <PayCommissionButton dealId={d.id} amount={Number(d.commission_amount)} />
+                            (() => {
+                              const t = commissionBreakdown(Number(d.commission_amount), {
+                                vatRegistered: COMPANY.vatRegistered,
+                                vatRate: COMPANY.vatRate,
+                                isJuristic,
+                              });
+                              return (
+                                <PayCommissionButton
+                                  dealId={d.id}
+                                  total={t.total}
+                                  net={t.net}
+                                  wht={t.wht}
+                                  isJuristic={isJuristic}
+                                />
+                              );
+                            })()
                           )}
                           <a
                             href={`/agency/invoice/${d.id}`}

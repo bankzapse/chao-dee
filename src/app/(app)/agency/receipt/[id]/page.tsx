@@ -124,19 +124,9 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
                 <span>{formatBaht(tax.vat)}</span>
               </div>
             )}
-            <div className="flex justify-between border-t border-slate-200 pt-1.5 font-semibold text-slate-900">
-              <span>รวม</span>
-              <span>{formatBaht(tax.total)}</span>
-            </div>
-            {tax.wht > 0 && (
-              <div className="flex justify-between text-rose-600">
-                <span>หัก ณ ที่จ่าย {WHT_RATE}%</span>
-                <span>-{formatBaht(tax.wht)}</span>
-              </div>
-            )}
             <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
-              <span>ยอดชำระสุทธิ</span>
-              <span>{formatBaht(tax.net)}</span>
+              <span>รวมทั้งสิ้น</span>
+              <span>{formatBaht(tax.total)}</span>
             </div>
           </div>
         </div>
@@ -145,8 +135,10 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
           ✓ ชำระเงินเรียบร้อยแล้ว
         </div>
         {tax.wht > 0 && (
-          <p className="mt-4 text-center text-xs text-slate-500">
-            มีการหักภาษี ณ ที่จ่าย {WHT_RATE}% ({formatBaht(tax.wht)}) — กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
+          <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 print:bg-white">
+            ผู้จ่ายที่เป็นนิติบุคคลหักภาษี ณ ที่จ่าย {WHT_RATE}% ได้ = {formatBaht(tax.wht)} (โอนสุทธิ {formatBaht(tax.net)})
+            <br />
+            กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
           </p>
         )}
         {!COMPANY.vatRegistered && (

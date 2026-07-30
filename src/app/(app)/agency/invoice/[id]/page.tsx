@@ -128,19 +128,9 @@ export default async function CommissionInvoicePage({ params }: { params: Promis
                 <span>{formatBaht(tax.vat)}</span>
               </div>
             )}
-            <div className="flex justify-between border-t border-slate-200 pt-1.5 font-semibold text-slate-900">
-              <span>รวม</span>
-              <span>{formatBaht(tax.total)}</span>
-            </div>
-            {tax.wht > 0 && (
-              <div className="flex justify-between text-rose-600">
-                <span>หัก ณ ที่จ่าย {WHT_RATE}%</span>
-                <span>-{formatBaht(tax.wht)}</span>
-              </div>
-            )}
             <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
-              <span>ยอดชำระสุทธิ</span>
-              <span>{formatBaht(tax.net)}</span>
+              <span>ยอดที่ต้องชำระ</span>
+              <span>{formatBaht(tax.total)}</span>
             </div>
           </div>
         </div>
@@ -153,21 +143,22 @@ export default async function CommissionInvoicePage({ params }: { params: Promis
           <div className="mt-8 rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-800 print:bg-white">
             <p className="font-semibold">วิธีชำระค่านายหน้า</p>
             <ol className="mt-1.5 list-decimal space-y-0.5 pl-5">
-              {promptpay && (
+              {promptpay ? (
                 <li>
-                  โอนยอด <span className="font-semibold">{formatBaht(tax.net)}</span> ผ่าน PromptPay{" "}
+                  โอนยอด <span className="font-semibold">{formatBaht(tax.total)}</span> ผ่าน PromptPay{" "}
                   <span className="font-semibold">{promptpay}</span> ({COMPANY.name})
                 </li>
+              ) : (
+                <li>โอนยอด {formatBaht(tax.total)} ให้ {COMPANY.name}</li>
               )}
-              {!promptpay && <li>โอนยอด {formatBaht(tax.net)} ให้ {COMPANY.name}</li>}
               <li>แนบสลิปในหน้า “ดีลนายหน้า” เพื่อให้ทีมงานตรวจสอบและยืนยัน</li>
             </ol>
           </div>
         )}
 
         {tax.wht > 0 && (
-          <p className="mt-4 text-center text-xs text-slate-500">
-            ผู้จ่ายเป็นนิติบุคคล — หักภาษี ณ ที่จ่าย {WHT_RATE}% ({formatBaht(tax.wht)}) แล้วโอนสุทธิ {formatBaht(tax.net)}
+          <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-center text-xs text-slate-500 print:bg-white">
+            ผู้จ่ายที่เป็นนิติบุคคลหักภาษี ณ ที่จ่าย {WHT_RATE}% ได้ = {formatBaht(tax.wht)} (โอนสุทธิ {formatBaht(tax.net)})
             <br />
             กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
           </p>

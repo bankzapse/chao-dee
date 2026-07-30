@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getLiffTenant, readLiffSession } from "@/lib/liff";
+import { getLiffTenant } from "@/lib/liff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht } from "@/lib/format";
-import { LiffInit } from "./liff-init";
 
 const MENU = [
   { href: "/liff/bills", icon: "🧾", label: "บิล / ยอดค้าง", sub: "ดูใบแจ้งหนี้และชำระเงิน" },
@@ -13,11 +12,8 @@ const MENU = [
 ];
 
 export default async function LiffHome() {
-  const sess = await readLiffSession();
-  // ยังไม่มีเซสชัน → ให้ LIFF init ตรวจ LINE ก่อน
-  if (!sess) return <LiffInit liffId={process.env.NEXT_PUBLIC_LIFF_ID ?? ""} />;
-
-  // เช็คจาก getLiffTenant (หาโดย sub) เสมอ — ไม่พึ่ง sess.tenantId ที่อาจ stale
+  // เซสชัน + liff.init() จัดการที่ layout (LiffBoot) แล้ว — ที่นี่แค่เช็คว่าผูกบัญชีหรือยัง
+  // getLiffTenant หาจาก sub เสมอ (ไม่พึ่ง tenantId ที่อาจ stale)
   const tenant = await getLiffTenant();
   if (!tenant) redirect("/liff/link");
 

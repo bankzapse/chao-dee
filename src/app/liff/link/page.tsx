@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
-import { getLiffTenant, readLiffSession } from "@/lib/liff";
-import { LiffInit } from "../liff-init";
+import { getLiffTenant } from "@/lib/liff";
 import { LinkForm } from "./link-form";
 
 export default async function LiffLinkPage() {
-  const sess = await readLiffSession();
-  if (!sess) return <LiffInit liffId={process.env.NEXT_PUBLIC_LIFF_ID ?? ""} />;
-
-  // ผูกแล้ว → เข้าเมนูเลย
+  // เซสชัน + liff.init() จัดการที่ layout (LiffBoot) — ที่นี่แค่เช็คว่าผูกแล้วหรือยัง
   const tenant = await getLiffTenant();
   if (tenant) redirect("/liff");
 

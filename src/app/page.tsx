@@ -1,4 +1,22 @@
 import Link from "next/link";
+import {
+  LayoutDashboard,
+  ScanLine,
+  ReceiptText,
+  MessageCircle,
+  Map as MapIcon,
+  FileText,
+  Wrench,
+  Smartphone,
+  Sparkles,
+  Check,
+  Search,
+  Gift,
+  Building2,
+  MapPin,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
 import { Pricing } from "@/components/landing/pricing";
 import { HeaderCta } from "@/components/landing/header-cta";
 import { COMPANY } from "@/lib/company";
@@ -41,15 +59,15 @@ async function sampleListings() {
   }
 }
 
-const FEATURES = [
-  { icon: "📊", title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
-  { icon: "🤖", title: "AI อ่านมิเตอร์", desc: "ถ่ายรูปหน้าปัด แล้ว AI อ่านค่าให้อัตโนมัติ พร้อมตรวจจับค่าผิดปกติ" },
-  { icon: "🧾", title: "ออกบิลอัตโนมัติ", desc: "รวมค่าเช่า+น้ำ+ไฟ ออกบิลทั้งตึกในคลิกเดียว แนบ PromptPay QR" },
-  { icon: "💬", title: "เชื่อม LINE ผู้เช่า", desc: "ส่งบิล เช็คยอดค้าง แจ้งซ่อม แจ้งพัสดุ และประกาศ ผ่าน LINE OA" },
-  { icon: "🗺️", title: "ผังห้องตามจริง", desc: "เห็นสถานะทุกห้องเป็นภาพ — ว่าง/มีผู้เช่า/ค้างชำระ ในหน้าเดียว" },
-  { icon: "📄", title: "สัญญา & ผู้เช่า", desc: "จัดการสัญญาเช่า เงินประกัน แจ้งเตือนสัญญาใกล้หมด ไม่จำกัด" },
-  { icon: "🔧", title: "แจ้งซ่อม & พัสดุ", desc: "รับแจ้งซ่อมและพัสดุผ่าน LINE ติดตามสถานะงานครบ" },
-  { icon: "📱", title: "แอปมือถือ", desc: "จดมิเตอร์หน้างาน ดูแดชบอร์ด อนุมัติงาน ได้จากมือถือ" },
+const FEATURES: { icon: LucideIcon; title: string; desc: string }[] = [
+  { icon: LayoutDashboard, title: "แดชบอร์ด & รายงาน", desc: "ภาพรวมรายได้ อัตราเข้าพัก ลูกหนี้ กราฟวิเคราะห์แบบเรียลไทม์" },
+  { icon: ScanLine, title: "AI อ่านมิเตอร์", desc: "ถ่ายรูปหน้าปัด แล้ว AI อ่านค่าให้อัตโนมัติ พร้อมตรวจจับค่าผิดปกติ" },
+  { icon: ReceiptText, title: "ออกบิลอัตโนมัติ", desc: "รวมค่าเช่า+น้ำ+ไฟ ออกบิลทั้งตึกในคลิกเดียว แนบ PromptPay QR" },
+  { icon: MessageCircle, title: "เชื่อม LINE ผู้เช่า", desc: "ส่งบิล เช็คยอดค้าง แจ้งซ่อม แจ้งพัสดุ และประกาศ ผ่าน LINE OA" },
+  { icon: MapIcon, title: "ผังห้องตามจริง", desc: "เห็นสถานะทุกห้องเป็นภาพ — ว่าง/มีผู้เช่า/ค้างชำระ ในหน้าเดียว" },
+  { icon: FileText, title: "สัญญา & ผู้เช่า", desc: "จัดการสัญญาเช่า เงินประกัน แจ้งเตือนสัญญาใกล้หมด ไม่จำกัด" },
+  { icon: Wrench, title: "แจ้งซ่อม & พัสดุ", desc: "รับแจ้งซ่อมและพัสดุผ่าน LINE ติดตามสถานะงานครบ" },
+  { icon: Smartphone, title: "แอปมือถือ", desc: "จดมิเตอร์หน้างาน ดูแดชบอร์ด อนุมัติงาน ได้จากมือถือ" },
 ];
 
 const STEPS = [
@@ -112,7 +130,7 @@ export default async function LandingPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200">
-                ✦ ทดลองฟรี 30 วัน · ไม่ต้องผูกบัตร
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> ทดลองฟรี 30 วัน · ไม่ต้องผูกบัตร
               </span>
               <h1 className="mt-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
                 จัดการหอพัก คอนโด<br />
@@ -140,9 +158,13 @@ export default async function LandingPage() {
                   ดูแพ็คเกจ & ราคา
                 </a>
               </div>
-              <p className="mt-4 text-sm text-slate-400">
-                ✓ ตั้งค่าง่ายใน 10 นาที   ✓ ผู้เช่าใช้ผ่าน LINE   ✓ ยกเลิกได้ทุกเมื่อ
-              </p>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-400">
+                {["ตั้งค่าง่ายใน 10 นาที", "ผู้เช่าใช้ผ่าน LINE", "ยกเลิกได้ทุกเมื่อ"].map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1.5">
+                    <Check className="h-4 w-4 text-emerald-400" strokeWidth={2.5} /> {t}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* hero visual: รูปตึกจริง + การ์ดแดชบอร์ดลอยทับ */}
@@ -170,12 +192,16 @@ export default async function LandingPage() {
               </div>
               {/* การ์ด AI ลอย */}
               <div className="absolute right-2 top-4 rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-lg sm:-right-5 sm:top-6">
-                <p className="text-xs text-slate-500">🤖 AI อ่านมิเตอร์</p>
+                <p className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  <ScanLine className="h-3.5 w-3.5 text-indigo-500" strokeWidth={2} /> AI อ่านมิเตอร์
+                </p>
                 <p className="text-sm font-bold text-slate-900">248 → +42 หน่วย</p>
               </div>
               {/* การ์ด LINE ลอย (เดสก์ท็อป) */}
               <div className="absolute -left-5 top-24 hidden rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-lg lg:block">
-                <p className="text-xs text-slate-500">💬 แจ้งผ่าน LINE</p>
+                <p className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  <MessageCircle className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2} /> แจ้งผ่าน LINE
+                </p>
                 <p className="text-sm font-bold text-emerald-600">แจ้งซ่อมใหม่ 1</p>
               </div>
             </div>
@@ -206,12 +232,13 @@ export default async function LandingPage() {
           <div className="flex flex-col justify-between rounded-3xl border border-indigo-100 bg-indigo-50/50 p-8">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-indigo-700">
-                🔎 สำหรับผู้เช่า
+                <Search className="h-3.5 w-3.5" strokeWidth={2} /> สำหรับผู้เช่า
               </span>
               <h3 className="mt-4 text-2xl font-bold text-slate-900">หาหอพัก คอนโด อพาร์ตเมนต์</h3>
               <p className="mt-2 text-slate-600">
                 ห้องว่างพร้อมเข้าอยู่ อัปเดตเรียลไทม์จากระบบเจ้าของหอ —
-                ติดต่อผ่าน Chao-Dee รับ<span className="font-semibold text-emerald-600">ส่วนลดเดือนแรก</span> 🎁
+                ติดต่อผ่าน Chao-Dee รับ<span className="font-semibold text-emerald-600">ส่วนลดเดือนแรก</span>{" "}
+                <Gift className="inline h-4 w-4 align-text-bottom text-emerald-600" strokeWidth={2} />
               </p>
             </div>
             <Link
@@ -225,7 +252,7 @@ export default async function LandingPage() {
           <div className="flex flex-col justify-between rounded-3xl border border-emerald-100 bg-emerald-50/50 p-8">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-700">
-                🏠 สำหรับเจ้าของหอ
+                <Building2 className="h-3.5 w-3.5" strokeWidth={2} /> สำหรับเจ้าของหอ
               </span>
               <h3 className="mt-4 text-2xl font-bold text-slate-900">ลงประกาศหาผู้เช่า “ฟรี”</h3>
               <p className="mt-2 text-slate-600">
@@ -274,7 +301,9 @@ export default async function LandingPage() {
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-4xl text-slate-300">🏢</div>
+                      <div className="flex h-full w-full items-center justify-center text-slate-300">
+                        <Building2 className="h-12 w-12" strokeWidth={1.5} />
+                      </div>
                     )}
                     {stat.vacant > 0 && (
                       <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-emerald-700">
@@ -287,8 +316,9 @@ export default async function LandingPage() {
                       {PROPERTY_TYPE_LABEL[l.property_type]}
                     </p>
                     <h4 className="mt-0.5 truncate font-semibold text-slate-900">{l.title}</h4>
-                    <p className="mt-1 truncate text-sm text-slate-500">
-                      📍 {[l.district, l.province].filter(Boolean).join(" · ") || "—"}
+                    <p className="mt-1 flex items-center gap-1 truncate text-sm text-slate-500">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" strokeWidth={2} />
+                      {[l.district, l.province].filter(Boolean).join(" · ") || "—"}
                     </p>
                     <div className="mt-3 flex items-baseline gap-1 border-t border-slate-100 pt-3">
                       <span className="text-lg font-bold text-slate-900">
@@ -349,8 +379,8 @@ export default async function LandingPage() {
                 key={f.title}
                 className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur transition hover:border-amber-300/30 hover:bg-white/[0.07]"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/25 to-cyan-500/25 text-2xl ring-1 ring-white/10">
-                  {f.icon}
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/25 to-cyan-500/25 shadow-lg shadow-indigo-950/50 ring-1 ring-white/10">
+                  <f.icon size={22} strokeWidth={2} className="text-cyan-200" />
                 </div>
                 <h3 className="mt-4 font-bold text-white">{f.title}</h3>
                 <p className="mt-2 text-sm text-slate-400">{f.desc}</p>
@@ -394,7 +424,11 @@ export default async function LandingPage() {
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {TESTIMONIALS.map((t) => (
               <div key={t.name} className="rounded-2xl border border-slate-200 bg-white p-6">
-                <div className="text-amber-400">★★★★★</div>
+                <div className="flex gap-0.5 text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-current" strokeWidth={0} />
+                  ))}
+                </div>
                 <p className="mt-3 text-slate-600">“{t.text}”</p>
                 <div className="mt-4 border-t border-slate-100 pt-4">
                   <p className="font-semibold text-slate-900">{t.name}</p>
@@ -438,8 +472,8 @@ export default async function LandingPage() {
               <Link href="/signup" className="rounded-xl bg-gradient-to-r from-amber-300 to-amber-400 px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-amber-900/20 transition hover:from-amber-200 hover:to-amber-300">
                 เริ่มใช้งานฟรี
               </Link>
-              <a href="https://line.me" target="_blank" rel="noreferrer" className="rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">
-                💬 ปรึกษาผ่าน LINE
+              <a href="https://line.me" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">
+                <MessageCircle className="h-4 w-4" strokeWidth={2} /> ปรึกษาผ่าน LINE
               </a>
             </div>
           </div>

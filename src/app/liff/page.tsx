@@ -16,9 +16,8 @@ export default async function LiffHome() {
   const sess = await readLiffSession();
   // ยังไม่มีเซสชัน → ให้ LIFF init ตรวจ LINE ก่อน
   if (!sess) return <LiffInit liffId={process.env.NEXT_PUBLIC_LIFF_ID ?? ""} />;
-  // ตรวจ LINE แล้วแต่ยังไม่ผูกบัญชี → ไปหน้าผูกเบอร์
-  if (!sess.tenantId) redirect("/liff/link");
 
+  // เช็คจาก getLiffTenant (หาโดย sub) เสมอ — ไม่พึ่ง sess.tenantId ที่อาจ stale
   const tenant = await getLiffTenant();
   if (!tenant) redirect("/liff/link");
 

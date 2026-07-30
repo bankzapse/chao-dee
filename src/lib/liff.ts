@@ -106,15 +106,17 @@ export async function readLiffSession(): Promise<LiffSession | null> {
 /** โหลดข้อมูลผู้เช่าจากเซสชัน (คืน null ถ้าไม่ล็อกอิน/ยังไม่ผูก/ผู้เช่าถูกลบ) */
 export async function getLiffTenant() {
   const sess = await readLiffSession();
-  if (!sess?.tenantId) return null;
+  if (!sess) return null;
   const admin = createAdminClient();
+  // หาจาก sub (LINE id ที่ตรวจแล้ว) โดยตรงเสมอ — ไม่พึ่ง tenantId ที่ cache ใน cookie
+  // เพราะถ้าผูกบัญชีผ่านแชท (webhook) หลังเปิด LIFF ไปแล้ว tenantId ใน cookie จะ stale
+  // แต่ line_user_id ใน DB คือแหล่งจริง เทียบกับ sub ได้ตรงทุกเคส
   const { data } = await admin
     .from("tenants")
     .select("id, org_id, full_name, phone, room_id, line_user_id")
-    .eq("id", sess.tenantId)
+    .eq("line_user_id", sess.sub)
     .maybeSingle();
-  // กันเคส cookie ยังอยู่แต่ผู้เช่าถูกยกเลิกการเชื่อม/ลบไปแล้ว
-  if (!data || data.line_user_id !== sess.sub) return null;
+  if (!data) return null;
   return data as {
     id: string;
     org_id: string;

@@ -26,10 +26,6 @@ export default async function LiffLinkPage() {
       <p className="mt-4 text-center text-xs text-slate-400">
         ถ้าเบอร์ไม่ตรงหรือผูกไม่ได้ กรุณาติดต่อผู้ดูแลหอให้เพิ่ม/แก้เบอร์ให้ก่อน
       </p>
-      {/* DEBUG ชั่วคราว: LINE userId ที่ LIFF เห็น (ไว้เทียบกับ line_user_id ใน DB) */}
-      <p className="mt-6 break-all text-center text-[10px] text-slate-300">
-        debug sub: {sess.sub}
-      </p>
     </div>
   );
 }

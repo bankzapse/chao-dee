@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 declare global {
   interface Window {
@@ -36,44 +35,37 @@ function loadSdk(): Promise<void> {
 }
 
 /**
- * บูต LIFF ทุกหน้า (วางใน layout) — ต้องเรียก liff.init() เสมอ ไม่งั้น LINE ค้าง loading
- * ชั่วคราว: โชว์ status ให้เห็นเพื่อ debug ว่าค้างขั้นไหน
+ * บูต LIFF ทุกหน้า (วางใน layout)
+ *
+ * ต้องเรียก liff.init() เสมอ ไม่งั้น LINE ค้างหน้า loading
+ * - มีเซสชันแล้ว → init อย่างเดียว ให้เนื้อหาที่ server render โชว์ได้เลย
+ * - ยังไม่มีเซสชัน → init + แลก id_token เป็นเซสชัน + โหลดหน้าใหม่ให้ server เห็น cookie
  */
 export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: boolean }) {
-  const router = useRouter();
-  const [status, setStatus] = useState("เริ่ม");
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        setStatus("โหลด SDK");
         await loadSdk();
         if (cancelled) return;
         const liff = window.liff;
         if (!liff || !liffId) {
-          setStatus("ไม่พบ liff/liffId (เปิดผ่าน LINE)");
+          setErr("กรุณาเปิดหน้านี้ผ่านแอป LINE");
           return;
         }
-        setStatus("liff.init");
-        await liff.init({ liffId });
-        if (cancelled) return;
-        if (hasSession) {
-          setStatus("พร้อม ✓ (มีเซสชัน)");
-          return;
-        }
+        await liff.init({ liffId }); // ต้องเรียกเสมอ — ดับหน้า loading ของ LINE
+        if (cancelled || hasSession) return;
         if (!liff.isLoggedIn()) {
-          setStatus("login redirect");
           liff.login({ redirectUri: window.location.href });
           return;
         }
-        setStatus("getIDToken");
         const idToken = liff.getIDToken();
         if (!idToken) {
-          setStatus("ไม่มี idToken");
+          setErr("อ่านข้อมูลบัญชี LINE ไม่ได้ ลองเปิดใหม่อีกครั้ง");
           return;
         }
-        setStatus("POST /api/liff/session");
         const res = await fetch("/api/liff/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -81,23 +73,23 @@ export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: b
         });
         if (cancelled) return;
         if (!res.ok) {
-          setStatus("session ไม่ผ่าน HTTP " + res.status);
+          setErr("ยืนยันบัญชีไม่สำเร็จ กรุณาลองใหม่");
           return;
         }
-        setStatus("เข้าสู่ระบบ… (นำทาง)");
         window.location.replace("/liff");
-      } catch (e) {
-        setStatus("error: " + (e instanceof Error ? e.message : String(e)));
+      } catch {
+        if (!cancelled) setErr("เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [hasSession, liffId, router]);
+  }, [hasSession, liffId]);
 
+  if (!err) return null;
   return (
-    <div className="fixed inset-x-0 top-0 z-[9999] bg-amber-100 px-2 py-1 text-center text-[11px] font-medium text-amber-900">
-      LiffBoot: {status}
+    <div className="fixed inset-x-0 top-0 z-50 bg-rose-50 px-4 py-2 text-center text-xs text-rose-600">
+      {err}
     </div>
   );
 }

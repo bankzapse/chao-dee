@@ -11,6 +11,7 @@ import {
 } from "@/lib/line";
 import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import { toLocalThai } from "@/lib/phone";
+import { isMaintenanceDetail } from "@/lib/line-commands";
 
 export const runtime = "nodejs";
 
@@ -339,9 +340,6 @@ async function createMaintenanceRequest(
   );
 }
 
-const MENU_CMD_RE =
-  /^(บิล|ยอดค้าง|ค้างชำระ|พัสดุ|ห้อง|ข้อมูล|ชำระ|จ่ายเงิน|โอน|ติดต่อ|ผู้ดูแล|เจ้าของ|แจ้งซ่อม)/;
-
 async function handleCommand(
   supabase: ReturnType<typeof createAdminClient>,
   replyToken: string,
@@ -353,10 +351,10 @@ async function handleCommand(
 ) {
   const t = text.toLowerCase();
 
-  // กำลังรอรายละเอียดแจ้งซ่อม → ข้อความนี้คือรายละเอียด (เว้นแต่เป็นคำสั่งเมนู)
+  // กำลังรอรายละเอียดแจ้งซ่อม → ข้อความนี้คือรายละเอียด (เว้นแต่เป็นคำสั่งเมนูล้วนๆ)
   if (pendingState === "maintenance") {
     await supabase.from("tenants").update({ line_state: "" }).eq("id", tenantId);
-    if (!MENU_CMD_RE.test(text.trim())) {
+    if (isMaintenanceDetail(text)) {
       await createMaintenanceRequest(supabase, replyToken, orgId, tenantId, fullName, text.trim());
       return;
     }

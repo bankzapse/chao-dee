@@ -17,10 +17,15 @@ export default async function RoomsPage({
   const { building } = await searchParams;
   const supabase = await createClient();
 
-  const { data: buildings } = await supabase
-    .from("buildings")
-    .select("*")
-    .order("name");
+  const [{ data: buildings }, { data: allIds }] = await Promise.all([
+    supabase.from("buildings").select("*").order("name"),
+    // ดึงแค่ building_id ของทุกห้อง ไว้นับจำนวนโชว์บนชิป
+    supabase.from("rooms").select("building_id"),
+  ]);
+  const buildingList = (buildings ?? []) as Building[];
+
+  // เลือกอาคารเสมอ — default อาคารแรก (ไม่มีแถบ "ทั้งหมด")
+  const selected = buildingList.find((b) => b.id === building)?.id ?? buildingList[0]?.id ?? "";
 
   let query = supabase
     .from("rooms")
@@ -28,21 +33,14 @@ export default async function RoomsPage({
     // เรียงตามชั้น → เลขห้อง เพื่อจัดกลุ่มตามชั้น
     .order("floor")
     .order("room_number");
-  if (building) query = query.eq("building_id", building);
-
-  const [{ data: rooms }, { data: allIds }] = await Promise.all([
-    query,
-    // ดึงแค่ building_id ของทุกห้อง ไว้นับจำนวนโชว์บนชิป
-    supabase.from("rooms").select("building_id"),
-  ]);
+  if (selected) query = query.eq("building_id", selected);
+  const { data: rooms } = await query;
   const list = (rooms ?? []) as unknown as RoomRow[];
-  const buildingList = (buildings ?? []) as Building[];
 
   const countByBuilding = new Map<string, number>();
   ((allIds ?? []) as { building_id: string }[]).forEach((r) =>
     countByBuilding.set(r.building_id, (countByBuilding.get(r.building_id) ?? 0) + 1)
   );
-  const totalRooms = ((allIds ?? []) as unknown[]).length;
 
   // จัดกลุ่มห้องตามชั้น (คง order ที่ query มาแล้ว)
   const byFloor = new Map<number, RoomRow[]>();
@@ -64,8 +62,8 @@ export default async function RoomsPage({
         subtitle="จัดการห้องพักแยกตามชั้น · แก้ไขเลขห้อง/ชั้นได้"
         action={
           <div className="flex gap-2">
-            <BulkAddRoomsButton buildings={buildingList} defaultBuilding={building} />
-            <AddRoomButton buildings={buildingList} defaultBuilding={building} />
+            <BulkAddRoomsButton buildings={buildingList} defaultBuilding={selected} />
+            <AddRoomButton buildings={buildingList} defaultBuilding={selected} />
           </div>
         }
       />
@@ -77,15 +75,14 @@ export default async function RoomsPage({
         />
       ) : (
         <>
-          {/* filter อาคาร */}
+          {/* filter อาคาร — เลือกทีละอาคาร (ไม่มี "ทั้งหมด") */}
           <div className="mb-4 flex flex-wrap gap-2">
-            <FilterChip href="/rooms" label={`ทั้งหมด (${totalRooms})`} active={!building} />
             {buildingList.map((b) => (
               <FilterChip
                 key={b.id}
                 href={`/rooms?building=${b.id}`}
                 label={`${b.name} (${countByBuilding.get(b.id) ?? 0})`}
-                active={building === b.id}
+                active={selected === b.id}
               />
             ))}
           </div>
@@ -93,7 +90,7 @@ export default async function RoomsPage({
           {list.length === 0 ? (
             <EmptyState
               title="ยังไม่มีห้องพัก"
-              action={<AddRoomButton buildings={buildingList} defaultBuilding={building} />}
+              action={<AddRoomButton buildings={buildingList} defaultBuilding={selected} />}
             />
           ) : (
             <div className="space-y-6">
@@ -117,7 +114,6 @@ export default async function RoomsPage({
                         <thead className="border-b border-slate-100 text-left text-slate-400">
                           <tr>
                             <th className="px-4 py-2 font-medium">ห้อง</th>
-                            {!building && <th className="px-4 py-2 font-medium">อาคาร</th>}
                             <th className="px-4 py-2 font-medium">ค่าเช่า</th>
                             <th className="px-4 py-2 font-medium">น้ำ/ไฟ</th>
                             <th className="px-4 py-2 font-medium">สถานะ</th>
@@ -128,9 +124,6 @@ export default async function RoomsPage({
                           {roomsOnFloor.map((r) => (
                             <tr key={r.id} className="hover:bg-slate-50">
                               <td className="px-4 py-3 font-semibold text-slate-900">{r.room_number}</td>
-                              {!building && (
-                                <td className="px-4 py-3 text-slate-600">{r.buildings?.name ?? "-"}</td>
-                              )}
                               <td className="px-4 py-3 text-slate-900">{formatBaht(r.base_rent)}</td>
                               <td className="px-4 py-3 text-xs text-slate-500">
                                 {formatBaht(r.water_rate)} / {formatBaht(r.electricity_rate)}

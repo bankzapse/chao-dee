@@ -1,80 +1,93 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
+import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
-import type { Tenant } from "@/lib/types";
+import type { Tenant, Building } from "@/lib/types";
 import { AddTenantButton, EditTenantButton, type RoomOpt } from "./tenant-buttons";
 import { TenantDocsButton } from "./tenant-docs";
 import { LineLinkCell } from "./line-link";
 import { deleteTenant } from "./actions";
 
-const NO_ROOM = "— ยังไม่ได้เข้าพัก —";
+const NONE = "none"; // แถบ "ยังไม่เข้าพัก"
 
-export default async function TenantsPage() {
+export default async function TenantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ building?: string }>;
+}) {
+  const { building } = await searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: docs }, { data: contracts }, { data: rooms }] = await Promise.all([
-    supabase.from("tenants").select("*").order("full_name"),
-    supabase.from("tenant_documents").select("tenant_id"),
-    supabase
-      .from("contracts")
-      .select("tenant_id, rooms(room_number, buildings(name))")
-      .eq("status", "active"),
-    supabase.from("rooms").select("id, room_number, buildings(name)").order("room_number"),
-  ]);
+  const [{ data }, { data: docs }, { data: contracts }, { data: rooms }, { data: buildings }] =
+    await Promise.all([
+      supabase.from("tenants").select("*").order("full_name"),
+      supabase.from("tenant_documents").select("tenant_id"),
+      supabase
+        .from("contracts")
+        .select("tenant_id, rooms(room_number, building_id, buildings(name))")
+        .eq("status", "active"),
+      supabase.from("rooms").select("id, room_number, building_id, buildings(name)").order("room_number"),
+      supabase.from("buildings").select("*").order("name"),
+    ]);
 
   const list = (data ?? []) as Tenant[];
+  const buildingList = (buildings ?? []) as Building[];
   const docCount = new Map<string, number>();
   (docs ?? []).forEach((d: { tenant_id: string }) => {
     docCount.set(d.tenant_id, (docCount.get(d.tenant_id) ?? 0) + 1);
   });
 
   // ห้องทั้งหมด → ตัวเลือกในฟอร์ม + map id → อาคาร/ห้อง
-  const roomMap = new Map<string, { building: string; room: string }>();
-  const roomOpts: RoomOpt[] = (rooms ?? []).map((r: { id: string; room_number: string; buildings: unknown }) => {
-    const b = (r.buildings as { name?: string } | null)?.name ?? "-";
-    roomMap.set(r.id, { building: b, room: r.room_number });
-    return { id: r.id, label: `${b} · ${r.room_number}` };
-  });
+  type Place = { building_id: string; building: string; room: string };
+  const roomMap = new Map<string, Place>();
+  const roomOpts: RoomOpt[] = (rooms ?? []).map(
+    (r: { id: string; room_number: string; building_id: string; buildings: unknown }) => {
+      const b = (r.buildings as { name?: string } | null)?.name ?? "-";
+      roomMap.set(r.id, { building_id: r.building_id, building: b, room: r.room_number });
+      return { id: r.id, label: `${b} · ${r.room_number}` };
+    }
+  );
 
-  // แผนที่ ผู้เช่า → อาคาร/ห้อง: ใช้ห้องที่ผูกกับผู้เช่าโดยตรงก่อน (room_id) แล้วค่อย fallback สัญญา active
-  const placement = new Map<string, { building: string; room: string }>();
+  // ผู้เช่า → ที่พัก: ใช้ห้องที่ผูกกับผู้เช่าโดยตรงก่อน (room_id) แล้วค่อย fallback สัญญา active
+  const placement = new Map<string, Place>();
   (contracts ?? []).forEach((c: { tenant_id: string; rooms: unknown }) => {
-    const r = c.rooms as { room_number: string; buildings: { name: string } | null } | null;
-    if (r) placement.set(c.tenant_id, { building: r.buildings?.name ?? "-", room: r.room_number });
+    const r = c.rooms as { room_number: string; building_id: string; buildings: { name: string } | null } | null;
+    if (r) placement.set(c.tenant_id, { building_id: r.building_id, building: r.buildings?.name ?? "-", room: r.room_number });
   });
   for (const t of list) {
     if (t.room_id && roomMap.has(t.room_id)) placement.set(t.id, roomMap.get(t.room_id)!);
   }
 
-  // จัดกลุ่มผู้เช่าตามอาคาร
-  const byBuilding = new Map<string, Tenant[]>();
+  // นับจำนวนต่ออาคาร + ยังไม่เข้าพัก
+  const countByB = new Map<string, number>();
+  let unplaced = 0;
   for (const t of list) {
-    const b = placement.get(t.id)?.building ?? NO_ROOM;
-    if (!byBuilding.has(b)) byBuilding.set(b, []);
-    byBuilding.get(b)!.push(t);
+    const p = placement.get(t.id);
+    if (p) countByB.set(p.building_id, (countByB.get(p.building_id) ?? 0) + 1);
+    else unplaced++;
   }
-  // เรียงผู้เช่าในแต่ละอาคารตามเลขห้อง (รับรู้ตัวเลข: 2 < 10)
-  for (const arr of byBuilding.values()) {
-    arr.sort((a, b) => {
-      const ra = placement.get(a.id)?.room ?? "";
-      const rb = placement.get(b.id)?.room ?? "";
-      if (ra && rb) return ra.localeCompare(rb, undefined, { numeric: true });
-      if (ra) return -1; // มีห้องมาก่อนไม่มีห้อง
-      if (rb) return 1;
-      return a.full_name.localeCompare(b.full_name, "th");
-    });
-  }
-  // เรียงอาคารตามชื่อ, กลุ่ม "ยังไม่ได้เข้าพัก" ไว้ท้ายสุด
-  const buildings = [...byBuilding.keys()].sort((a, b) => {
-    if (a === NO_ROOM) return 1;
-    if (b === NO_ROOM) return -1;
-    return a.localeCompare(b, "th");
+
+  // อาคารที่เลือก — default อาคารแรก (หรือ "ยังไม่เข้าพัก" ถ้าไม่มีอาคาร)
+  const validIds = new Set(buildingList.map((b) => b.id));
+  const selected =
+    building && (validIds.has(building) || building === NONE)
+      ? building
+      : buildingList[0]?.id ?? NONE;
+
+  const shown = list.filter((t) => (placement.get(t.id)?.building_id ?? NONE) === selected);
+  shown.sort((a, b) => {
+    const ra = placement.get(a.id)?.room ?? "";
+    const rb = placement.get(b.id)?.room ?? "";
+    if (ra && rb) return ra.localeCompare(rb, undefined, { numeric: true });
+    if (ra) return -1;
+    if (rb) return 1;
+    return a.full_name.localeCompare(b.full_name, "th");
   });
 
   return (
     <div>
       <PageHeader
         title="ผู้เช่า"
-        subtitle="จัดกลุ่มตามอาคาร · แสดงห้องที่พักอยู่"
+        subtitle="เลือกดูทีละอาคาร · แสดงห้องที่พักอยู่"
         action={<AddTenantButton rooms={roomOpts} />}
       />
 
@@ -85,15 +98,30 @@ export default async function TenantsPage() {
           action={<AddTenantButton rooms={roomOpts} />}
         />
       ) : (
-        <div className="space-y-6">
-          {buildings.map((building) => (
-            <section key={building} className="card overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  🏢 {building}
-                </h2>
-                <span className="text-xs text-slate-400">{byBuilding.get(building)!.length} คน</span>
-              </div>
+        <>
+          {/* filter อาคาร */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {buildingList.map((b) => (
+              <FilterChip
+                key={b.id}
+                href={`/tenants?building=${b.id}`}
+                label={`${b.name} (${countByB.get(b.id) ?? 0})`}
+                active={selected === b.id}
+              />
+            ))}
+            {unplaced > 0 && (
+              <FilterChip
+                href={`/tenants?building=${NONE}`}
+                label={`ยังไม่เข้าพัก (${unplaced})`}
+                active={selected === NONE}
+              />
+            )}
+          </div>
+
+          {shown.length === 0 ? (
+            <EmptyState title="ไม่มีผู้เช่าในอาคารนี้" />
+          ) : (
+            <section className="card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="border-b border-slate-100 text-left text-slate-400">
@@ -106,7 +134,7 @@ export default async function TenantsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {byBuilding.get(building)!.map((t) => (
+                    {shown.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 font-medium text-slate-900">👤 {t.full_name}</td>
                         <td className="px-4 py-3 text-slate-600">
@@ -142,8 +170,8 @@ export default async function TenantsPage() {
                 </table>
               </div>
             </section>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

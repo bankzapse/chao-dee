@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
+import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
 import {
   formatBaht,
@@ -7,7 +8,7 @@ import {
   CONTRACT_STATUS_LABEL,
   CONTRACT_STATUS_STYLE,
 } from "@/lib/format";
-import type { Contract, ContractStatus, Tenant } from "@/lib/types";
+import type { Contract, ContractStatus, Tenant, Building } from "@/lib/types";
 import {
   AddContractButton,
   EditContractButton,
@@ -19,26 +20,33 @@ import { ContractDocsButton } from "./contract-docs";
 import { deleteContract } from "./actions";
 
 type ContractRow = Contract & {
-  rooms: { room_number: string; buildings: { name: string } | null } | null;
+  rooms: { room_number: string; building_id: string; buildings: { name: string } | null } | null;
   tenants: { full_name: string } | null;
 };
 
-export default async function ContractsPage() {
+const NONE = "none"; // แถบ "ไม่ระบุอาคาร"
+
+export default async function ContractsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ building?: string }>;
+}) {
+  const { building } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: contracts }, { data: rooms }, { data: tenants }] =
+  const [{ data: contracts }, { data: rooms }, { data: tenants }, { data: buildings }] =
     await Promise.all([
       supabase
         .from("contracts")
-        .select(
-          "*, rooms(room_number, buildings(name)), tenants(full_name)"
-        )
+        .select("*, rooms(room_number, building_id, buildings(name)), tenants(full_name)")
         .order("created_at", { ascending: false }),
       supabase.from("rooms").select("id, room_number, base_rent, buildings(name)"),
       supabase.from("tenants").select("*").order("full_name"),
+      supabase.from("buildings").select("*").order("name"),
     ]);
 
   const list = (contracts ?? []) as unknown as ContractRow[];
+  const buildingList = (buildings ?? []) as Building[];
 
   // ดีลนายหน้าที่ยังเปิดอยู่ (ใช้ผูก attribution ตอนทำสัญญา) — resilient เผื่อยังไม่ได้รัน 0044
   const { data: dealRows } = await supabase
@@ -56,15 +64,6 @@ export default async function ContractsPage() {
       label: `${d.lead_name || "ผู้สนใจเช่า"}${d.lead_phone ? ` · ${d.lead_phone}` : ""}`,
     }));
 
-  // นับจำนวนไฟล์เอกสารของแต่ละสัญญาจาก storage (folder: contracts/{id})
-  const docCount = new Map<string, number>();
-  await Promise.all(
-    list.map(async (c) => {
-      const { data: files } = await supabase.storage.from("documents").list(`contracts/${c.id}`, { limit: 100 });
-      const n = (files ?? []).filter((f) => !f.name.startsWith(".")).length;
-      if (n > 0) docCount.set(c.id, n);
-    })
-  );
   const roomOptions: RoomOption[] = (rooms ?? []).map((r) => {
     const b = r.buildings as unknown as { name: string } | null;
     return {
@@ -74,30 +73,43 @@ export default async function ContractsPage() {
     };
   });
 
-  // แบ่งตามอาคาร + เรียงห้องจากน้อยไปมาก
-  const NO_ROOM = "— ไม่ระบุอาคาร —";
-  const byBuilding = new Map<string, ContractRow[]>();
+  // นับต่ออาคาร + ไม่ระบุอาคาร
+  const countByB = new Map<string, number>();
+  let noBuilding = 0;
   for (const c of list) {
-    const b = c.rooms?.buildings?.name ?? NO_ROOM;
-    if (!byBuilding.has(b)) byBuilding.set(b, []);
-    byBuilding.get(b)!.push(c);
+    const bid = c.rooms?.building_id;
+    if (bid) countByB.set(bid, (countByB.get(bid) ?? 0) + 1);
+    else noBuilding++;
   }
-  for (const arr of byBuilding.values()) {
-    arr.sort((a, b) =>
+
+  // อาคารที่เลือก — default อาคารแรก
+  const validIds = new Set(buildingList.map((b) => b.id));
+  const selected =
+    building && (validIds.has(building) || building === NONE)
+      ? building
+      : buildingList[0]?.id ?? NONE;
+
+  const shown = list
+    .filter((c) => (c.rooms?.building_id ?? NONE) === selected)
+    .sort((a, b) =>
       (a.rooms?.room_number ?? "").localeCompare(b.rooms?.room_number ?? "", undefined, { numeric: true })
     );
-  }
-  const buildings = [...byBuilding.keys()].sort((a, b) => {
-    if (a === NO_ROOM) return 1;
-    if (b === NO_ROOM) return -1;
-    return a.localeCompare(b, "th");
-  });
+
+  // นับไฟล์เอกสารเฉพาะสัญญาที่แสดง (folder: contracts/{id})
+  const docCount = new Map<string, number>();
+  await Promise.all(
+    shown.map(async (c) => {
+      const { data: files } = await supabase.storage.from("documents").list(`contracts/${c.id}`, { limit: 100 });
+      const n = (files ?? []).filter((f) => !f.name.startsWith(".")).length;
+      if (n > 0) docCount.set(c.id, n);
+    })
+  );
 
   return (
     <div>
       <PageHeader
         title="สัญญาเช่า"
-        subtitle="จัดการสัญญาเช่าได้ไม่จำกัด"
+        subtitle="เลือกดูทีละอาคาร"
         action={
           <AddContractButton rooms={roomOptions} tenants={(tenants ?? []) as Tenant[]} deals={dealOptions} />
         }
@@ -116,13 +128,30 @@ export default async function ContractsPage() {
           }
         />
       ) : (
-        <div className="space-y-6">
-          {buildings.map((building) => (
-            <section key={building} className="card overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">🏢 {building}</h2>
-                <span className="text-xs text-slate-400">{byBuilding.get(building)!.length} สัญญา</span>
-              </div>
+        <>
+          {/* filter อาคาร */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {buildingList.map((b) => (
+              <FilterChip
+                key={b.id}
+                href={`/contracts?building=${b.id}`}
+                label={`${b.name} (${countByB.get(b.id) ?? 0})`}
+                active={selected === b.id}
+              />
+            ))}
+            {noBuilding > 0 && (
+              <FilterChip
+                href={`/contracts?building=${NONE}`}
+                label={`ไม่ระบุอาคาร (${noBuilding})`}
+                active={selected === NONE}
+              />
+            )}
+          </div>
+
+          {shown.length === 0 ? (
+            <EmptyState title="ไม่มีสัญญาในอาคารนี้" />
+          ) : (
+            <section className="card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="border-b border-slate-100 text-left text-slate-400">
@@ -137,7 +166,7 @@ export default async function ContractsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {byBuilding.get(building)!.map((c) => (
+                    {shown.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 font-medium text-slate-900">
                           🚪 {c.rooms?.room_number ?? "-"}
@@ -173,8 +202,8 @@ export default async function ContractsPage() {
                 </table>
               </div>
             </section>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -12,6 +12,12 @@ import type { FormState } from "@/components/action-form";
 
 const PATH = "/owner/agency";
 
+/** ช่วง attribution: lead ต้องเซ็นสัญญาภายในกี่วันจึงคิดค่านายหน้า (มาตรฐาน 60–90 วัน) */
+const ATTRIBUTION_WINDOW_DAYS = 90;
+
+/** สถานะก่อนเซ็น (ยังเลื่อน/ปิดดีลได้) */
+const PRE_SIGN = ["new", "contacted", "viewing"];
+
 /** สร้างดีลนายหน้าจาก lead (ผู้สนใจเช่าที่เข้ามาทาง /rent) */
 export async function createDealFromLead(leadId: string): Promise<void> {
   const { userId: adminId } = await requirePerm("agency");
@@ -25,11 +31,16 @@ export async function createDealFromLead(leadId: string): Promise<void> {
   const l = lead as { id: string; org_id: string; listing_id: string; name: string; phone: string } | null;
   if (!l) return;
 
-  // กันสร้างซ้ำจาก lead เดียวกัน
-  const { data: exists } = await admin.from("agency_deals").select("id").eq("lead_id", l.id).maybeSingle();
-  if (exists) return;
+  // กันสร้างซ้ำจาก lead เดียวกัน (เช็คก่อน + unique index 0050 กัน race)
+  const { data: exists } = await admin
+    .from("agency_deals")
+    .select("id")
+    .eq("lead_id", l.id)
+    .order("created_at", { ascending: true })
+    .limit(1);
+  if ((exists as { id: string }[] | null)?.length) return;
 
-  await admin.from("agency_deals").insert({
+  const { error: insErr } = await admin.from("agency_deals").insert({
     org_id: l.org_id,
     lead_id: l.id,
     listing_id: l.listing_id,
@@ -39,6 +50,7 @@ export async function createDealFromLead(leadId: string): Promise<void> {
     commission_rate: DEFAULT_COMMISSION_RATE,
     source: "rent_marketplace",
   });
+  if (insErr) return; // ซ้ำ (unique lead_id) หรือ error อื่น — ไม่สร้าง/ไม่บันทึก audit
 
   await logAudit({
     org_id: l.org_id,
@@ -55,7 +67,10 @@ export async function setDealStatus(dealId: string, status: DealStatus): Promise
   const { userId: adminId } = await requirePerm("agency");
   if (!["contacted", "viewing"].includes(status)) return;
   const admin = createAdminClient();
-  const { data: d } = await admin.from("agency_deals").select("org_id").eq("id", dealId).maybeSingle();
+  const { data: d } = await admin.from("agency_deals").select("org_id, status").eq("id", dealId).maybeSingle();
+  const cur = (d as { org_id?: string; status?: string } | null)?.status;
+  // ห้ามย้อนสถานะจากดีลที่เซ็น/วางบิล/จ่าย/ยกเลิกไปแล้ว
+  if (!PRE_SIGN.includes(cur ?? "")) return;
   await admin
     .from("agency_deals")
     .update({ status, updated_at: new Date().toISOString() })
@@ -83,11 +98,33 @@ export async function markDealSigned(
   const admin = createAdminClient();
   const { data: d } = await admin
     .from("agency_deals")
-    .select("org_id, commission_rate")
+    .select("org_id, commission_rate, status, lead_id")
     .eq("id", dealId)
     .maybeSingle();
-  const deal = d as { org_id: string; commission_rate: number } | null;
+  const deal = d as { org_id: string; commission_rate: number; status: string; lead_id: string | null } | null;
   if (!deal) return { error: "ไม่พบดีลนี้" };
+  // ปิดดีลได้เฉพาะดีลที่ยังไม่เซ็น — กันย้อนสถานะ/ยกเลิกใบแจ้งหนี้/แก้ยอดหลังวางบิล
+  if (!PRE_SIGN.includes(deal.status)) {
+    return { error: "ดีลนี้เซ็น/วางบิล/ชำระไปแล้ว ไม่สามารถปิดซ้ำได้" };
+  }
+
+  // ตรวจช่วง attribution: lead ต้องเซ็นภายในกำหนด ไม่งั้นไม่คิดค่านายหน้าอัตโนมัติ
+  if (deal.lead_id) {
+    const { data: lead } = await admin
+      .from("listing_leads")
+      .select("created_at")
+      .eq("id", deal.lead_id)
+      .maybeSingle();
+    const created = (lead as { created_at?: string } | null)?.created_at;
+    if (created) {
+      const days = (Date.now() - new Date(created).getTime()) / 86_400_000;
+      if (days > ATTRIBUTION_WINDOW_DAYS) {
+        return {
+          error: `เกินช่วง attribution ${ATTRIBUTION_WINDOW_DAYS} วัน (lead เข้ามา ${Math.round(days)} วันแล้ว) — ไม่คิดค่านายหน้าอัตโนมัติ`,
+        };
+      }
+    }
+  }
 
   const rate = Number(deal.commission_rate ?? DEFAULT_COMMISSION_RATE);
   const amount = commissionOf(rentRaw, rate);
@@ -243,13 +280,22 @@ export async function confirmCommissionPaid(dealId: string): Promise<void> {
 export async function cancelDeal(dealId: string): Promise<void> {
   const { userId: adminId } = await requirePerm("agency");
   const admin = createAdminClient();
-  const { data: d } = await admin.from("agency_deals").select("org_id").eq("id", dealId).maybeSingle();
+  const { data: d } = await admin
+    .from("agency_deals")
+    .select("org_id, status, slip_path")
+    .eq("id", dealId)
+    .maybeSingle();
+  const deal = d as { org_id?: string; status?: string; slip_path?: string } | null;
+  if (!deal) return;
+  // ห้ามยกเลิกดีลที่ชำระแล้ว/ยกเลิกแล้ว หรือวางบิลแล้วและผู้เช่าส่งสลิปมาแล้ว (เงินอาจโอนมาแล้ว)
+  if (deal.status === "paid" || deal.status === "cancelled") return;
+  if (deal.status === "invoiced" && deal.slip_path) return;
   await admin
     .from("agency_deals")
     .update({ status: "cancelled", cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", dealId);
   await logAudit({
-    org_id: (d as { org_id?: string } | null)?.org_id ?? null,
+    org_id: deal.org_id ?? null,
     actor_id: adminId,
     action: "ยกเลิกดีลนายหน้า",
     meta: { deal_id: dealId },

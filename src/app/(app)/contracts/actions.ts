@@ -4,43 +4,32 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { money, intMin } from "@/lib/num";
-import { commissionOf, DEFAULT_COMMISSION_RATE } from "@/lib/agency";
 import type { FormState } from "@/components/action-form";
 import { dbErrorMessage, NO_ROWS_MESSAGE } from "@/lib/db-error";
 
 /**
- * ผูกสัญญาที่เพิ่งสร้างกับดีลนายหน้า → ปิดดีลเป็น "เซ็นสัญญาแล้ว" + คำนวณค่านายหน้า
+ * ผูกสัญญาที่เพิ่งสร้างกับดีลนายหน้า — บันทึกแค่ "ห้อง/ผู้เช่า" ที่ปิดได้
+ *
+ * ความปลอดภัย: ไม่ตั้งสถานะเป็น "signed" และไม่คำนวณค่านายหน้าจากค่าเช่าที่เจ้าของกรอกเอง
+ * (กันเจ้าของตั้งยอดค่านายหน้าเอง/บังคับปิดดีล). การยืนยันเซ็นสัญญา + คำนวณค่านายหน้า
+ * ทำโดยทีม Chao-Dee ผ่าน markDealSigned ด้วยค่าเช่าที่ตรวจสอบแล้วเท่านั้น
  * best-effort: ถ้ายังไม่มีตาราง/ดีล หรือดีลปิดไปแล้ว จะข้ามเงียบ ๆ ไม่กระทบการสร้างสัญญา
  */
-async function linkAgencyDeal(o: {
-  leadId: string;
-  orgId: string;
-  roomId: string;
-  tenantId: string;
-  rent: number;
-}) {
+async function linkAgencyDeal(o: { leadId: string; orgId: string; roomId: string; tenantId: string }) {
   try {
     const admin = createAdminClient();
     const { data } = await admin
       .from("agency_deals")
-      .select("id, status, commission_rate, org_id")
+      .select("id, status, org_id")
       .eq("lead_id", o.leadId)
-      .maybeSingle();
-    const d = data as { id: string; status: string; commission_rate: number; org_id: string } | null;
+      .order("created_at", { ascending: true })
+      .limit(1);
+    const d = (data as { id: string; status: string; org_id: string }[] | null)?.[0];
     if (!d || d.org_id !== o.orgId) return;
-    if (["signed", "invoiced", "paid", "cancelled"].includes(d.status)) return; // ปิดไปแล้ว ไม่ทับ
-    const rate = Number(d.commission_rate ?? DEFAULT_COMMISSION_RATE);
+    if (["signed", "invoiced", "paid", "cancelled"].includes(d.status)) return; // ดำเนินการไปแล้ว ไม่ทับ
     await admin
       .from("agency_deals")
-      .update({
-        status: "signed",
-        room_id: o.roomId,
-        tenant_id: o.tenantId,
-        rent_base: o.rent,
-        commission_amount: commissionOf(o.rent, rate),
-        signed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update({ room_id: o.roomId, tenant_id: o.tenantId, updated_at: new Date().toISOString() })
       .eq("id", d.id);
   } catch {
     // เงียบไว้ — การสร้างสัญญาต้องไม่ล้มเพราะระบบนายหน้า
@@ -100,15 +89,9 @@ export async function createContract(
   // ห้องที่มีสัญญา active → สถานะ "มีผู้เช่า"
   await supabase.from("rooms").update({ status: "occupied" }).eq("id", room_id);
 
-  // ผูกดีลนายหน้า: ถ้าระบุว่ามาจาก Chao-Dee → ปิดดีล + คำนวณค่านายหน้าอัตโนมัติ
+  // ผูกดีลนายหน้า: บันทึกห้อง/ผู้เช่าที่ปิดได้ (ทีม Chao-Dee ยืนยันเซ็น + คิดค่านายหน้าเอง)
   if (lead_id) {
-    await linkAgencyDeal({
-      leadId: lead_id,
-      orgId: org_id,
-      roomId: room_id,
-      tenantId: tenant_id,
-      rent: Number(extraFields(formData).rent_amount) || 0,
-    });
+    await linkAgencyDeal({ leadId: lead_id, orgId: org_id, roomId: room_id, tenantId: tenant_id });
   }
   return { ok: true };
 }

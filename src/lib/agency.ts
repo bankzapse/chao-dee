@@ -49,3 +49,27 @@ export function commissionOf(rentBase: number, rate = DEFAULT_COMMISSION_RATE): 
   const n = Number(rentBase) * Number(rate);
   return Number.isFinite(n) ? Math.round(Math.max(0, n) * 100) / 100 : 0;
 }
+
+/** อัตราภาษีหัก ณ ที่จ่ายค่าบริการ (ผู้จ่ายเป็นนิติบุคคลต้องหัก) */
+export const WHT_RATE = 3;
+
+const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+
+/**
+ * แยกยอดค่านายหน้าเป็นภาษี (มาตรฐานไทย)
+ *  - ฐาน (base) = ค่านายหน้าก่อน VAT
+ *  - VAT 7% บวกเพิ่มเมื่อผู้ให้บริการจด VAT
+ *  - หัก ณ ที่จ่าย 3% ของ "ฐาน" เมื่อผู้จ่ายเป็นนิติบุคคล (หักจากยอดรวมตอนโอน)
+ *  - net = ยอดโอนจริง = รวม(รวม VAT) − หัก ณ ที่จ่าย
+ */
+export function commissionBreakdown(
+  base: number,
+  opts: { vatRegistered: boolean; vatRate?: number; isJuristic: boolean }
+) {
+  const b = Math.max(0, round2(base));
+  const vat = opts.vatRegistered ? round2((b * (opts.vatRate ?? 7)) / 100) : 0;
+  const total = round2(b + vat);
+  const wht = opts.isJuristic ? round2((b * WHT_RATE) / 100) : 0;
+  const net = round2(total - wht);
+  return { base: b, vat, total, wht, net };
+}

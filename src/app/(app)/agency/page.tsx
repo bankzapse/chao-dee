@@ -123,21 +123,35 @@ export default async function AgencyPage() {
                     </td>
                     <td className="px-4 py-3">
                       {d.status === "invoiced" ? (
-                        d.slip_path ? (
-                          <p className="text-right text-xs text-amber-600">ส่งสลิปแล้ว · รอยืนยัน</p>
-                        ) : (
-                          <PayCommissionButton dealId={d.id} amount={Number(d.commission_amount)} />
-                        )
+                        <div className="space-y-1 text-right">
+                          {d.slip_path ? (
+                            <p className="text-xs text-amber-600">ส่งสลิปแล้ว · รอยืนยัน</p>
+                          ) : (
+                            <PayCommissionButton dealId={d.id} amount={Number(d.commission_amount)} />
+                          )}
+                          <a
+                            href={`/agency/invoice/${d.id}`}
+                            className="block text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                          >
+                            🧾 ใบแจ้งหนี้
+                          </a>
+                        </div>
                       ) : d.status === "paid" ? (
-                        <div className="text-right">
+                        <div className="space-y-0.5 text-right">
                           <p className="text-xs text-emerald-600">
                             ✓ ชำระแล้ว {d.paid_at ? formatDate(d.paid_at) : ""}
                           </p>
                           <a
                             href={`/agency/receipt/${d.id}`}
-                            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                            className="block text-xs font-medium text-indigo-600 hover:text-indigo-700"
                           >
                             🧾 ใบเสร็จ
+                          </a>
+                          <a
+                            href={`/agency/invoice/${d.id}`}
+                            className="block text-xs text-slate-400 hover:text-slate-600"
+                          >
+                            ใบแจ้งหนี้
                           </a>
                         </div>
                       ) : (

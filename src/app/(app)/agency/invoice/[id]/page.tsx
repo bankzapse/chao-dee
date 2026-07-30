@@ -8,16 +8,16 @@ import { PrintButton } from "@/components/qr-code";
 import { BrandMark } from "@/components/brand-mark";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "ใบเสร็จค่านายหน้า", robots: { index: false } };
+export const metadata = { title: "ใบแจ้งหนี้ค่านายหน้า", robots: { index: false } };
 
-export default async function CommissionReceiptPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CommissionInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
 
   // RLS: เห็นเฉพาะดีลของกิจการตัวเอง
   const { data } = await supabase
     .from("agency_deals")
-    .select("id, status, lead_name, rent_base, commission_amount, signed_at, paid_at, created_at")
+    .select("id, status, lead_name, rent_base, commission_amount, signed_at, invoiced_at, paid_at")
     .eq("id", id)
     .maybeSingle();
   const d = data as {
@@ -27,9 +27,11 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
     rent_base: number;
     commission_amount: number;
     signed_at: string | null;
+    invoiced_at: string | null;
     paid_at: string | null;
   } | null;
-  if (!d || d.status !== "paid") notFound();
+  // ใบแจ้งหนี้เกิดตั้งแต่ "วางบิล" เป็นต้นไป
+  if (!d || !["invoiced", "paid"].includes(d.status)) notFound();
 
   const { data: org } = await supabase
     .from("organizations")
@@ -42,9 +44,11 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
     tax_address?: string;
     tax_entity_type?: string;
   } | null) ?? {};
-  const no = `AGC-${String(d.id).slice(0, 8).toUpperCase()}`;
 
-  // แยกภาษี: commission_amount = ฐานค่าบริการ, บวก VAT ถ้าจด, หัก ณ ที่จ่ายถ้าผู้จ่ายนิติบุคคล
+  const no = `INV-AGC-${String(d.id).slice(0, 8).toUpperCase()}`;
+  const paid = d.status === "paid";
+  const promptpay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY || "";
+
   const tax = commissionBreakdown(d.commission_amount, {
     vatRegistered: COMPANY.vatRegistered,
     vatRate: COMPANY.vatRate,
@@ -72,22 +76,22 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
             </div>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-slate-900">ใบเสร็จรับเงิน</p>
-            <p className="text-xs text-slate-500">RECEIPT · ค่านายหน้า</p>
+            <p className="text-lg font-bold text-slate-900">ใบแจ้งหนี้</p>
+            <p className="text-xs text-slate-500">INVOICE · ค่านายหน้า</p>
             <p className="mt-2 text-sm font-medium text-slate-700">เลขที่ {no}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-6 py-6 text-sm">
           <div>
-            <p className="text-slate-400">ผู้ชำระเงิน</p>
+            <p className="text-slate-400">เรียกเก็บจาก</p>
             <p className="mt-1 font-medium text-slate-900">{o.tax_name || o.name || "-"}</p>
             {o.tax_id && <p className="text-slate-500">เลขผู้เสียภาษี {o.tax_id}</p>}
             {o.tax_address && <p className="text-slate-500">{o.tax_address}</p>}
           </div>
           <div className="text-right">
-            <p className="text-slate-400">วันที่ชำระ</p>
-            <p className="mt-1 font-medium text-slate-900">{d.paid_at ? formatDate(d.paid_at) : "-"}</p>
+            <p className="text-slate-400">วันที่วางบิล</p>
+            <p className="mt-1 font-medium text-slate-900">{d.invoiced_at ? formatDate(d.invoiced_at) : "-"}</p>
           </div>
         </div>
 
@@ -141,12 +145,31 @@ export default async function CommissionReceiptPage({ params }: { params: Promis
           </div>
         </div>
 
-        <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
-          ✓ ชำระเงินเรียบร้อยแล้ว
-        </div>
+        {paid ? (
+          <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
+            ✓ ชำระเงินแล้ว {d.paid_at ? `เมื่อ ${formatDate(d.paid_at)}` : ""}
+          </div>
+        ) : (
+          <div className="mt-8 rounded-lg bg-amber-50 px-4 py-4 text-sm text-amber-800 print:bg-white">
+            <p className="font-semibold">วิธีชำระค่านายหน้า</p>
+            <ol className="mt-1.5 list-decimal space-y-0.5 pl-5">
+              {promptpay && (
+                <li>
+                  โอนยอด <span className="font-semibold">{formatBaht(tax.net)}</span> ผ่าน PromptPay{" "}
+                  <span className="font-semibold">{promptpay}</span> ({COMPANY.name})
+                </li>
+              )}
+              {!promptpay && <li>โอนยอด {formatBaht(tax.net)} ให้ {COMPANY.name}</li>}
+              <li>แนบสลิปในหน้า “ดีลนายหน้า” เพื่อให้ทีมงานตรวจสอบและยืนยัน</li>
+            </ol>
+          </div>
+        )}
+
         {tax.wht > 0 && (
           <p className="mt-4 text-center text-xs text-slate-500">
-            มีการหักภาษี ณ ที่จ่าย {WHT_RATE}% ({formatBaht(tax.wht)}) — กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
+            ผู้จ่ายเป็นนิติบุคคล — หักภาษี ณ ที่จ่าย {WHT_RATE}% ({formatBaht(tax.wht)}) แล้วโอนสุทธิ {formatBaht(tax.net)}
+            <br />
+            กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่ายให้ {COMPANY.name}
           </p>
         )}
         {!COMPANY.vatRegistered && (

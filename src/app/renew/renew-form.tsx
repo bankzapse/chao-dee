@@ -10,6 +10,7 @@ import { PACKAGES, COMMON_FEATURES, yearlyDiscount, type Package } from "@/lib/p
 import { COMPANY, splitVat } from "@/lib/company";
 import { formatBaht } from "@/lib/format";
 import { submitRenewal, checkPromo } from "./actions";
+import { Building2, ReceiptText, Check } from "lucide-react";
 
 export function RenewForm({
   platformPromptPay,
@@ -100,7 +101,10 @@ export function RenewForm({
       <div className="space-y-6 lg:col-span-2">
         {/* เลือกแพ็คเกจ */}
         <div className="card p-5">
-          <h2 className="mb-3 font-semibold text-slate-900">🏢 เลือกแพ็คเกจ</h2>
+          <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
+            <Building2 className="h-5 w-5 text-indigo-500" strokeWidth={2} />
+            เลือกแพ็คเกจ
+          </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {buyable.map((p) => (
               <button
@@ -161,8 +165,8 @@ export function RenewForm({
           <div className="mt-2 grid gap-x-4 gap-y-2 sm:grid-cols-2">
             {COMMON_FEATURES.map((f) => (
               <div key={f} className="flex items-start gap-2 text-sm text-slate-600">
-                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] text-emerald-700">
-                  ✓
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
                 </span>
                 {f}
               </div>
@@ -231,7 +235,10 @@ export function RenewForm({
       {/* ===== ขวา: สรุปการสั่งซื้อ ===== */}
       <div className="lg:col-span-1">
         <div className="card sticky top-6 p-5">
-          <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">🧾 สรุปการสั่งซื้อ</h2>
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
+            <ReceiptText className="h-5 w-5 text-indigo-500" strokeWidth={2} />
+            สรุปการสั่งซื้อ
+          </h2>
 
           <div className="space-y-2.5 text-sm">
             <Row label="แพ็คเกจ" value={pkg.name} bold />
@@ -274,7 +281,12 @@ export function RenewForm({
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
             {!file && <p className="mt-1 text-xs text-slate-400">ต้องแนบสลิปก่อนจึงจะส่งคำขอได้</p>}
-            {file && <p className="mt-1 text-xs text-emerald-600">✓ แนบแล้ว: {file.name}</p>}
+            {file && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+                <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                แนบแล้ว: {file.name}
+              </p>
+            )}
           </div>
 
           {msg && (

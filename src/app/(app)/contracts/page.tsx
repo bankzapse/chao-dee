@@ -1,3 +1,4 @@
+import { DoorOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
@@ -169,7 +170,10 @@ export default async function ContractsPage({
                     {shown.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 font-medium text-slate-900">
-                          🚪 {c.rooms?.room_number ?? "-"}
+                          <span className="inline-flex items-center gap-1.5">
+                            <DoorOpen className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                            {c.rooms?.room_number ?? "-"}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-slate-700">{c.tenants?.full_name ?? "-"}</td>
                         <td className="px-4 py-3 text-xs text-slate-500">

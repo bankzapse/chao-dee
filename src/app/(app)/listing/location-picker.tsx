@@ -135,7 +135,7 @@ export function LocationPicker({
     setSaving(false);
     if (res.error) setMsg({ text: res.error });
     else {
-      setMsg({ ok: true, text: "บันทึกตำแหน่งแล้ว ✓" });
+      setMsg({ ok: true, text: "บันทึกตำแหน่งแล้ว" });
       onSaved?.();
     }
   }

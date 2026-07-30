@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FileText } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { Spinner } from "@/components/spinner";
 import { createClient } from "@/lib/supabase/client";
@@ -19,7 +20,7 @@ const typeLabel = (v: string) => DOC_TYPES.find((d) => d.value === v)?.label ?? 
 
 export function ContractDocsButton({ contractId, count = 0 }: { contractId: string; count?: number }) {
   return (
-    <ModalButton label={`📎 เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารสัญญาเช่า" variant="secondary">
+    <ModalButton label={`เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารสัญญาเช่า" variant="secondary">
       {() => <DocsPanel contractId={contractId} />}
     </ModalButton>
   );
@@ -110,7 +111,9 @@ function DocsPanel({ contractId }: { contractId: string }) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={d.url} alt={typeLabel(d.doc_type)} className="h-32 w-full object-cover" />
                 ) : (
-                  <div className="flex h-32 w-full items-center justify-center text-4xl">📄</div>
+                  <div className="flex h-32 w-full items-center justify-center text-slate-300">
+                    <FileText className="h-10 w-10" strokeWidth={1.5} />
+                  </div>
                 )}
               </a>
               <div className="flex items-center justify-between px-2 py-1.5">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Building2, Link2, Inbox, Gift, Star, Hourglass } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
@@ -69,11 +70,11 @@ export default async function ListingPage() {
         subtitle="โปรโมทที่พักบนหน้าเว็บ Chao-Dee — ฟรีสำหรับสมาชิก · ห้องว่างอัปเดตอัตโนมัติ"
         action={
           <div className="flex items-center gap-2">
-            <Link href="/rent" target="_blank" className="btn-secondary">
-              🔗 ดูหน้าประกาศสาธารณะ
+            <Link href="/rent" target="_blank" className="btn-secondary inline-flex items-center gap-1.5">
+              <Link2 className="h-4 w-4" strokeWidth={2} /> ดูหน้าประกาศสาธารณะ
             </Link>
-            <Link href="/listing/leads" className="btn-primary">
-              📥 ผู้ติดต่อ{totalNewLeads > 0 ? ` (${totalNewLeads})` : ""}
+            <Link href="/listing/leads" className="btn-primary inline-flex items-center gap-1.5">
+              <Inbox className="h-4 w-4" strokeWidth={2} /> ผู้ติดต่อ{totalNewLeads > 0 ? ` (${totalNewLeads})` : ""}
             </Link>
           </div>
         }
@@ -111,8 +112,8 @@ export default async function ListingPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={listing.cover_image} alt={b.name} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300">
-                        🏢
+                      <div className="flex h-full w-full items-center justify-center text-slate-300">
+                        <Building2 className="h-8 w-8" strokeWidth={1.5} />
                       </div>
                     )}
                   </div>
@@ -134,22 +135,22 @@ export default async function ListingPage() {
                       ห้องว่าง {s.vacant} · เริ่ม {s.minRent > 0 ? formatBaht(s.minRent) : "-"}
                     </p>
                     {disc && (
-                      <p className="mt-1 text-xs font-medium text-emerald-600">
-                        🎁 ส่วนลดเดือนแรก {disc}
+                      <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-600">
+                        <Gift className="h-3.5 w-3.5" strokeWidth={2} /> ส่วนลดเดือนแรก {disc}
                       </p>
                     )}
                     {listing && (newLeads.get(listing.id) ?? 0) > 0 && (
-                      <p className="mt-1 text-xs font-medium text-indigo-600">
-                        📥 มีผู้ติดต่อใหม่ {newLeads.get(listing.id)} ราย
+                      <p className="mt-1 flex items-center gap-1 text-xs font-medium text-indigo-600">
+                        <Inbox className="h-3.5 w-3.5" strokeWidth={2} /> มีผู้ติดต่อใหม่ {newLeads.get(listing.id)} ราย
                       </p>
                     )}
                     {listing && isFeaturedActive(listing, today) && (
-                      <p className="mt-1 text-xs font-medium text-amber-600">
-                        ⭐ กำลังโปรโมท{listing.featured_until ? ` — ถึง ${formatDate(listing.featured_until)}` : ""}
+                      <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-600">
+                        <Star className="h-3.5 w-3.5" strokeWidth={2} /> กำลังโปรโมท{listing.featured_until ? ` — ถึง ${formatDate(listing.featured_until)}` : ""}
                       </p>
                     )}
                     {listing && pendingPromo.has(listing.id) && (
-                      <p className="mt-1 text-xs font-medium text-slate-500">⏳ รอทีมงานอนุมัติโปรโมท</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs font-medium text-slate-500"><Hourglass className="h-3.5 w-3.5" strokeWidth={2} /> รอทีมงานอนุมัติโปรโมท</p>
                     )}
                   </div>
                 </div>

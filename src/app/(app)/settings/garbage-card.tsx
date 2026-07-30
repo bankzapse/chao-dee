@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { ActionForm } from "@/components/action-form";
 import { updateGarbageSettings } from "./actions";
 
@@ -16,7 +17,7 @@ export function GarbageCard({ org }: { org: GarbageInfo }) {
   return (
     <div className="card mb-6 p-5">
       <div className="flex items-center gap-2">
-        <span className="text-lg">🗑️</span>
+        <Trash2 className="h-5 w-5 text-slate-500" strokeWidth={2} />
         <h2 className="font-semibold text-slate-900">ค่าขยะ</h2>
       </div>
       <p className="mt-1 text-xs text-slate-500">

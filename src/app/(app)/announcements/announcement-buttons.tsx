@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Send } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
 import { createAnnouncement, sendAnnouncement } from "./actions";
@@ -53,7 +54,14 @@ export function SendAnnouncementButton({ id }: { id: string }) {
           })
         }
       >
-        {pending ? "กำลังส่ง…" : "📤 ส่งผ่าน LINE"}
+        {pending ? (
+          "กำลังส่ง…"
+        ) : (
+          <span className="inline-flex items-center gap-1">
+            <Send className="h-4 w-4" strokeWidth={2} />
+            ส่งผ่าน LINE
+          </span>
+        )}
       </button>
     </div>
   );

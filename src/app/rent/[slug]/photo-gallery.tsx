@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect, useCallback } from "react";
+import { Building2, ImageIcon, X } from "lucide-react";
 
 export function PhotoGallery({ photos }: { photos: string[] }) {
   const [idx, setIdx] = useState(0);
@@ -30,8 +31,8 @@ export function PhotoGallery({ photos }: { photos: string[] }) {
 
   if (total === 0) {
     return (
-      <div className="flex h-72 w-full items-center justify-center rounded-2xl bg-slate-100 text-6xl text-slate-300 sm:h-96">
-        🏢
+      <div className="flex h-72 w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-300 sm:h-96">
+        <Building2 className="h-16 w-16" strokeWidth={1.5} />
       </div>
     );
   }
@@ -50,7 +51,7 @@ export function PhotoGallery({ photos }: { photos: string[] }) {
           className="h-72 w-full cursor-zoom-in object-cover sm:h-96"
         />
         <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
-          🖼 {idx + 1}/{total}
+          <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} /> {idx + 1}/{total}
         </span>
         {total > 1 && (
           <>
@@ -91,8 +92,8 @@ export function PhotoGallery({ photos }: { photos: string[] }) {
             <span className="text-sm font-medium">
               {idx + 1} / {total}
             </span>
-            <button type="button" aria-label="ปิด" onClick={() => setOpen(false)} className="text-3xl leading-none hover:text-slate-300">
-              ✕
+            <button type="button" aria-label="ปิด" onClick={() => setOpen(false)} className="hover:text-slate-300">
+              <X className="h-7 w-7" strokeWidth={2} />
             </button>
           </div>
 

@@ -1,3 +1,4 @@
+import { ShieldCheck } from "lucide-react";
 import { requireOwner } from "@/lib/admin";
 import { ADMIN_SECTIONS } from "@/lib/admin-sections";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -37,7 +38,10 @@ export default async function OwnerAdmins() {
         {owners.map((o) => (
           <div key={o.id} className="flex items-center justify-between px-5 py-3">
             <div>
-              <p className="font-medium text-slate-900">🛡️ {o.full_name || "-"}</p>
+              <p className="flex items-center gap-1.5 font-medium text-slate-900">
+                <ShieldCheck className="h-4 w-4 text-indigo-500" strokeWidth={2} />
+                {o.full_name || "-"}
+              </p>
               <p className="text-xs text-slate-400">{o.phone || "-"}</p>
             </div>
             <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-700">เจ้าของระบบ</span>

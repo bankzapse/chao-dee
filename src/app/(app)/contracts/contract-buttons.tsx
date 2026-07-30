@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Handshake } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
 import { createContract, updateContract, closeContract } from "./actions";
@@ -126,7 +127,10 @@ function AddForm({
       </div>
       {deals.length > 0 && (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3">
-          <label className="label">🤝 ผู้เช่ารายนี้มาจาก Chao-Dee หรือไม่?</label>
+          <label className="label flex items-center gap-1.5">
+            <Handshake className="h-4 w-4 text-slate-400" strokeWidth={2} />
+            ผู้เช่ารายนี้มาจาก Chao-Dee หรือไม่?
+          </label>
           <select name="lead_id" className="field" defaultValue="">
             <option value="">— ไม่ใช่ / หาเอง —</option>
             {deals.map((d) => (

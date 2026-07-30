@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Printer } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
 import { recordPayment, sendInvoiceViaLine, updateInvoice, addInvoiceItem } from "../actions";
@@ -11,7 +12,7 @@ import type { Invoice, PaymentMethod } from "@/lib/types";
 export function PrintButton() {
   return (
     <button className="btn-secondary no-print" onClick={() => window.print()}>
-      🖨️ พิมพ์ / บันทึก PDF
+      <Printer className="mr-1.5 inline h-4 w-4" strokeWidth={2} /> พิมพ์ / บันทึก PDF
     </button>
   );
 }
@@ -33,13 +34,13 @@ export function SendInvoiceLineButton({ invoiceId }: { invoiceId: string }) {
             const res = await sendInvoiceViaLine(invoiceId);
             if (res.error) setMsg(res.error);
             else {
-              setMsg("ส่งแล้ว ✓");
+              setMsg("ส่งแล้ว");
               router.refresh();
             }
           })
         }
       >
-        {pending ? "กำลังส่ง…" : "📤 ส่งบิลผ่าน LINE"}
+        {pending ? "กำลังส่ง…" : "ส่งบิลผ่าน LINE"}
       </button>
     </div>
   );
@@ -80,7 +81,7 @@ function MoneyField({
  */
 export function EditInvoiceButton({ inv }: { inv: Invoice }) {
   return (
-    <ModalButton label="✏️ แก้ไขบิล" title="แก้ไขบิล" variant="secondary">
+    <ModalButton label="แก้ไขบิล" title="แก้ไขบิล" variant="secondary">
       {(close) => (
         <ActionForm action={updateInvoice.bind(null, inv.id)} onSuccess={close} submitLabel="บันทึกการแก้ไข">
           <div>

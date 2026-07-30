@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle, ReceiptText } from "lucide-react";
 import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard, Badge } from "@/components/ui";
@@ -72,7 +73,7 @@ export default async function OwnerTaxInvoices() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900">{org.name ?? "-"}</p>
                       {!hasTaxInfo && (
-                        <p className="text-xs text-amber-600">⚠ สมาชิกยังไม่กรอกข้อมูลผู้เสียภาษี</p>
+                        <p className="inline-flex items-center gap-1 text-xs text-amber-600"><AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} /> สมาชิกยังไม่กรอกข้อมูลผู้เสียภาษี</p>
                       )}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -92,9 +93,9 @@ export default async function OwnerTaxInvoices() {
                         {p.tax_invoice_no ? (
                           <Link
                             href={`/owner/tax-invoices/${p.id}`}
-                            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                           >
-                            🧾 ดู/พิมพ์
+                            <ReceiptText className="h-4 w-4" strokeWidth={2} /> ดู/พิมพ์
                           </Link>
                         ) : (
                           <IssueTaxInvoiceButton paymentId={p.id} />

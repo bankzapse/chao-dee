@@ -11,6 +11,7 @@ import {
 } from "@/lib/format";
 import { requirePerm } from "@/lib/admin";
 import { buildingTypeLabel } from "@/lib/signup-options";
+import { ReceiptText } from "lucide-react";
 import {
   RecordPaymentButton,
   ManageSubButton,
@@ -215,9 +216,10 @@ export default async function MemberDetail({
                               href={slipUrls.get(r.id)}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                              className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                             >
-                              🧾 ดูสลิป
+                              <ReceiptText className="h-4 w-4" strokeWidth={2} />
+                              ดูสลิป
                             </a>
                           )}
                           {pending && isSub && (

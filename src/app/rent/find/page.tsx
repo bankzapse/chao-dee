@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Sparkles, Zap, Home } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
+import { IconBadge } from "@/components/icon-badge";
 import { getProvinces } from "@/lib/thai-geo";
 import { RequestForm } from "./request-form";
 
@@ -32,8 +34,8 @@ export default function FindRoomPage() {
       {/* hero */}
       <section className="bg-slate-900 text-white">
         <div className="mx-auto max-w-4xl px-5 pb-14 pt-10 text-center">
-          <span className="inline-flex rounded-full bg-amber-300/15 px-3 py-1 text-xs font-medium text-amber-200">
-            ✦ ฟรีสำหรับผู้เช่า · ไม่มีค่าใช้จ่าย
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300/15 px-3 py-1 text-xs font-medium text-amber-200">
+            <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> ฟรีสำหรับผู้เช่า · ไม่มีค่าใช้จ่าย
           </span>
           <h1 className="mt-4 text-3xl font-extrabold leading-snug sm:text-4xl">
             หาห้องไม่เจอ? <span className="text-amber-300">ให้เราหาให้</span>
@@ -53,12 +55,14 @@ export default function FindRoomPage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {[
-            { icon: "🆓", t: "ฟรี 100%", d: "ผู้เช่าไม่เสียค่านายหน้า" },
-            { icon: "⚡", t: "ตอบไว", d: "ทีมงานติดต่อกลับโดยเร็ว" },
-            { icon: "🏠", d: "คัดจากห้องว่างจริงในระบบ", t: "ห้องอัปเดตจริง" },
+            { icon: Sparkles, tone: "emerald" as const, t: "ฟรี 100%", d: "ผู้เช่าไม่เสียค่านายหน้า" },
+            { icon: Zap, tone: "amber" as const, t: "ตอบไว", d: "ทีมงานติดต่อกลับโดยเร็ว" },
+            { icon: Home, tone: "indigo" as const, d: "คัดจากห้องว่างจริงในระบบ", t: "ห้องอัปเดตจริง" },
           ].map((f) => (
             <div key={f.t} className="rounded-xl border border-slate-200 bg-white p-4 text-center">
-              <p className="text-2xl">{f.icon}</p>
+              <div className="flex justify-center">
+                <IconBadge icon={f.icon} tone={f.tone} size="md" />
+              </div>
               <p className="mt-1 font-semibold text-slate-900">{f.t}</p>
               <p className="text-xs text-slate-500">{f.d}</p>
             </div>

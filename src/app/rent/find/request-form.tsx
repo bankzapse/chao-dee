@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { CheckCircle2 } from "lucide-react";
 import { submitHousingRequest } from "../actions";
 
 function SubmitButton() {
@@ -23,7 +24,7 @@ export function RequestForm({ provinces }: { provinces: string[] }) {
   if (state?.ok) {
     return (
       <div className="rounded-2xl bg-emerald-50 p-8 text-center">
-        <p className="text-3xl">✅</p>
+        <CheckCircle2 className="mx-auto h-9 w-9 text-emerald-600" strokeWidth={2} />
         <p className="mt-2 text-lg font-semibold text-emerald-700">ส่งคำขอเรียบร้อยแล้ว</p>
         <p className="mt-1 text-sm text-emerald-600">
           ทีมงาน Chao-Dee จะติดต่อกลับโดยเร็ว พร้อมห้องที่ตรงกับที่คุณต้องการ

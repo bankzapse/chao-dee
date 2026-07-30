@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard } from "@/components/ui";
@@ -47,11 +48,11 @@ export default async function OwnerReports() {
           <p className="mt-1 text-sm text-slate-500">รายได้และการกระจายแพ็คเกจ</p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
-          <a href="/owner/reports/export?type=subscriptions" className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
-            ⬇︎ สมาชิก (CSV)
+          <a href="/owner/reports/export?type=subscriptions" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+            <Download className="h-4 w-4 text-slate-400" strokeWidth={2} /> สมาชิก (CSV)
           </a>
-          <a href="/owner/reports/export?type=payments" className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
-            ⬇︎ การชำระเงิน (CSV)
+          <a href="/owner/reports/export?type=payments" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+            <Download className="h-4 w-4 text-slate-400" strokeWidth={2} /> การชำระเงิน (CSV)
           </a>
         </div>
       </div>

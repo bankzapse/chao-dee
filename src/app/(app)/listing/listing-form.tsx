@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Circle, CircleDot } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { ActionForm, type FormState } from "@/components/action-form";
 import { Spinner } from "@/components/spinner";
@@ -271,7 +272,15 @@ export function PublishToggle({
       }`}
     >
       {pending && <Spinner />}
-      {published ? "🟢 เผยแพร่อยู่ — กดเพื่อซ่อน" : "⚪ ยังไม่เผยแพร่ — กดเพื่อเผยแพร่"}
+      {published ? (
+        <>
+          <CircleDot className="h-4 w-4" strokeWidth={2} /> เผยแพร่อยู่ — กดเพื่อซ่อน
+        </>
+      ) : (
+        <>
+          <Circle className="h-4 w-4" strokeWidth={2} /> ยังไม่เผยแพร่ — กดเพื่อเผยแพร่
+        </>
+      )}
     </button>
   );
 }

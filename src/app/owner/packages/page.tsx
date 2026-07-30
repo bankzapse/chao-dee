@@ -4,6 +4,7 @@ import { COMMON_FEATURES } from "@/lib/packages";
 import { getEffectivePackages } from "@/lib/packages-db";
 import { formatBaht } from "@/lib/format";
 import { EditPriceButton } from "./package-buttons";
+import { Check } from "lucide-react";
 
 export default async function OwnerPackages() {
   await requirePerm("packages");
@@ -85,8 +86,8 @@ export default async function OwnerPackages() {
         <h2 className="font-semibold text-slate-900">ฟีเจอร์ที่ทุกแพ็คเกจได้</h2>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {COMMON_FEATURES.map((f) => (
-            <li key={f} className="flex gap-2 text-sm text-slate-600">
-              <span className="text-emerald-500">✓</span>
+            <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+              <Check className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2.5} />
               {f}
             </li>
           ))}

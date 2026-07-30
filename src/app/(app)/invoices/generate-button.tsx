@@ -24,7 +24,7 @@ export function GenerateButton({ period }: { period: string }) {
           })
         }
       >
-        {pending ? "กำลังออกบิล…" : "⚡ ออกบิลรอบนี้"}
+        {pending ? "กำลังออกบิล…" : "ออกบิลรอบนี้"}
       </button>
     </div>
   );
@@ -66,7 +66,7 @@ export function RecalcButton({ period }: { period: string }) {
           })
         }
       >
-        {pending ? "กำลังคำนวณ…" : "🔄 คำนวณยอดใหม่"}
+        {pending ? "กำลังคำนวณ…" : "คำนวณยอดใหม่"}
       </button>
     </div>
   );

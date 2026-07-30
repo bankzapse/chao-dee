@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -68,7 +69,7 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
           <Link href="/owner/tax-invoices" className="text-sm text-slate-500 hover:text-slate-700">
             ← กลับ
           </Link>
-          <PrintButton label="🖨️ พิมพ์ / บันทึก PDF" />
+          <PrintButton label="พิมพ์ / บันทึก PDF" />
         </div>
 
         <div className="print-area rounded-2xl bg-white p-10 shadow-sm print:rounded-none print:shadow-none">
@@ -107,7 +108,7 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
               {org.tax_address && <p className="text-slate-500">{org.tax_address}</p>}
               {buyerPhone && <p className="text-slate-500">โทร {buyerPhone}</p>}
               {!org.tax_name && !org.tax_id && (
-                <p className="text-xs text-amber-600">⚠ สมาชิกยังไม่กรอกข้อมูลผู้เสียภาษี</p>
+                <p className="inline-flex items-center gap-1 text-xs text-amber-600"><AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} /> สมาชิกยังไม่กรอกข้อมูลผู้เสียภาษี</p>
               )}
             </div>
             <div className="text-right">
@@ -160,8 +161,8 @@ export default async function OwnerTaxInvoicePage({ params }: { params: Promise<
             </div>
           </div>
 
-          <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
-            ✓ ชำระเงินเรียบร้อยแล้ว
+          <div className="mt-8 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
+            <CheckCircle2 className="h-4 w-4" strokeWidth={2} /> ชำระเงินเรียบร้อยแล้ว
           </div>
           <p className="mt-6 text-center text-xs text-slate-400">เอกสารนี้ออกโดยระบบ Chao-Dee</p>
         </div>

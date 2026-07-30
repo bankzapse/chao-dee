@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import {
   requestPasswordReset,
   confirmPasswordReset,
@@ -94,7 +95,9 @@ export function ForgotForm() {
               <ResendButton />
             </div>
             {resendState?.otpSent && !resendState?.error && (
-              <p className="text-xs font-medium text-emerald-600">✓ ส่งรหัสใหม่ให้แล้ว — ใช้รหัสล่าสุดเท่านั้น</p>
+              <p className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> ส่งรหัสใหม่ให้แล้ว — ใช้รหัสล่าสุดเท่านั้น
+              </p>
             )}
             {resendState?.error && <p className="text-xs text-rose-600">{resendState.error}</p>}
           </form>

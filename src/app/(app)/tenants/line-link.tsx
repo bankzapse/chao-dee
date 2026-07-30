@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { generateLinkCode, unlinkLine } from "./actions";
 import { Spinner } from "@/components/spinner";
 
@@ -21,8 +22,9 @@ export function LineLinkCell({
   if (linked) {
     return (
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-          🟢 เชื่อมแล้ว
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+          <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
+          เชื่อมแล้ว
         </span>
         <button
           className="text-xs text-slate-400 hover:text-rose-600 disabled:opacity-50"

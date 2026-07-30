@@ -16,7 +16,7 @@ export function ListingMediaButton({
 }) {
   return (
     <ModalButton
-      label={lat != null && lng != null ? "📍 แผนที่ ✓" : "📍 ปักหมุดแผนที่"}
+      label={lat != null && lng != null ? "แผนที่" : "ปักหมุดแผนที่"}
       title="ปักหมุดตำแหน่ง"
       variant="secondary"
     >

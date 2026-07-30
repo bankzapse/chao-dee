@@ -1,3 +1,4 @@
+import { Megaphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
@@ -46,7 +47,10 @@ export default async function AnnouncementsPage() {
             <div key={a.id} className="card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-slate-900">📢 {a.title}</h3>
+                  <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                    <Megaphone className="h-4 w-4 shrink-0 text-slate-400" strokeWidth={2} />
+                    {a.title}
+                  </h3>
                   {a.body && (
                     <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{a.body}</p>
                   )}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { generateOrgLineCode, unlinkOrgLine } from "./line-actions";
 
@@ -39,7 +40,10 @@ export function LineOwnerCard({
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-slate-900">แจ้งเตือนผ่าน LINE (เจ้าของหอ)</h2>
             {linked ? (
-              <Badge className="bg-emerald-100 text-emerald-700">🟢 เชื่อมแล้ว</Badge>
+              <Badge className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
+                เชื่อมแล้ว
+              </Badge>
             ) : (
               <Badge className="bg-slate-100 text-slate-500">ยังไม่เชื่อม</Badge>
             )}

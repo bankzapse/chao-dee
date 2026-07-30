@@ -70,7 +70,7 @@ export function AdvanceButton({ dealId, to, label }: { dealId: string; to: DealS
 /** ปิดดีล: กรอกค่าเช่า/เดือน แล้วระบบคำนวณค่านายหน้า (1 เดือน) */
 export function MarkSignedButton({ dealId }: { dealId: string }) {
   return (
-    <ModalButton label="✓ เซ็นสัญญาแล้ว" title="ปิดดีล — ผู้เช่าเซ็นสัญญาแล้ว">
+    <ModalButton label="เซ็นสัญญาแล้ว" title="ปิดดีล — ผู้เช่าเซ็นสัญญาแล้ว">
       {(close) => (
         <ActionForm action={markDealSigned.bind(null, dealId)} onSuccess={close} submitLabel="ปิดดีล & คำนวณค่านายหน้า">
           <div>
@@ -105,7 +105,7 @@ export function ConfirmPaidButton({ dealId }: { dealId: string }) {
   return (
     <TxButton
       onRun={() => confirmCommissionPaid(dealId)}
-      label="✓ ยืนยันรับเงิน"
+      label="ยืนยันรับเงิน"
       className="text-sm font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
       confirm="ยืนยันว่าได้รับค่านายหน้าแล้ว?"
     />

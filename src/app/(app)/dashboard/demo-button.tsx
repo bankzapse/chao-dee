@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Gift } from "lucide-react";
 import { seedDemoData } from "../demo-actions";
 
 export function SeedDemoButton() {
@@ -21,7 +22,13 @@ export function SeedDemoButton() {
         })
       }
     >
-      {pending ? "กำลังโหลด…" : "🎁 โหลดข้อมูลตัวอย่าง"}
+      {pending ? (
+        "กำลังโหลด…"
+      ) : (
+        <span className="inline-flex items-center gap-1.5">
+          <Gift className="h-4 w-4" strokeWidth={2} /> โหลดข้อมูลตัวอย่าง
+        </span>
+      )}
     </button>
   );
 }

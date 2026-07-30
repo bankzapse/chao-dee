@@ -6,6 +6,7 @@ import { formatBaht, formatDate } from "@/lib/format";
 import { PrintButton } from "./print-button";
 import { COMPANY, splitVat } from "@/lib/company";
 import { BrandMark } from "@/components/brand-mark";
+import { Check } from "lucide-react";
 
 export const metadata = { title: "ใบเสร็จรับเงิน", robots: { index: false } };
 
@@ -201,8 +202,9 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          <div className="mt-8 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
-            ✓ ชำระเงินเรียบร้อยแล้ว
+          <div className="mt-8 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700 print:bg-white">
+            <Check className="h-4 w-4" strokeWidth={2.5} />
+            ชำระเงินเรียบร้อยแล้ว
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-400">

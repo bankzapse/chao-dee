@@ -1,9 +1,18 @@
+import {
+  Building2,
+  ReceiptText,
+  MessageCircle,
+  Sparkles,
+  Bell,
+  Ticket,
+  Mail,
+} from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { COMPANY } from "@/lib/company";
 
 const GUIDES = [
   {
-    icon: "🏢",
+    icon: Building2,
     title: "เริ่มต้นใช้งาน",
     steps: [
       "เพิ่มอาคารที่เมนู “อาคาร”",
@@ -12,16 +21,16 @@ const GUIDES = [
     ],
   },
   {
-    icon: "🧾",
+    icon: ReceiptText,
     title: "ออกบิลรายเดือน",
     steps: [
-      "ไปเมนู “จดมิเตอร์” เลือกรอบเดือน แล้วกรอกเลขมิเตอร์ (หรือกด 📷 ให้ AI อ่านให้)",
+      "ไปเมนู “จดมิเตอร์” เลือกรอบเดือน แล้วกรอกเลขมิเตอร์ (หรือกดให้ AI อ่านให้)",
       "ไปเมนู “บิล/ใบแจ้งหนี้” เลือกรอบเดือน แล้วกด “ออกบิลรอบนี้”",
       "เปิดบิลเพื่อพิมพ์ PDF, ส่งผ่าน LINE, หรือบันทึกการชำระเงิน",
     ],
   },
   {
-    icon: "💬",
+    icon: MessageCircle,
     title: "เชื่อม LINE กับผู้เช่า",
     steps: [
       "ที่เมนู “ผู้เช่า” เลือกผู้เช่า แล้วกด “เชื่อม LINE” จะได้รหัส 6 หลัก",
@@ -30,16 +39,16 @@ const GUIDES = [
     ],
   },
   {
-    icon: "🤖",
+    icon: Sparkles,
     title: "AI อ่านมิเตอร์",
     steps: [
-      "ที่หน้า “จดมิเตอร์” กดปุ่ม 📷 ข้างช่องกรอกเลขมิเตอร์",
+      "ที่หน้า “จดมิเตอร์” กดปุ่มข้างช่องกรอกเลขมิเตอร์",
       "ถ่ายรูปหรือเลือกรูปหน้าปัดมิเตอร์",
       "ระบบอ่านตัวเลขให้อัตโนมัติ พร้อมเตือนหากค่าผิดปกติ — ตรวจสอบแล้วกดบันทึกได้เลย",
     ],
   },
   {
-    icon: "🔔",
+    icon: Bell,
     title: "รับแจ้งเตือนแจ้งซ่อมทาง LINE",
     steps: [
       "ไปเมนู “ตั้งค่า” → การ์ด “แจ้งเตือนผ่าน LINE (เจ้าของหอ)” กด “สร้างรหัสเชื่อม”",
@@ -48,7 +57,7 @@ const GUIDES = [
     ],
   },
   {
-    icon: "🎫",
+    icon: Ticket,
     title: "ต่ออายุ & ใบเสร็จ",
     steps: [
       "ไปเมนู “ตั้งค่า” → “ต่ออายุ/อัปเกรด” เลือกแพ็คเกจและรอบการชำระ",
@@ -91,10 +100,12 @@ export default function HelpPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {GUIDES.map((g) => (
+        {GUIDES.map((g) => {
+          const Icon = g.icon;
+          return (
           <div key={g.title} className="card p-5">
-            <h2 className="mb-3 font-semibold text-slate-900">
-              {g.icon} {g.title}
+            <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
+              <Icon className="h-5 w-5 text-indigo-600" strokeWidth={2} /> {g.title}
             </h2>
             <ol className="space-y-2">
               {g.steps.map((s, i) => (
@@ -107,7 +118,8 @@ export default function HelpPage() {
               ))}
             </ol>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <h2 className="mb-3 mt-8 text-lg font-semibold text-slate-900">คำถามที่พบบ่อย</h2>
@@ -128,18 +140,18 @@ export default function HelpPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <a
             href={`mailto:${COMPANY.email}`}
-            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
           >
-            ✉️ {COMPANY.email}
+            <Mail className="h-4 w-4" strokeWidth={2} /> {COMPANY.email}
           </a>
           {lineUrl && (
             <a
               href={lineUrl}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg border border-white/40 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/40 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
             >
-              💬 แชทผ่าน LINE OA
+              <MessageCircle className="h-4 w-4" strokeWidth={2} /> แชทผ่าน LINE OA
             </a>
           )}
         </div>

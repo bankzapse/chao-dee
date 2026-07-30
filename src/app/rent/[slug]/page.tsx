@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BrandMark } from "@/components/brand-mark";
+import { MapPin, Check, Gift, Phone, MessageCircle } from "lucide-react";
 import { formatBaht } from "@/lib/format";
 import { PROPERTY_TYPE_LABEL, GENDER_LABEL, discountLabel, waterLabel } from "@/lib/listings";
 import type { PropertyListing } from "@/lib/types";
@@ -171,8 +172,9 @@ export default async function RentDetail({
               {PROPERTY_TYPE_LABEL[l.property_type]}
             </p>
             <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">{l.title}</h1>
-            <p className="mt-1 text-slate-500">
-              📍 {[l.address, l.district, l.province].filter(Boolean).join(" · ") || "—"}
+            <p className="mt-1 flex items-center gap-1.5 text-slate-500">
+              <MapPin className="h-4 w-4 shrink-0 text-slate-400" strokeWidth={2} />
+              {[l.address, l.district, l.province].filter(Boolean).join(" · ") || "—"}
             </p>
 
             <div className="mt-4 flex flex-wrap gap-3">
@@ -205,7 +207,10 @@ export default async function RentDetail({
             {l.nearby && (
               <div className="mt-6">
                 <h2 className="mb-2 font-semibold text-slate-900">สถานที่ใกล้เคียง</h2>
-                <p className="whitespace-pre-line text-slate-600">📍 {l.nearby}</p>
+                <p className="flex items-start gap-1.5 whitespace-pre-line text-slate-600">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" strokeWidth={2} />
+                  {l.nearby}
+                </p>
               </div>
             )}
 
@@ -221,8 +226,9 @@ export default async function RentDetail({
                 <h2 className="mb-2 font-semibold text-slate-900">สิ่งอำนวยความสะดวก</h2>
                 <div className="flex flex-wrap gap-2">
                   {l.amenities.map((a) => (
-                    <span key={a} className="rounded-lg bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
-                      ✓ {a}
+                    <span key={a} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" strokeWidth={2.5} />
+                      {a}
                     </span>
                   ))}
                 </div>
@@ -279,7 +285,8 @@ export default async function RentDetail({
             <div className="sticky top-20 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
               {disc && (
                 <div className="mb-4 rounded-xl bg-emerald-50 p-3 text-center text-sm font-medium text-emerald-700">
-                  🎁 จองผ่าน Chao-Dee<br />รับส่วนลดเดือนแรก {disc}
+                  <Gift className="mx-auto mb-1 h-5 w-5" strokeWidth={2} />
+                  จองผ่าน Chao-Dee<br />รับส่วนลดเดือนแรก {disc}
                 </div>
               )}
               <h2 className="mb-3 font-semibold text-slate-900">สนใจที่พักนี้?</h2>
@@ -289,11 +296,17 @@ export default async function RentDetail({
                 <div className="mt-4 border-t border-slate-100 pt-4 text-sm">
                   <p className="mb-1 text-slate-400">หรือติดต่อโดยตรง</p>
                   {l.contact_phone && (
-                    <a href={`tel:${l.contact_phone}`} className="block text-indigo-600 hover:text-indigo-700">
-                      📞 {l.contact_phone}
+                    <a href={`tel:${l.contact_phone}`} className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700">
+                      <Phone className="h-4 w-4" strokeWidth={2} />
+                      {l.contact_phone}
                     </a>
                   )}
-                  {l.contact_line && <p className="text-slate-600">💬 LINE: {l.contact_line}</p>}
+                  {l.contact_line && (
+                    <p className="flex items-center gap-1.5 text-slate-600">
+                      <MessageCircle className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                      LINE: {l.contact_line}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

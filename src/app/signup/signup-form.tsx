@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { Check, Home, PartyPopper, Smartphone, User } from "lucide-react";
 import Link from "next/link";
 import { signUpRequest, type SignupState } from "./actions";
 import { verifyOtp, type AuthState } from "@/app/login/actions";
@@ -88,7 +89,9 @@ export function SignupForm({
           <StepDot done /> <StepDot done /> <StepDot active />
           <span className="ml-1">ขั้นตอนสุดท้าย</span>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">ยืนยันเบอร์โทรศัพท์ 📱</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
+          ยืนยันเบอร์โทรศัพท์ <Smartphone className="h-6 w-6 text-indigo-600" strokeWidth={2} />
+        </h1>
         <p className="mt-1 text-sm text-slate-500">
           กรอกรหัส OTP ที่ส่งไปยัง <span className="font-medium text-slate-800">{phone}</span>
         </p>
@@ -110,8 +113,8 @@ export function SignupForm({
           {verState?.error && (
             <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{verState.error}</p>
           )}
-          <button type="submit" className="btn-primary w-full">
-            ยืนยันและเริ่มใช้งาน 🎉
+          <button type="submit" className="btn-primary flex w-full items-center justify-center gap-2">
+            ยืนยันและเริ่มใช้งาน <PartyPopper className="h-4 w-4" strokeWidth={2} />
           </button>
         </form>
       </div>
@@ -141,7 +144,9 @@ export function SignupForm({
       {/* ===== ขั้นที่ 1: ข้อมูลหอพัก ===== */}
       <div className={step === 1 ? "space-y-5" : "hidden"}>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">เล่าเรื่องหอพักของคุณ 🏠</h2>
+          <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+            เล่าเรื่องหอพักของคุณ <Home className="h-5 w-5 text-indigo-600" strokeWidth={2} />
+          </h2>
           <p className="text-sm text-slate-500">ใช้ตั้งค่าเริ่มต้นให้อัตโนมัติ ปรับทีหลังได้</p>
         </div>
 
@@ -222,7 +227,9 @@ export function SignupForm({
       {/* ===== ขั้นที่ 2: ข้อมูลผู้ดูแล ===== */}
       <div className={step === 2 ? "space-y-5" : "hidden"}>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">ข้อมูลผู้ดูแล 👤</h2>
+          <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
+            ข้อมูลผู้ดูแล <User className="h-5 w-5 text-indigo-600" strokeWidth={2} />
+          </h2>
           <p className="text-sm text-slate-500">ใช้เข้าสู่ระบบและรับการแจ้งเตือน</p>
         </div>
 
@@ -305,7 +312,7 @@ function StepDot({ active, done }: { active?: boolean; done?: boolean }) {
             : "bg-slate-100 text-slate-400"
       }`}
     >
-      {done ? "✓" : ""}
+      {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : ""}
     </span>
   );
 }

@@ -201,7 +201,7 @@ export function DeleteMemberButton({ orgId, orgName }: { orgId: string; orgName:
       }}
     >
       {pending && <Spinner className="!h-3.5 !w-3.5" />}
-      {pending ? "กำลังลบ…" : "🗑 ลบสมาชิก"}
+      {pending ? "กำลังลบ…" : "ลบสมาชิก"}
     </button>
   );
 }
@@ -210,7 +210,7 @@ export function VerifyPaymentButton({ paymentId }: { paymentId: string }) {
   return (
     <TxButton
       onRun={() => verifyPayment(paymentId)}
-      label="✓ ยืนยัน & เปิดสิทธิ์"
+      label="ยืนยัน & เปิดสิทธิ์"
       className="text-sm font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
       confirm="ยืนยันการชำระนี้และเปิดสิทธิ์/ต่ออายุให้สมาชิก?"
     />

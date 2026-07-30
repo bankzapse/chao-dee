@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LayoutDashboard, MessageCircle, PartyPopper, ScanLine, Wallet } from "lucide-react";
 import { SignupForm } from "./signup-form";
 import { getProvinces } from "@/lib/thai-geo";
 import { BrandMark } from "@/components/brand-mark";
@@ -6,10 +7,10 @@ import { BrandMark } from "@/components/brand-mark";
 export const metadata = { title: "สมัครใช้งาน" };
 
 const POINTS = [
-  { icon: "🤖", text: "จดมิเตอร์ด้วย AI + ออกบิลอัตโนมัติ" },
-  { icon: "💸", text: "รับเงินผ่าน PromptPay QR ในบิล" },
-  { icon: "💬", text: "ผู้เช่าเช็คยอด/แจ้งซ่อมผ่าน LINE" },
-  { icon: "📊", text: "แดชบอร์ด & รายงานเรียลไทม์" },
+  { icon: ScanLine, text: "จดมิเตอร์ด้วย AI + ออกบิลอัตโนมัติ" },
+  { icon: Wallet, text: "รับเงินผ่าน PromptPay QR ในบิล" },
+  { icon: MessageCircle, text: "ผู้เช่าเช็คยอด/แจ้งซ่อมผ่าน LINE" },
+  { icon: LayoutDashboard, text: "แดชบอร์ด & รายงานเรียลไทม์" },
 ];
 
 export default function SignupPage() {
@@ -30,17 +31,24 @@ export default function SignupPage() {
         </Link>
 
         <div className="relative">
-          <p className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-medium">🎉 ทดลองฟรี 30 วัน · ไม่ต้องผูกบัตร</p>
+          <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+            <PartyPopper className="h-3.5 w-3.5" strokeWidth={2} /> ทดลองฟรี 30 วัน · ไม่ต้องผูกบัตร
+          </p>
           <h2 className="mt-4 text-3xl font-bold leading-snug">
             เริ่มจัดการหอพัก<br />ให้เป็นระบบใน 3 นาที
           </h2>
           <ul className="mt-7 space-y-3">
-            {POINTS.map((p) => (
-              <li key={p.text} className="flex items-center gap-3 text-indigo-50">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15 text-base">{p.icon}</span>
-                {p.text}
-              </li>
-            ))}
+            {POINTS.map((p) => {
+              const Icon = p.icon;
+              return (
+                <li key={p.text} className="flex items-center gap-3 text-indigo-50">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                    <Icon className="h-4 w-4" strokeWidth={2} />
+                  </span>
+                  {p.text}
+                </li>
+              );
+            })}
           </ul>
         </div>
 

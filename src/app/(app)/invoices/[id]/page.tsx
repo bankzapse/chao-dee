@@ -219,7 +219,7 @@ export default async function InvoiceDetailPage({
                       <DeleteButton
                         action={deleteInvoiceItem.bind(null, it.id)}
                         confirmText={`ลบรายการ "${it.description}" ออกจากบิล?`}
-                        label="✕"
+                        label="×"
                       />
                     </span>
                   </span>

@@ -21,7 +21,7 @@ const typeLabel = (v: string) => DOC_TYPES.find((d) => d.value === v)?.label ?? 
 
 export function TenantDocsButton({ tenantId, count }: { tenantId: string; count: number }) {
   return (
-    <ModalButton label={`📎 เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารผู้เช่า" variant="secondary">
+    <ModalButton label={`เอกสาร${count > 0 ? ` (${count})` : ""}`} title="เอกสารผู้เช่า" variant="secondary">
       {() => <DocsPanel tenantId={tenantId} />}
     </ModalButton>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PartyPopper } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, StatCard, EmptyState, Badge } from "@/components/ui";
 import { BarChart, type BarDatum } from "@/components/bar-chart";
@@ -112,7 +113,7 @@ export default async function ReportsPage() {
       <div>
         <PageHeader title="แดชบอร์ด / รายงาน" subtitle="ภาพรวมหอพักของคุณ" action={<SeedDemoButton />} />
         <EmptyState
-          title="ยินดีต้อนรับสู่ Chao-Dee 🎉"
+          title="ยินดีต้อนรับสู่ Chao-Dee"
           description="เริ่มต้นด้วยการเพิ่มอาคารและห้องพัก หรือลองโหลดข้อมูลตัวอย่างเพื่อดูการทำงานของระบบ"
           action={
             <div className="flex gap-2">
@@ -247,7 +248,10 @@ export default async function ReportsPage() {
             สัญญาใกล้หมดอายุ (ภายใน 30 วัน)
           </h2>
           {expiringList.length === 0 ? (
-            <div className="card p-6 text-sm text-slate-500">ไม่มีสัญญาที่ใกล้หมดอายุ 🎉</div>
+            <div className="card flex items-center gap-2 p-6 text-sm text-slate-500">
+              <PartyPopper className="h-4 w-4 text-emerald-500" strokeWidth={2} />
+              ไม่มีสัญญาที่ใกล้หมดอายุ
+            </div>
           ) : (
             <div className="card divide-y divide-slate-100">
               {expiringList.map((c) => (

@@ -1,3 +1,4 @@
+import { Building2, Wrench, MessageCircle, ClipboardList, Hourglass, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
@@ -61,10 +62,10 @@ export default async function MaintenancePage() {
 
   const count = (s: MaintenanceStatus) => list.filter((m) => m.status === s).length;
   const summary = [
-    { label: "ทั้งหมด", value: list.length, icon: "🧰", cls: "from-slate-500 to-slate-600" },
-    { label: "รอดำเนินการ", value: count("open"), icon: "⏳", cls: "from-rose-500 to-rose-600" },
-    { label: "กำลังซ่อม", value: count("in_progress"), icon: "🔧", cls: "from-amber-500 to-orange-500" },
-    { label: "เสร็จแล้ว", value: count("done"), icon: "✅", cls: "from-emerald-500 to-teal-500" },
+    { label: "ทั้งหมด", value: list.length, icon: ClipboardList, cls: "from-slate-500 to-slate-600" },
+    { label: "รอดำเนินการ", value: count("open"), icon: Hourglass, cls: "from-rose-500 to-rose-600" },
+    { label: "กำลังซ่อม", value: count("in_progress"), icon: Wrench, cls: "from-amber-500 to-orange-500" },
+    { label: "เสร็จแล้ว", value: count("done"), icon: CheckCircle2, cls: "from-emerald-500 to-teal-500" },
   ];
 
   return (
@@ -79,8 +80,8 @@ export default async function MaintenancePage() {
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {summary.map((s) => (
           <div key={s.label} className="card flex items-center gap-3 p-4">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${s.cls} text-lg shadow-sm`}>
-              {s.icon}
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${s.cls} text-white shadow-sm`}>
+              <s.icon className="h-5 w-5" strokeWidth={2} />
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs text-slate-500">{s.label}</p>
@@ -92,7 +93,7 @@ export default async function MaintenancePage() {
 
       {list.length === 0 ? (
         <EmptyState
-          title="ยังไม่มีงานแจ้งซ่อม 🎉"
+          title="ยังไม่มีงานแจ้งซ่อม"
           description="ผู้เช่าแจ้งซ่อมผ่าน LINE ได้เลย หรือเพิ่มเองที่นี่"
           action={<AddMaintenanceButton rooms={roomOpts} tenants={(tenants ?? []) as Tenant[]} />}
         />
@@ -101,7 +102,7 @@ export default async function MaintenancePage() {
           {buildings.map((building) => (
             <section key={building}>
               <div className="mb-2 flex items-center gap-2 px-1">
-                <h2 className="text-sm font-semibold text-slate-700">🏢 {building}</h2>
+                <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-700"><Building2 className="h-4 w-4 text-slate-400" strokeWidth={2} /> {building}</h2>
                 <span className="text-xs text-slate-400">{byBuilding.get(building)!.length} รายการ</span>
               </div>
               <div className="space-y-3">
@@ -111,8 +112,8 @@ export default async function MaintenancePage() {
                     <div key={m.id} className={`card card-hover border-l-4 ${a.bar} p-5`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${a.chip}`}>
-                      🔧
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${a.chip}`}>
+                      <Wrench className="h-5 w-5" strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -121,13 +122,13 @@ export default async function MaintenancePage() {
                           {MAINTENANCE_STATUS_LABEL[m.status]}
                         </span>
                         {m.source === "line" && (
-                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                            💬 LINE
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <MessageCircle className="h-3 w-3" strokeWidth={2} /> LINE
                           </span>
                         )}
                       </div>
                       <p className="mt-1 text-sm text-slate-500">
-                        {m.rooms?.room_number ? `🚪 ห้อง ${m.rooms.room_number}` : "ไม่ระบุห้อง"}
+                        {m.rooms?.room_number ? `ห้อง ${m.rooms.room_number}` : "ไม่ระบุห้อง"}
                         {m.tenants?.full_name ? ` · ${m.tenants.full_name}` : ""} · {formatDate(m.created_at)}
                       </p>
                       {m.description && (

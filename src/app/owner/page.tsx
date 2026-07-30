@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Users, Wallet, TrendingUp, Hourglass, Building2, Star } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui";
 import { BarChart, type BarDatum } from "@/components/bar-chart";
@@ -82,10 +83,10 @@ export default async function OwnerDashboard() {
   const rentPending = promoList.filter((p) => p.status === "pending").length;
 
   const kpis = [
-    { icon: "👥", label: "สมาชิกทั้งหมด", value: String(totalMembers), hint: `+${newThisMonth} เดือนนี้`, grad: "from-indigo-500 to-violet-500" },
-    { icon: "💰", label: "รายได้/เดือน (MRR)", value: formatBaht(mrr), hint: `ARR ${formatBaht(mrr * 12)}`, grad: "from-emerald-500 to-teal-500" },
-    { icon: "📈", label: "รายได้เดือนนี้", value: formatBaht(revenueThisMonth), hint: "จากที่ยืนยันแล้ว", grad: "from-cyan-500 to-sky-500" },
-    { icon: "⏳", label: "รอยืนยันชำระ", value: String(pendingPays.length), hint: formatBaht(pendingAmount), grad: "from-amber-500 to-orange-500" },
+    { icon: Users, label: "สมาชิกทั้งหมด", value: String(totalMembers), hint: `+${newThisMonth} เดือนนี้`, grad: "from-indigo-500 to-violet-500" },
+    { icon: Wallet, label: "รายได้/เดือน (MRR)", value: formatBaht(mrr), hint: `ARR ${formatBaht(mrr * 12)}`, grad: "from-emerald-500 to-teal-500" },
+    { icon: TrendingUp, label: "รายได้เดือนนี้", value: formatBaht(revenueThisMonth), hint: "จากที่ยืนยันแล้ว", grad: "from-cyan-500 to-sky-500" },
+    { icon: Hourglass, label: "รอยืนยันชำระ", value: String(pendingPays.length), hint: formatBaht(pendingAmount), grad: "from-amber-500 to-orange-500" },
   ];
 
   return (
@@ -106,8 +107,8 @@ export default async function OwnerDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
           <div key={k.label} className="card card-hover p-5">
-            <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${k.grad} text-xl shadow-sm`}>
-              {k.icon}
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${k.grad} shadow-sm`}>
+              <k.icon className="h-6 w-6 text-white" strokeWidth={2} />
             </div>
             <p className="mt-3 text-sm text-slate-500">{k.label}</p>
             <p className="mt-0.5 text-2xl font-bold text-slate-900">{k.value}</p>
@@ -120,7 +121,7 @@ export default async function OwnerDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-semibold text-slate-900">🏢 ธุรกิจ Chao-Dee</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-slate-900"><Building2 className="h-4 w-4 text-slate-400" strokeWidth={2} /> ธุรกิจ Chao-Dee</h2>
             <span className="text-xs text-slate-400">{chaodeeOrgs} กิจการ</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
@@ -140,7 +141,7 @@ export default async function OwnerDashboard() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-semibold text-slate-900">⭐ ธุรกิจ Rent</h2>
+            <h2 className="flex items-center gap-2 font-semibold text-slate-900"><Star className="h-4 w-4 text-amber-400" strokeWidth={2} /> ธุรกิจ Rent</h2>
             <span className="text-xs text-slate-400">{rentOrgs} บัญชี rent</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
@@ -193,7 +194,7 @@ export default async function OwnerDashboard() {
             )}
           </div>
           {expiringSoon.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-400">ไม่มีสมาชิกใกล้ครบกำหนด 🎉</p>
+            <p className="py-8 text-center text-sm text-slate-400">ไม่มีสมาชิกใกล้ครบกำหนด</p>
           ) : (
             <div className="divide-y divide-slate-100">
               {expiringSoon.slice(0, 6).map((s) => (

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { CheckCircle2 } from "lucide-react";
 import { submitLead } from "../actions";
 
 function SubmitButton() {
@@ -32,7 +33,7 @@ export function LeadForm({
   if (state?.ok) {
     return (
       <div className="rounded-xl bg-emerald-50 p-5 text-center">
-        <p className="text-2xl">✅</p>
+        <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" strokeWidth={2} />
         <p className="mt-1 font-semibold text-emerald-700">ส่งข้อมูลเรียบร้อยแล้ว</p>
         <p className="mt-1 text-sm text-emerald-600">
           เจ้าของจะติดต่อกลับโดยเร็ว

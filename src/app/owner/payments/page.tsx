@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReceiptText } from "lucide-react";
 import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard, Badge } from "@/components/ui";
@@ -101,9 +102,9 @@ export default async function OwnerPayments() {
                           href={slipUrls.get(p.id)}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                         >
-                          🧾 ดูสลิป
+                          <ReceiptText className="h-4 w-4" strokeWidth={2} /> ดูสลิป
                         </a>
                       )}
                       {p.status === "pending" && (

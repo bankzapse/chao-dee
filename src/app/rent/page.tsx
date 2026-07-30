@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Building2, Home, MapPin, Sparkles, Star } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BrandMark } from "@/components/brand-mark";
 import { formatBaht } from "@/lib/format";
@@ -65,11 +66,13 @@ function LuxeCard({
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-4xl text-slate-300">🏢</div>
+          <div className="flex h-full w-full items-center justify-center text-slate-300">
+            <Building2 className="h-12 w-12" strokeWidth={1.5} />
+          </div>
         )}
         {featured && (
-          <span className="absolute left-3 top-3 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-amber-950 shadow">
-            ⭐ แนะนำ
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-amber-950 shadow">
+            <Star className="h-3.5 w-3.5 fill-current" strokeWidth={2} /> แนะนำ
           </span>
         )}
         {vacant > 0 && (
@@ -84,7 +87,8 @@ function LuxeCard({
         </p>
         <h3 className="mt-0.5 truncate font-semibold text-slate-900">{l.title}</h3>
         <p className="mt-1 truncate text-sm text-slate-500">
-          📍 {[l.district, l.province].filter(Boolean).join(" · ") || "—"}
+          <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-slate-400" strokeWidth={2} />
+          {[l.district, l.province].filter(Boolean).join(" · ") || "—"}
         </p>
         <div className="mt-3 flex items-baseline gap-1 border-t border-slate-100 pt-3">
           <span className="text-xs text-slate-400">เริ่ม</span>
@@ -162,8 +166,10 @@ export default async function RentHome({
           </Link>
           <div className="flex items-center gap-2 text-sm sm:gap-3">
             <Link href="/" className="rounded-lg px-2 py-1.5 text-slate-300 hover:bg-white/10 hover:text-white">
-              <span className="sm:hidden">🏠</span>
-              <span className="hidden sm:inline">🏢 กลับหน้าหลัก</span>
+              <Home className="h-4 w-4 sm:hidden" strokeWidth={2} />
+              <span className="hidden items-center gap-1.5 sm:inline-flex">
+                <Building2 className="h-4 w-4" strokeWidth={2} /> กลับหน้าหลัก
+              </span>
             </Link>
             <Link href="/rent/login" className="hidden text-slate-300 hover:text-white sm:block">
               เข้าสู่ระบบ
@@ -193,9 +199,9 @@ export default async function RentHome({
             หาไม่เจอที่ถูกใจ?{" "}
             <Link
               href="/rent/find"
-              className="rounded-full bg-amber-400/15 px-3 py-1.5 font-semibold text-amber-200 ring-1 ring-amber-300/30 hover:bg-amber-400/25"
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1.5 font-semibold text-amber-200 ring-1 ring-amber-300/30 hover:bg-amber-400/25"
             >
-              ✦ ให้เราหาห้องให้ฟรี →
+              <Sparkles className="h-4 w-4" strokeWidth={2} /> ให้เราหาห้องให้ฟรี →
             </Link>
           </p>
 
@@ -250,7 +256,9 @@ export default async function RentHome({
       {featured.length > 0 && (
         <section className="mx-auto max-w-6xl px-5 pt-10">
           <div className="mb-4 flex items-center gap-2">
-            <h2 className="text-lg font-bold text-slate-900">⭐ ประกาศแนะนำ</h2>
+            <h2 className="inline-flex items-center gap-1.5 text-lg font-bold text-slate-900">
+              <Star className="h-5 w-5 fill-current text-amber-400" strokeWidth={2} /> ประกาศแนะนำ
+            </h2>
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">โปรโมท</span>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

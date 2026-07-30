@@ -1,7 +1,9 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
+import { IconBadge } from "@/components/icon-badge";
 
 export default function AppError({
   error,
@@ -17,9 +19,7 @@ export default function AppError({
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-3xl">
-          ⚠️
-        </div>
+        <IconBadge icon={AlertTriangle} tone="rose" size="lg" className="mx-auto" />
         <h1 className="mt-4 text-xl font-bold text-slate-900">เกิดข้อผิดพลาด</h1>
         <p className="mt-2 text-sm text-slate-500">
           ระบบขัดข้องชั่วคราว ทีมงานได้รับแจ้งแล้ว กรุณาลองใหม่อีกครั้ง

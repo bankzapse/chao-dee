@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Star, Check } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { createClient } from "@/lib/supabase/client";
 import { PromptPayQR } from "@/components/promptpay-qr";
@@ -23,7 +24,7 @@ export function PromoteButton({
 }) {
   return (
     <ModalButton
-      label={active ? "⭐ ต่ออายุโปรโมท" : "⭐ โปรโมท"}
+      label={active ? "ต่ออายุโปรโมท" : "โปรโมท"}
       title="ซื้อโปรโมทประกาศ"
       variant="secondary"
     >
@@ -89,7 +90,7 @@ function PromoPanel({
   return (
     <div className="space-y-4">
       <div className="rounded-xl bg-indigo-50 p-3 text-sm text-indigo-800">
-        ⭐ โปรโมทแล้วประกาศจะถูก<span className="font-semibold">ดันขึ้นบนสุด</span>ของหน้าค้นหา
+        <Star className="mr-1 inline h-4 w-4 align-[-3px]" strokeWidth={2} />โปรโมทแล้วประกาศจะถูก<span className="font-semibold">ดันขึ้นบนสุด</span>ของหน้าค้นหา
         พร้อมป้าย “โปรโมท” — เห็นชัด คนสนใจมากขึ้น
       </div>
 
@@ -146,7 +147,11 @@ function PromoPanel({
           className="field"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
-        {file && <p className="mt-1 text-xs text-emerald-600">✓ แนบแล้ว: {file.name}</p>}
+        {file && (
+          <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+            <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> แนบแล้ว: {file.name}
+          </p>
+        )}
       </div>
 
       {msg && (

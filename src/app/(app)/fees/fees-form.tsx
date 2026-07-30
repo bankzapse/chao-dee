@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Save, Pencil, Car } from "lucide-react";
 import { formatBaht, VEHICLE_TYPE_LABEL } from "@/lib/format";
 import type { Vehicle, VehicleType, Tenant } from "@/lib/types";
 import { AddVehicleButton, EditVehicleButton, type RoomOpt } from "./vehicle-buttons";
@@ -115,7 +116,13 @@ export function FeesForm({
         <div className="ml-auto flex items-center gap-3">
           {msg && <span className={`text-sm ${msg.ok ? "text-emerald-600" : "text-rose-600"}`}>{msg.text}</span>}
           <button className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? "กำลังบันทึก…" : "💾 บันทึกค่าบริการ"}
+            {saving ? (
+              "กำลังบันทึก…"
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <Save className="h-4 w-4" strokeWidth={2} /> บันทึกค่าบริการ
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -172,11 +179,10 @@ export function FeesForm({
                           <span className="text-[11px] text-slate-400">
                             {VEHICLE_TYPE_LABEL[v.vehicle_type as VehicleType]}
                           </span>
-                          <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} label="✏️" />
+                          <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} />
                           <DeleteButton
                             action={deleteVehicle.bind(null, v.id)}
                             confirmText={`ลบรถทะเบียน ${v.plate}?`}
-                            label="🗑"
                           />
                         </span>
                       ))}
@@ -208,10 +214,12 @@ export function FeesForm({
 
       {unassigned.length > 0 && (
         <div className="border-t border-slate-200 p-4">
-          <p className="text-sm font-semibold text-slate-700">
-            🚗 รถที่ยังไม่ระบุห้อง ({unassigned.length})
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+            <Car className="h-4 w-4 text-slate-400" strokeWidth={2} /> รถที่ยังไม่ระบุห้อง ({unassigned.length})
           </p>
-          <p className="mt-0.5 text-xs text-slate-400">กด ✏️ เพื่อระบุห้องให้รถคันนั้น</p>
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
+            กด <Pencil className="inline h-3.5 w-3.5" strokeWidth={2} /> เพื่อระบุห้องให้รถคันนั้น
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {unassigned.map((v) => (
               <span
@@ -222,11 +230,10 @@ export function FeesForm({
                 <span className="text-[11px] text-slate-400">
                   {VEHICLE_TYPE_LABEL[v.vehicle_type as VehicleType]}
                 </span>
-                <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} label="✏️" />
+                <EditVehicleButton vehicle={v} rooms={roomOpts} tenants={tenants} />
                 <DeleteButton
                   action={deleteVehicle.bind(null, v.id)}
                   confirmText={`ลบรถทะเบียน ${v.plate}?`}
-                  label="🗑"
                 />
               </span>
             ))}

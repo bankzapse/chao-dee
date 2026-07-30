@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Camera, Loader2 } from "lucide-react";
 import { formatBaht } from "@/lib/format";
 import { saveMeterReadings, type MeterRow } from "./actions";
 
@@ -55,7 +56,7 @@ function AiReadButton({
         onResult(json.value);
         const conf =
           json.confidence === "low" ? " (ความมั่นใจต่ำ โปรดตรวจสอบ)" : "";
-        onMessage((json.anomaly ? `⚠️ ${json.anomaly}` : `AI อ่านได้ ${json.value}`) + conf);
+        onMessage((json.anomaly ? json.anomaly : `AI อ่านได้ ${json.value}`) + conf);
       }
     } catch {
       onMessage("เกิดข้อผิดพลาดในการอ่านรูป");
@@ -85,7 +86,11 @@ function AiReadButton({
         disabled={loading}
         onClick={() => inputRef.current?.click()}
       >
-        {loading ? "⏳" : "📷"}
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-slate-400" strokeWidth={2} />
+        ) : (
+          <Camera className="h-4 w-4 text-indigo-500" strokeWidth={2} />
+        )}
       </button>
     </>
   );
@@ -199,7 +204,7 @@ export function MetersForm({
         <div className="flex items-center gap-3">
           {msg && <span className="text-sm text-emerald-600">{msg}</span>}
           <button className="btn-primary" onClick={save} disabled={saving}>
-            {saving ? "กำลังบันทึก…" : "💾 บันทึกค่ามิเตอร์"}
+            {saving ? "กำลังบันทึก…" : "บันทึกค่ามิเตอร์"}
           </button>
         </div>
       </div>

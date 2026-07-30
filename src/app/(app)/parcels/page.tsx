@@ -1,3 +1,4 @@
+import { Building2, DoorOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
@@ -73,7 +74,10 @@ export default async function ParcelsPage() {
           {buildings.map((building) => (
             <section key={building} className="card overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">🏢 {building}</h2>
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <Building2 className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                  {building}
+                </h2>
                 <span className="text-xs text-slate-400">{byBuilding.get(building)!.length} ชิ้น</span>
               </div>
               <div className="overflow-x-auto">
@@ -92,7 +96,14 @@ export default async function ParcelsPage() {
                       <tr key={p.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3">
                           <span className="font-medium text-slate-900">
-                            {p.rooms?.room_number ? `🚪 ห้อง ${p.rooms.room_number}` : "-"}
+                            {p.rooms?.room_number ? (
+                              <span className="inline-flex items-center gap-1">
+                                <DoorOpen className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                                ห้อง {p.rooms.room_number}
+                              </span>
+                            ) : (
+                              "-"
+                            )}
                           </span>
                           {p.tenants?.full_name && (
                             <span className="ml-2 text-slate-500">{p.tenants.full_name}</span>

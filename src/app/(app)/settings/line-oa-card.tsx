@@ -1,5 +1,6 @@
 "use client";
 
+import { MessageCircle, Printer } from "lucide-react";
 import { ActionForm } from "@/components/action-form";
 import { QRCodeImg } from "@/components/qr-code";
 import { lineOaUrl } from "@/lib/line-oa";
@@ -11,7 +12,7 @@ export function LineOaCard({ lineOaId, orgName }: { lineOaId: string; orgName: s
   return (
     <div className="card mb-6 p-5">
       <div className="flex items-center gap-2">
-        <span className="text-lg">💚</span>
+        <MessageCircle className="h-5 w-5 text-emerald-500" strokeWidth={2} />
         <h2 className="font-semibold text-slate-900">LINE OA ของหอพัก (ให้ผู้เช่าสแกนเพิ่มเพื่อน)</h2>
       </div>
       <p className="mt-1 text-sm text-slate-500">
@@ -40,9 +41,10 @@ export function LineOaCard({ lineOaId, orgName }: { lineOaId: string; orgName: s
             <p className="text-sm font-medium text-slate-700">{lineOaId}</p>
             <a
               href={printHref}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
-              🖨️ เปิดหน้าพิมพ์ QR
+              <Printer className="h-4 w-4" strokeWidth={2} />
+              เปิดหน้าพิมพ์ QR
             </a>
           </div>
         ) : (

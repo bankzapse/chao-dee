@@ -1,3 +1,4 @@
+import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
@@ -136,7 +137,12 @@ export default async function TenantsPage({
                   <tbody className="divide-y divide-slate-100">
                     {shown.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-900">👤 {t.full_name}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900">
+                          <span className="inline-flex items-center gap-2">
+                            <User className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                            {t.full_name}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-slate-600">
                           {placement.get(t.id) ? (
                             <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">

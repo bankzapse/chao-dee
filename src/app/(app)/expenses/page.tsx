@@ -1,3 +1,4 @@
+import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, StatCard } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
@@ -90,7 +91,9 @@ export default async function ExpensesPage({
       ) : (
         <section className="card overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">🏢 {scope}</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Building2 className="h-4 w-4 text-slate-400" strokeWidth={2} /> {scope}
+            </h2>
             <span className="text-xs text-slate-500">
               {list.length} รายการ · เดือนนี้ <b className="text-rose-600">{formatBaht(thisMonth)}</b> ·
               รวม <b className="text-slate-700">{formatBaht(total)}</b>

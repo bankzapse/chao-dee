@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
 import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
 import { createParcel, markPickedUp } from "./actions";
@@ -101,7 +102,7 @@ export function PickUpButton({ id }: { id: string }) {
   const [pending, startTransition] = useTransition();
   return (
     <button
-      className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+      className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-700"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
@@ -110,7 +111,8 @@ export function PickUpButton({ id }: { id: string }) {
         })
       }
     >
-      ✓ รับแล้ว
+      <Check className="h-4 w-4" strokeWidth={2.5} />
+      รับแล้ว
     </button>
   );
 }

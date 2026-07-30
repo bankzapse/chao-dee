@@ -1,3 +1,4 @@
+import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
@@ -41,8 +42,9 @@ export default async function BuildingsPage() {
             <div key={b.id} className="card flex flex-col p-5">
               <div className="flex items-start justify-between">
                 <div className="min-w-0">
-                  <h3 className="truncate text-lg font-semibold text-slate-900">
-                    🏢 {b.name}
+                  <h3 className="flex items-center gap-2 truncate text-lg font-semibold text-slate-900">
+                    <Building2 className="h-5 w-5 shrink-0 text-slate-400" strokeWidth={2} />
+                    <span className="truncate">{b.name}</span>
                   </h3>
                   {b.address && (
                     <p className="mt-0.5 truncate text-sm text-slate-500">{b.address}</p>

@@ -1,3 +1,4 @@
+import { Hourglass, Mail } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/login/actions";
@@ -36,8 +37,8 @@ export default async function SubscriptionRequired() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-slate-100 p-4">
       <div className="card w-full max-w-md p-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl">
-          ⏳
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+          <Hourglass className="h-7 w-7" strokeWidth={2} />
         </div>
         <h1 className="mt-4 text-xl font-bold text-slate-900">แพ็คเกจหมดอายุแล้ว</h1>
         <p className="mt-2 text-sm text-slate-500">
@@ -52,8 +53,8 @@ export default async function SubscriptionRequired() {
           <a href="/renew" className="btn-primary w-full">
             ต่ออายุตอนนี้
           </a>
-          <a href="mailto:support@chao-dee.com" className="btn-secondary w-full">
-            ✉️ ติดต่อทีมงาน
+          <a href="mailto:support@chao-dee.com" className="btn-secondary flex w-full items-center justify-center gap-2">
+            <Mail className="h-4 w-4" strokeWidth={2} /> ติดต่อทีมงาน
           </a>
         </div>
 

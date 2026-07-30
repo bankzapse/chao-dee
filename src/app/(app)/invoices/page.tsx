@@ -15,6 +15,7 @@ import {
   INVOICE_STATUS_STYLE,
 } from "@/lib/format";
 import type { Invoice, InvoiceStatus, Building } from "@/lib/types";
+import { Building2, DoorOpen, Phone } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +121,10 @@ export default async function InvoicesPage({
       ) : (
         <section className="card overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">🏢 {scope}</h2>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Building2 className="h-4 w-4 text-slate-400" strokeWidth={2} />
+              {scope}
+            </h2>
             <span className="text-xs text-slate-500">
               {rows.length} บิล · ออกบิล <b className="text-slate-700">{formatBaht(totalBilled)}</b>
               {outstanding > 0 && (
@@ -148,16 +152,20 @@ export default async function InvoicesPage({
                 {rows.map((i) => (
                   <tr key={i.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-900">
-                      🚪 {i.rooms?.room_number ?? "-"}
+                      <span className="inline-flex items-center gap-1.5">
+                        <DoorOpen className="h-4 w-4 text-slate-400" strokeWidth={2} />
+                        {i.rooms?.room_number ?? "-"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       <p>{i.tenants?.full_name ?? "-"}</p>
                       {i.tenants?.phone && (
                         <a
                           href={`tel:${i.tenants.phone}`}
-                          className="text-xs text-indigo-600 hover:text-indigo-700"
+                          className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700"
                         >
-                          📞 {i.tenants.phone}
+                          <Phone className="h-3 w-3" strokeWidth={2} />
+                          {i.tenants.phone}
                         </a>
                       )}
                     </td>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Building2, Lightbulb, Gift, Star, Hourglass } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
 import { BrandMark } from "@/components/brand-mark";
@@ -83,9 +84,10 @@ export default async function RentManage() {
           <StandaloneListingButton label="+ ลงประกาศใหม่" />
         </div>
 
-        <div className="mt-6 rounded-xl bg-indigo-50 p-4 text-sm text-indigo-800">
-          💡 อยากได้ระบบจดมิเตอร์ ออกบิล เชื่อม LINE ผู้เช่า ครบวงจร?{" "}
-          <Link href="/signup" className="font-semibold underline">ทดลอง Chao-Dee ฟรี 30 วัน</Link>
+        <div className="mt-6 flex items-start gap-2 rounded-xl bg-indigo-50 p-4 text-sm text-indigo-800">
+          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" strokeWidth={2} />
+          <span>อยากได้ระบบจดมิเตอร์ ออกบิล เชื่อม LINE ผู้เช่า ครบวงจร?{" "}
+          <Link href="/signup" className="font-semibold underline">ทดลอง Chao-Dee ฟรี 30 วัน</Link></span>
         </div>
 
         {listings.length === 0 ? (
@@ -110,7 +112,9 @@ export default async function RentManage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={l.cover_image} alt={l.title} className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300">🏢</div>
+                        <div className="flex h-full w-full items-center justify-center text-slate-300">
+                          <Building2 className="h-7 w-7" strokeWidth={1.5} />
+                        </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -125,13 +129,21 @@ export default async function RentManage() {
                       <p className="mt-0.5 text-sm text-slate-500">
                         {PROPERTY_TYPE_LABEL[l.property_type]} · ห้องว่าง {s.vacant} · เริ่ม {s.minRent > 0 ? formatBaht(s.minRent) : "-"}
                       </p>
-                      {disc && <p className="mt-1 text-xs font-medium text-emerald-600">🎁 ส่วนลดเดือนแรก {disc}</p>}
-                      {featured && (
-                        <p className="mt-1 text-xs font-medium text-amber-600">
-                          ⭐ กำลังโปรโมท{l.featured_until ? ` — ถึง ${formatDate(l.featured_until)}` : ""}
+                      {disc && (
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-600">
+                          <Gift className="h-3.5 w-3.5 shrink-0" strokeWidth={2} /> ส่วนลดเดือนแรก {disc}
                         </p>
                       )}
-                      {pendingPromo.has(l.id) && <p className="mt-1 text-xs text-slate-500">⏳ รออนุมัติโปรโมท</p>}
+                      {featured && (
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-600">
+                          <Star className="h-3.5 w-3.5 shrink-0" strokeWidth={2} /> กำลังโปรโมท{l.featured_until ? ` — ถึง ${formatDate(l.featured_until)}` : ""}
+                        </p>
+                      )}
+                      {pendingPromo.has(l.id) && (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                          <Hourglass className="h-3.5 w-3.5 shrink-0" strokeWidth={2} /> รออนุมัติโปรโมท
+                        </p>
+                      )}
                       {l.building_id && (
                         <p className="mt-1 text-xs text-slate-400">
                           ผูกกับอาคารในระบบจัดการหอ — ห้องว่าง/ราคาอัปเดตอัตโนมัติ

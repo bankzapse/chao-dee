@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 /** ผูกบัญชีด้วยเบอร์โทรที่ลงทะเบียนไว้กับหอ */
 export function LinkForm() {
-  const router = useRouter();
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -24,8 +22,9 @@ export function LinkForm() {
         setErr(json.error ?? "ผูกบัญชีไม่สำเร็จ");
         return;
       }
-      router.replace("/liff");
-      router.refresh();
+      // hard navigation: โหลด /liff ใหม่ทั้งหน้าเพื่อให้อ่าน cookie ที่เพิ่งผูก (เซสชันมี tenantId แล้ว)
+      // เลี่ยง Router Cache ของ Next.js ที่ยัง cache หน้า /liff ตอน "ยังไม่ผูก" ไว้ → เด้งกลับหน้าผูกวน
+      window.location.replace("/liff");
     } catch {
       setErr("เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง");
     } finally {

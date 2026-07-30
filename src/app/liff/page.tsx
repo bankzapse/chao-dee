@@ -5,15 +5,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht } from "@/lib/format";
 
 const MENU = [
-  { href: "/liff/bills", icon: "🧾", label: "บิล / ยอดค้าง", sub: "ดูใบแจ้งหนี้และชำระเงิน" },
-  { href: "/liff/maintenance", icon: "🔧", label: "แจ้งซ่อม", sub: "แจ้งปัญหา แนบรูปได้" },
-  { href: "/liff/parcels", icon: "📦", label: "พัสดุ", sub: "พัสดุที่มาถึงหอ" },
-  { href: "/liff/room", icon: "🏠", label: "ข้อมูลห้อง / สัญญา", sub: "ค่าเช่า ค่าน้ำ-ไฟ สัญญา" },
+  { href: "/liff/bills", label: "บิล / ยอดค้าง", sub: "ใบแจ้งหนี้และการชำระเงิน" },
+  { href: "/liff/maintenance", label: "แจ้งซ่อม", sub: "แจ้งปัญหาในห้อง แนบรูปได้" },
+  { href: "/liff/parcels", label: "พัสดุ", sub: "พัสดุที่มาถึงหอ" },
+  { href: "/liff/room", label: "ข้อมูลห้อง / สัญญา", sub: "ค่าเช่า ค่าบริการ และสัญญาเช่า" },
+  { href: "/liff/payment", label: "วิธีชำระเงิน", sub: "ช่องทางและขั้นตอนการโอน" },
+  { href: "/liff/contact", label: "ติดต่อผู้ดูแล", sub: "เบอร์โทรและช่องทางติดต่อ" },
 ];
 
 export default async function LiffHome() {
   // เซสชัน + liff.init() จัดการที่ layout (LiffBoot) แล้ว — ที่นี่แค่เช็คว่าผูกบัญชีหรือยัง
-  // getLiffTenant หาจาก sub เสมอ (ไม่พึ่ง tenantId ที่อาจ stale)
   const tenant = await getLiffTenant();
   if (!tenant) redirect("/liff/link");
 
@@ -37,25 +38,31 @@ export default async function LiffHome() {
 
   return (
     <div>
-      <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-5 text-white">
-        <p className="text-xs text-indigo-100">{org?.name ?? "หอพัก"}</p>
-        <p className="mt-0.5 text-lg font-bold">สวัสดี คุณ{tenant.full_name}</p>
-        <div className="mt-3 rounded-xl bg-white/10 px-4 py-3">
-          <p className="text-xs text-indigo-100">ยอดค้างชำระรวม</p>
-          <p className="text-2xl font-bold">{formatBaht(outstanding)}</p>
+      {/* หัวการ์ด: ทักทาย + ยอดค้าง */}
+      <div className="rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
+        <p className="text-sm text-indigo-100">{org?.name ?? "หอพัก"}</p>
+        <p className="mt-1 text-2xl font-bold leading-tight">คุณ{tenant.full_name}</p>
+        <div className="mt-5 rounded-2xl bg-white/10 px-5 py-4">
+          <p className="text-sm text-indigo-100">ยอดค้างชำระรวม</p>
+          <p className="mt-0.5 text-3xl font-bold">{formatBaht(outstanding)}</p>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        {MENU.map((m) => (
+      {/* เมนู: รายการแนวตั้ง ตัวใหญ่ ไม่มีไอคอน */}
+      <div className="mt-5 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100">
+        {MENU.map((m, i) => (
           <Link
             key={m.href}
             href={m.href}
-            className="flex flex-col gap-1 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 active:scale-95"
+            className={`flex items-center justify-between px-5 py-4 active:bg-slate-50 ${
+              i > 0 ? "border-t border-slate-100" : ""
+            }`}
           >
-            <span className="text-3xl">{m.icon}</span>
-            <span className="mt-1 font-semibold text-slate-900">{m.label}</span>
-            <span className="text-xs text-slate-400">{m.sub}</span>
+            <div className="min-w-0">
+              <p className="text-lg font-semibold text-slate-900">{m.label}</p>
+              <p className="mt-0.5 text-sm text-slate-400">{m.sub}</p>
+            </div>
+            <span className="ml-3 shrink-0 text-2xl text-slate-300">›</span>
           </Link>
         ))}
       </div>

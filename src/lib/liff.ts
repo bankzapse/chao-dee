@@ -12,7 +12,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * และ cookie นี้ปลอม/แก้ไม่ได้เพราะไม่รู้ secret ฝั่ง server
  */
 
-const COOKIE = "liff_session";
+// ชื่อใหม่ (v2) — เปลี่ยนจาก "liff_session" เพื่อให้ cookie เก่าที่ path="/liff" ถูกมองข้าม
+// เครื่องที่ค้าง cookie เก่าจะไม่มี session ที่อ่านได้ → LiffInit รันใหม่ → ออก cookie ใหม่ path="/" ที่ถูกต้อง
+const COOKIE = "liff_sess";
+const LEGACY_COOKIE = "liff_session";
 const MAX_AGE = 60 * 60 * 12; // 12 ชม.
 
 function secret(): string {
@@ -88,8 +91,10 @@ export async function setLiffSession(sub: string, tenantId: string | null): Prom
     path: "/",
     maxAge: MAX_AGE,
   });
-  // ลบ cookie เก่า path="/liff" ที่ค้างจากเวอร์ชันก่อนหน้า (กัน cookie ซ้ำชื่อคนละ path → อ่านตัวเก่าที่ tenantId ค้าง)
-  jar.set(COOKIE, "", { httpOnly: true, secure: true, sameSite: "none", path: "/liff", maxAge: 0 });
+  // ลบ cookie เก่า "liff_session" ที่ค้างจากเวอร์ชันก่อน (ทั้ง path เดิม "/liff" และ "/") ให้หมด
+  const kill = { httpOnly: true, secure: true, sameSite: "none" as const, maxAge: 0 };
+  jar.set(LEGACY_COOKIE, "", { ...kill, path: "/liff" });
+  jar.set(LEGACY_COOKIE, "", { ...kill, path: "/" });
 }
 
 export async function readLiffSession(): Promise<LiffSession | null> {

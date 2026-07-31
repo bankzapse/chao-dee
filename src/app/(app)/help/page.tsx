@@ -4,7 +4,7 @@ import {
   MessageCircle,
   Sparkles,
   Bell,
-  Ticket,
+  RefreshCw,
   Mail,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui";
@@ -57,7 +57,7 @@ const GUIDES = [
     ],
   },
   {
-    icon: Ticket,
+    icon: RefreshCw,
     title: "ต่ออายุ & ใบเสร็จ",
     steps: [
       "ไปเมนู “ตั้งค่า” → “ต่ออายุ/อัปเกรด” เลือกแพ็คเกจและรอบการชำระ",

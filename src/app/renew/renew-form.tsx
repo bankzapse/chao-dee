@@ -10,7 +10,7 @@ import { PACKAGES, COMMON_FEATURES, yearlyDiscount, type Package } from "@/lib/p
 import { COMPANY, splitVat } from "@/lib/company";
 import { formatBaht } from "@/lib/format";
 import { submitRenewal, checkPromo } from "./actions";
-import { Building2, ReceiptText, Check } from "lucide-react";
+import { Package as PackageIcon, ReceiptText, Check } from "lucide-react";
 
 export function RenewForm({
   platformPromptPay,
@@ -102,7 +102,7 @@ export function RenewForm({
         {/* เลือกแพ็คเกจ */}
         <div className="card p-5">
           <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-900">
-            <Building2 className="h-5 w-5 text-indigo-500" strokeWidth={2} />
+            <PackageIcon className="h-5 w-5 text-indigo-500" strokeWidth={2} />
             เลือกแพ็คเกจ
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">

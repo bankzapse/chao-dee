@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Inbox, Star, Wrench } from "lucide-react";
+import { Building2, Inbox, Star, LayoutDashboard } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BrandMark } from "@/components/brand-mark";
@@ -75,7 +75,7 @@ export default async function RentSignupPage() {
                 <Star className="h-4 w-4 shrink-0 fill-current text-amber-300" strokeWidth={2} /> ซื้อโปรโมทดันขึ้นบนสุดได้
               </li>
               <li className="flex items-center gap-2">
-                <Wrench className="h-4 w-4 shrink-0 text-amber-300" strokeWidth={2} /> อัปเกรดเป็นระบบจัดการหอครบวงจร
+                <LayoutDashboard className="h-4 w-4 shrink-0 text-amber-300" strokeWidth={2} /> อัปเกรดเป็นระบบจัดการหอครบวงจร
               </li>
             </ul>
             <p className="mt-5 text-xs text-slate-400">ลูกค้า Chao-Dee เดิม เข้าสู่ระบบด้วยบัญชีเดิมได้เลย</p>

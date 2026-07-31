@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Link2, Inbox, Gift, Star, Hourglass } from "lucide-react";
+import { Building2, ExternalLink, Inbox, Gift, Star, Hourglass } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
@@ -71,7 +71,7 @@ export default async function ListingPage() {
         action={
           <div className="flex items-center gap-2">
             <Link href="/rent" target="_blank" className="btn-secondary inline-flex items-center gap-1.5">
-              <Link2 className="h-4 w-4" strokeWidth={2} /> ดูหน้าประกาศสาธารณะ
+              <ExternalLink className="h-4 w-4" strokeWidth={2} /> ดูหน้าประกาศสาธารณะ
             </Link>
             <Link href="/listing/leads" className="btn-primary inline-flex items-center gap-1.5">
               <Inbox className="h-4 w-4" strokeWidth={2} /> ผู้ติดต่อ{totalNewLeads > 0 ? ` (${totalNewLeads})` : ""}

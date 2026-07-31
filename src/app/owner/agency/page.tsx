@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Search } from "lucide-react";
 import { requirePerm } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatCard, Badge } from "@/components/ui";
@@ -146,7 +146,7 @@ export default async function OwnerAgencyPage() {
         <div className="mt-6 card overflow-hidden">
           <div className="border-b border-slate-200 bg-amber-50 px-4 py-2.5">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-amber-900">
-              <Star className="h-4 w-4 text-amber-500" strokeWidth={2} fill="currentColor" />
+              <Search className="h-4 w-4 text-indigo-500" strokeWidth={2} />
               คำขอ “ให้เราหาห้องให้” ({openRequests.length})
             </h2>
           </div>

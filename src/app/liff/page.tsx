@@ -1,16 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  ReceiptText,
+  Wrench,
+  Package,
+  DoorOpen,
+  Wallet,
+  Phone,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 import { getLiffTenant } from "@/lib/liff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht } from "@/lib/format";
+import { IconBadge, type IconTone } from "@/components/icon-badge";
 
-const MENU = [
-  { href: "/liff/bills", label: "บิล / ยอดค้าง", sub: "ใบแจ้งหนี้และการชำระเงิน" },
-  { href: "/liff/maintenance", label: "แจ้งซ่อม", sub: "แจ้งปัญหาในห้อง แนบรูปได้" },
-  { href: "/liff/parcels", label: "พัสดุ", sub: "พัสดุที่มาถึงหอ" },
-  { href: "/liff/room", label: "ข้อมูลห้อง / สัญญา", sub: "ค่าเช่า ค่าบริการ และสัญญาเช่า" },
-  { href: "/liff/payment", label: "วิธีชำระเงิน", sub: "ช่องทางและขั้นตอนการโอน" },
-  { href: "/liff/contact", label: "ติดต่อผู้ดูแล", sub: "เบอร์โทรและช่องทางติดต่อ" },
+const MENU: { href: string; label: string; sub: string; icon: LucideIcon; tone: IconTone }[] = [
+  { href: "/liff/bills", label: "บิล / ยอดค้าง", sub: "ใบแจ้งหนี้และการชำระเงิน", icon: ReceiptText, tone: "indigo" },
+  { href: "/liff/maintenance", label: "แจ้งซ่อม", sub: "แจ้งปัญหาในห้อง แนบรูปได้", icon: Wrench, tone: "amber" },
+  { href: "/liff/parcels", label: "พัสดุ", sub: "พัสดุที่มาถึงหอ", icon: Package, tone: "emerald" },
+  { href: "/liff/room", label: "ข้อมูลห้อง / สัญญา", sub: "ค่าเช่า ค่าบริการ และสัญญาเช่า", icon: DoorOpen, tone: "cyan" },
+  { href: "/liff/payment", label: "วิธีชำระเงิน", sub: "ช่องทางและขั้นตอนการโอน", icon: Wallet, tone: "violet" },
+  { href: "/liff/contact", label: "ติดต่อผู้ดูแล", sub: "เบอร์โทรและช่องทางติดต่อ", icon: Phone, tone: "rose" },
 ];
 
 export default async function LiffHome() {
@@ -48,21 +59,22 @@ export default async function LiffHome() {
         </div>
       </div>
 
-      {/* เมนู: รายการแนวตั้ง ตัวใหญ่ ไม่มีไอคอน */}
+      {/* เมนู: รายการแนวตั้ง ไอคอน picture-shadow + ตัวใหญ่ */}
       <div className="mt-5 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100">
         {MENU.map((m, i) => (
           <Link
             key={m.href}
             href={m.href}
-            className={`flex items-center justify-between px-5 py-4 active:bg-slate-50 ${
+            className={`flex items-center gap-4 px-5 py-4 active:bg-slate-50 ${
               i > 0 ? "border-t border-slate-100" : ""
             }`}
           >
-            <div className="min-w-0">
+            <IconBadge icon={m.icon} tone={m.tone} size="md" />
+            <div className="min-w-0 flex-1">
               <p className="text-lg font-semibold text-slate-900">{m.label}</p>
               <p className="mt-0.5 text-sm text-slate-400">{m.sub}</p>
             </div>
-            <span className="ml-3 shrink-0 text-2xl text-slate-300">›</span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-slate-300" strokeWidth={2} />
           </Link>
         ))}
       </div>

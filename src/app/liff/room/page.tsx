@@ -42,9 +42,11 @@ async function loadContract(admin: Admin, tenantId: string) {
   return core.data as Record<string, unknown> | null;
 }
 
+type Doc = { name: string; url: string };
+
 /** เอกสารสัญญาจาก storage (documents/contracts/{id}) พร้อม signed URL ให้ผู้เช่าเปิดดู/ดาวน์โหลด */
-async function loadDocs(admin: Admin, contractId: string) {
-  const out: { name: string; url: string }[] = [];
+async function loadContractDocs(admin: Admin, contractId: string): Promise<Doc[]> {
+  const out: Doc[] = [];
   try {
     const { data } = await admin.storage.from("documents").list(`contracts/${contractId}`, { limit: 100 });
     const files = (data ?? []).filter((f) => !f.name.startsWith("."));
@@ -64,6 +66,33 @@ async function loadDocs(admin: Admin, contractId: string) {
   return out;
 }
 
+const DOC_TYPE_LABEL: Record<string, string> = {
+  contract: "สัญญาเช่า",
+  id_card: "บัตรประชาชน",
+  house_reg: "ทะเบียนบ้าน",
+  other: "เอกสาร",
+};
+
+/** เอกสารผู้เช่า (ตาราง tenant_documents → storage) — ผู้เช่าอัปโหลดสัญญา/บัตรฯ ไว้ตรงนี้ก็ได้ */
+async function loadTenantDocs(admin: Admin, tenantId: string): Promise<Doc[]> {
+  const out: Doc[] = [];
+  try {
+    const { data } = await admin
+      .from("tenant_documents")
+      .select("doc_type, file_path")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false });
+    for (const d of (data ?? []) as { doc_type: string; file_path: string }[]) {
+      if (!d.file_path) continue;
+      const { data: signed } = await admin.storage.from("documents").createSignedUrl(d.file_path, 60 * 60);
+      if (signed?.signedUrl) out.push({ name: DOC_TYPE_LABEL[d.doc_type] ?? "เอกสาร", url: signed.signedUrl });
+    }
+  } catch {
+    /* ไม่มีตาราง/เอกสาร — ข้าม */
+  }
+  return out;
+}
+
 const num = (v: unknown) => Number(v ?? 0);
 const str = (v: unknown) => (v == null ? "" : String(v));
 
@@ -76,10 +105,12 @@ export default async function LiffRoom() {
   const contract = await loadContract(admin, tenant.id);
   const roomId = tenant.room_id ?? (contract?.room_id ? str(contract.room_id) : null);
   const contractId = contract?.id ? str(contract.id) : "";
-  const [room, docs] = await Promise.all([
+  const [room, contractDocs, tenantDocs] = await Promise.all([
     loadRoom(admin, roomId),
-    contractId ? loadDocs(admin, contractId) : Promise.resolve([]),
+    contractId ? loadContractDocs(admin, contractId) : Promise.resolve([] as Doc[]),
+    loadTenantDocs(admin, tenant.id),
   ]);
+  const docs = [...contractDocs, ...tenantDocs];
 
   const b = room?.buildings as { name?: string } | { name?: string }[] | null | undefined;
   const buildingName = Array.isArray(b) ? b[0]?.name : b?.name;
@@ -157,7 +188,7 @@ export default async function LiffRoom() {
           {/* เอกสารสัญญา — เปิดดู/ดาวน์โหลด */}
           {docs.length > 0 && (
             <div>
-              <p className="mb-1.5 px-1 text-sm font-medium text-slate-500">เอกสารสัญญาเช่า</p>
+              <p className="mb-1.5 px-1 text-sm font-medium text-slate-500">เอกสาร</p>
               <div className="divide-y divide-slate-100 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
                 {docs.map((d) => (
                   <a

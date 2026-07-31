@@ -8,72 +8,124 @@ export const runtime = "nodejs";
 const LINE_API = "https://api.line.me/v2/bot";
 const LINE_DATA_API = "https://api-data.line.me/v2/bot";
 
-// 6 ปุ่ม (2 แถว x 3 คอลัมน์, 2500x1686)
+// 4 ปุ่ม (2 แถว x 2 คอลัมน์, 2500x1686) — พื้นหลังรูปภาพ + overlay ไล่สี + ไอคอนเส้น
 // ปุ่มที่มี path → เปิดหน้า LIFF (webview) · ที่มี text → ส่งข้อความให้ webhook ตอบ
-// ถ้ายังไม่ได้ตั้ง NEXT_PUBLIC_LIFF_ID ปุ่ม LIFF จะ fallback เป็นส่งข้อความแทน
-// path = ต่อท้าย LIFF endpoint (ตั้งเป็น chao-dee.com/liff) → "/bills" เปิด /liff/bills
+// (วิธีชำระเงิน/ติดต่อผู้ดูแล ย้ายไปอยู่ในเมนูของหน้า LIFF แล้ว จึงไม่มีใน rich menu)
 const BUTTONS = [
-  { label: "บิล / ยอดค้าง", emoji: "🧾", path: "/bills", text: "บิล", bg: "#6366f1" },
-  { label: "แจ้งซ่อม", emoji: "🔧", path: "/maintenance", text: "แจ้งซ่อม", bg: "#f59e0b" },
-  { label: "พัสดุ", emoji: "📦", path: "/parcels", text: "พัสดุ", bg: "#10b981" },
-  { label: "ข้อมูลห้อง", emoji: "🏠", path: "/room", text: "ข้อมูลห้อง", bg: "#06b6d4" },
-  { label: "วิธีชำระเงิน", emoji: "💳", text: "ชำระเงิน", bg: "#8b5cf6" },
-  { label: "ติดต่อผู้ดูแล", emoji: "☎️", text: "ติดต่อ", bg: "#f43f5e" },
+  {
+    label: "บิล / ยอดค้าง",
+    sub: "ใบแจ้งหนี้ · ชำระเงิน",
+    path: "/bills",
+    text: "บิล",
+    img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=70",
+    overlay: "linear-gradient(160deg, rgba(79,70,229,0.55) 0%, rgba(30,27,75,0.88) 100%)",
+    icon: ["M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", "M14 2v5h5", "M16 13H8", "M16 17H8", "M10 9H8"],
+  },
+  {
+    label: "แจ้งซ่อม",
+    sub: "แจ้งปัญหา · แนบรูป",
+    path: "/maintenance",
+    text: "แจ้งซ่อม",
+    img: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=70",
+    overlay: "linear-gradient(160deg, rgba(217,119,6,0.55) 0%, rgba(120,53,15,0.88) 100%)",
+    icon: ["M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"],
+  },
+  {
+    label: "พัสดุ",
+    sub: "พัสดุที่มาถึงหอ",
+    path: "/parcels",
+    text: "พัสดุ",
+    img: "https://images.unsplash.com/photo-1586769852836-bc069f19e1b6?auto=format&fit=crop&w=900&q=70",
+    overlay: "linear-gradient(160deg, rgba(5,150,105,0.55) 0%, rgba(6,78,59,0.88) 100%)",
+    icon: ["M7.5 4.27l9 5.15", "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z", "M3.3 7l8.7 5 8.7-5", "M12 22V12"],
+  },
+  {
+    label: "ข้อมูลห้อง",
+    sub: "ค่าเช่า · สัญญาเช่า",
+    path: "/room",
+    text: "ข้อมูลห้อง",
+    img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70",
+    overlay: "linear-gradient(160deg, rgba(8,145,178,0.55) 0%, rgba(22,78,99,0.88) 100%)",
+    icon: ["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "M9 22V12h6v10"],
+  },
 ];
 const W = 2500;
 const H = 1686;
-const COLS = 3;
+const COLS = 2;
 const ROWS = 2;
 const CW = W / COLS;
 const CH = H / ROWS;
 
-/** รูปเมนู (glass cards บนพื้น gradient) */
+/** รูปเมนู — แต่ละช่อง: รูปพื้นหลัง + overlay ไล่สี + ไอคอนเส้นในวงกระจก + ตัวใหญ่ + คำอธิบาย */
 function menuImage() {
   return new ImageResponse(
     (
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          width: W,
-          height: H,
-          backgroundImage: "linear-gradient(135deg, #4338ca 0%, #4f46e5 45%, #0e7490 100%)",
-        }}
-      >
+      <div style={{ display: "flex", flexWrap: "wrap", width: W, height: H, background: "#0f172a" }}>
         {BUTTONS.map((b) => (
-          <div
-            key={b.text}
-            style={{ width: CW, height: CH, display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
+          <div key={b.text} style={{ width: CW, height: CH, display: "flex", padding: 14 }}>
             <div
               style={{
-                width: CW - 72,
-                height: CH - 72,
+                position: "relative",
+                width: "100%",
+                height: "100%",
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 30,
-                borderRadius: 48,
-                background: "rgba(255,255,255,0.10)",
-                border: "2px solid rgba(255,255,255,0.22)",
+                borderRadius: 44,
+                overflow: "hidden",
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={b.img}
+                width={CW}
+                height={CH}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                alt=""
+              />
+              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: b.overlay }} />
               <div
                 style={{
+                  position: "relative",
                   display: "flex",
-                  width: 190,
-                  height: 190,
-                  borderRadius: 999,
-                  background: b.bg,
+                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 104,
+                  width: "100%",
+                  height: "100%",
+                  gap: 26,
                 }}
               >
-                {b.emoji}
+                <div
+                  style={{
+                    display: "flex",
+                    width: 156,
+                    height: 156,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.16)",
+                    border: "3px solid rgba(255,255,255,0.55)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg
+                    width={82}
+                    height={82}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {b.icon.map((d, i) => (
+                      <path key={i} d={d} />
+                    ))}
+                  </svg>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                  <div style={{ fontSize: 74, fontWeight: 800, color: "white" }}>{b.label}</div>
+                  <div style={{ fontSize: 40, color: "rgba(255,255,255,0.92)" }}>{b.sub}</div>
+                </div>
               </div>
-              <div style={{ fontSize: 62, fontWeight: 700, color: "white" }}>{b.label}</div>
             </div>
           </div>
         ))}

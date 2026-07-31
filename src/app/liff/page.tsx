@@ -50,31 +50,31 @@ export default async function LiffHome() {
   return (
     <div>
       {/* หัวการ์ด: ทักทาย + ยอดค้าง */}
-      <div className="rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
-        <p className="text-sm text-indigo-100">{org?.name ?? "หอพัก"}</p>
-        <p className="mt-1 text-2xl font-bold leading-tight">คุณ{tenant.full_name}</p>
-        <div className="mt-5 rounded-2xl bg-white/10 px-5 py-4">
-          <p className="text-sm text-indigo-100">ยอดค้างชำระรวม</p>
-          <p className="mt-0.5 text-3xl font-bold">{formatBaht(outstanding)}</p>
+      <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-4 text-white shadow-sm">
+        <p className="text-xs text-indigo-100">{org?.name ?? "หอพัก"}</p>
+        <p className="mt-0.5 text-lg font-bold leading-tight">คุณ{tenant.full_name}</p>
+        <div className="mt-3 rounded-xl bg-white/10 px-4 py-3">
+          <p className="text-xs text-indigo-100">ยอดค้างชำระรวม</p>
+          <p className="mt-0.5 text-2xl font-bold">{formatBaht(outstanding)}</p>
         </div>
       </div>
 
-      {/* เมนู: รายการแนวตั้ง ไอคอน picture-shadow + ตัวใหญ่ */}
-      <div className="mt-5 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100">
+      {/* เมนู: รายการแนวตั้ง ไอคอน picture-shadow */}
+      <div className="mt-3 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
         {MENU.map((m, i) => (
           <Link
             key={m.href}
             href={m.href}
-            className={`flex items-center gap-4 px-5 py-4 active:bg-slate-50 ${
+            className={`flex items-center gap-3 px-4 py-2.5 active:bg-slate-50 ${
               i > 0 ? "border-t border-slate-100" : ""
             }`}
           >
-            <IconBadge icon={m.icon} tone={m.tone} size="md" />
+            <IconBadge icon={m.icon} tone={m.tone} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="text-lg font-semibold text-slate-900">{m.label}</p>
-              <p className="mt-0.5 text-sm text-slate-400">{m.sub}</p>
+              <p className="text-base font-semibold text-slate-900">{m.label}</p>
+              <p className="text-xs text-slate-400">{m.sub}</p>
             </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-slate-300" strokeWidth={2} />
+            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={2} />
           </Link>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { FileText, Download } from "lucide-react";
 import { getLiffTenant } from "@/lib/liff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht, formatDate } from "@/lib/format";
@@ -6,9 +7,10 @@ import { LiffHeader } from "../liff-header";
 
 type Row = { label: string; value: string };
 type Section = { title: string; rows: Row[] };
+type Admin = ReturnType<typeof createAdminClient>;
 
 /** ดึงข้อมูลห้องแบบเผื่อ column ใหม่ยังไม่มีใน DB (schema drift) — error แล้วถอยไป column หลัก */
-async function loadRoom(admin: ReturnType<typeof createAdminClient>, roomId: string | null) {
+async function loadRoom(admin: Admin, roomId: string | null) {
   if (!roomId) return null;
   const full = await admin
     .from("rooms")
@@ -24,7 +26,7 @@ async function loadRoom(admin: ReturnType<typeof createAdminClient>, roomId: str
   return core.data as Record<string, unknown> | null;
 }
 
-async function loadContract(admin: ReturnType<typeof createAdminClient>, tenantId: string) {
+async function loadContract(admin: Admin, tenantId: string) {
   const q = (cols: string) =>
     admin
       .from("contracts")
@@ -34,10 +36,32 @@ async function loadContract(admin: ReturnType<typeof createAdminClient>, tenantI
       .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
-  const full = await q("start_date, end_date, rent_amount, deposit_amount, occupant_count, late_fee, late_fee_mode, terms");
+  const full = await q("id, room_id, start_date, end_date, rent_amount, deposit_amount, occupant_count, late_fee, late_fee_mode, terms");
   if (!full.error) return full.data as Record<string, unknown> | null;
-  const core = await q("start_date, end_date, rent_amount, deposit_amount");
+  const core = await q("id, room_id, start_date, end_date, rent_amount, deposit_amount");
   return core.data as Record<string, unknown> | null;
+}
+
+/** เอกสารสัญญาจาก storage (documents/contracts/{id}) พร้อม signed URL ให้ผู้เช่าเปิดดู/ดาวน์โหลด */
+async function loadDocs(admin: Admin, contractId: string) {
+  const out: { name: string; url: string }[] = [];
+  try {
+    const { data } = await admin.storage.from("documents").list(`contracts/${contractId}`, { limit: 100 });
+    const files = (data ?? []).filter((f) => !f.name.startsWith("."));
+    for (const f of files) {
+      const { data: signed } = await admin.storage
+        .from("documents")
+        .createSignedUrl(`contracts/${contractId}/${f.name}`, 60 * 60);
+      if (signed?.signedUrl) {
+        // ชื่อไฟล์เก็บเป็น "{doc_type}__{ชื่อจริง}" — โชว์ชื่อจริงให้อ่านง่าย
+        const nice = f.name.includes("__") ? f.name.split("__").slice(1).join("__") : f.name;
+        out.push({ name: nice || f.name, url: signed.signedUrl });
+      }
+    }
+  } catch {
+    /* ไม่มีเอกสาร/ยังไม่ได้ตั้ง bucket — ข้าม */
+  }
+  return out;
 }
 
 const num = (v: unknown) => Number(v ?? 0);
@@ -48,9 +72,13 @@ export default async function LiffRoom() {
   if (!tenant) redirect("/liff/link");
 
   const admin = createAdminClient();
-  const [room, contract] = await Promise.all([
-    loadRoom(admin, tenant.room_id),
-    loadContract(admin, tenant.id),
+  // โหลดสัญญาก่อน แล้วใช้ห้องจากสัญญาถ้าผู้เช่าไม่ได้ผูกห้องตรง (tenant.room_id ว่าง)
+  const contract = await loadContract(admin, tenant.id);
+  const roomId = tenant.room_id ?? (contract?.room_id ? str(contract.room_id) : null);
+  const contractId = contract?.id ? str(contract.id) : "";
+  const [room, docs] = await Promise.all([
+    loadRoom(admin, roomId),
+    contractId ? loadDocs(admin, contractId) : Promise.resolve([]),
   ]);
 
   const b = room?.buildings as { name?: string } | { name?: string }[] | null | undefined;
@@ -101,11 +129,12 @@ export default async function LiffRoom() {
   }
 
   const terms = str(contract?.terms).trim();
+  const hasAny = sections.length > 0 || docs.length > 0;
 
   return (
     <div>
       <LiffHeader title="ข้อมูลห้อง / สัญญา" />
-      {sections.length === 0 ? (
+      {!hasAny ? (
         <p className="rounded-2xl bg-white p-8 text-center text-sm text-slate-400 ring-1 ring-slate-100">
           ยังไม่มีข้อมูลห้อง — กรุณาติดต่อผู้ดูแลหอ
         </p>
@@ -124,6 +153,28 @@ export default async function LiffRoom() {
               </div>
             </div>
           ))}
+
+          {/* เอกสารสัญญา — เปิดดู/ดาวน์โหลด */}
+          {docs.length > 0 && (
+            <div>
+              <p className="mb-1.5 px-1 text-sm font-medium text-slate-500">เอกสารสัญญาเช่า</p>
+              <div className="divide-y divide-slate-100 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+                {docs.map((d) => (
+                  <a
+                    key={d.url}
+                    href={d.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-slate-50"
+                  >
+                    <FileText className="h-5 w-5 shrink-0 text-indigo-500" strokeWidth={2} />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{d.name}</span>
+                    <Download className="h-4 w-4 shrink-0 text-slate-400" strokeWidth={2} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {terms && (
             <div>

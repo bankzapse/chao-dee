@@ -17,7 +17,7 @@ const BUTTONS = [
     sub: "ใบแจ้งหนี้ · ชำระเงิน",
     path: "/bills",
     text: "บิล",
-    img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=70",
+    img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=560&q=42",
     overlay: "linear-gradient(160deg, rgba(79,70,229,0.55) 0%, rgba(30,27,75,0.88) 100%)",
     icon: ["M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", "M14 2v5h5", "M16 13H8", "M16 17H8", "M10 9H8"],
   },
@@ -26,7 +26,7 @@ const BUTTONS = [
     sub: "แจ้งปัญหา · แนบรูป",
     path: "/maintenance",
     text: "แจ้งซ่อม",
-    img: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=70",
+    img: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=560&q=42",
     overlay: "linear-gradient(160deg, rgba(217,119,6,0.55) 0%, rgba(120,53,15,0.88) 100%)",
     icon: ["M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"],
   },
@@ -35,7 +35,7 @@ const BUTTONS = [
     sub: "พัสดุที่มาถึงหอ",
     path: "/parcels",
     text: "พัสดุ",
-    img: "https://images.unsplash.com/photo-1586769852836-bc069f19e1b6?auto=format&fit=crop&w=900&q=70",
+    img: "https://images.unsplash.com/photo-1586769852836-bc069f19e1b6?auto=format&fit=crop&w=560&q=42",
     overlay: "linear-gradient(160deg, rgba(5,150,105,0.55) 0%, rgba(6,78,59,0.88) 100%)",
     icon: ["M7.5 4.27l9 5.15", "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z", "M3.3 7l8.7 5 8.7-5", "M12 22V12"],
   },
@@ -44,13 +44,13 @@ const BUTTONS = [
     sub: "ค่าเช่า · สัญญาเช่า",
     path: "/room",
     text: "ข้อมูลห้อง",
-    img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=70",
+    img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=560&q=42",
     overlay: "linear-gradient(160deg, rgba(8,145,178,0.55) 0%, rgba(22,78,99,0.88) 100%)",
     icon: ["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "M9 22V12h6v10"],
   },
 ];
-const W = 2500;
-const H = 1686;
+const W = 1200;
+const H = 810;
 const COLS = 2;
 const ROWS = 2;
 const CW = W / COLS;
@@ -62,14 +62,14 @@ function menuImage() {
     (
       <div style={{ display: "flex", flexWrap: "wrap", width: W, height: H, background: "#0f172a" }}>
         {BUTTONS.map((b) => (
-          <div key={b.text} style={{ width: CW, height: CH, display: "flex", padding: 14 }}>
+          <div key={b.text} style={{ width: CW, height: CH, display: "flex", padding: 8 }}>
             <div
               style={{
                 position: "relative",
                 width: "100%",
                 height: "100%",
                 display: "flex",
-                borderRadius: 44,
+                borderRadius: 24,
                 overflow: "hidden",
               }}
             >
@@ -91,24 +91,24 @@ function menuImage() {
                   justifyContent: "center",
                   width: "100%",
                   height: "100%",
-                  gap: 26,
+                  gap: 14,
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    width: 156,
-                    height: 156,
+                    width: 84,
+                    height: 84,
                     borderRadius: 999,
                     background: "rgba(255,255,255,0.16)",
-                    border: "3px solid rgba(255,255,255,0.55)",
+                    border: "2px solid rgba(255,255,255,0.55)",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
                   <svg
-                    width={82}
-                    height={82}
+                    width={46}
+                    height={46}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="white"
@@ -121,9 +121,9 @@ function menuImage() {
                     ))}
                   </svg>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                  <div style={{ fontSize: 74, fontWeight: 800, color: "white" }}>{b.label}</div>
-                  <div style={{ fontSize: 40, color: "rgba(255,255,255,0.92)" }}>{b.sub}</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize: 40, fontWeight: 800, color: "white" }}>{b.label}</div>
+                  <div style={{ fontSize: 22, color: "rgba(255,255,255,0.92)" }}>{b.sub}</div>
                 </div>
               </div>
             </div>

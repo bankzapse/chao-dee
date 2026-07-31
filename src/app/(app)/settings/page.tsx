@@ -84,11 +84,11 @@ export default async function SettingsPage() {
         </a>
       </div>
 
-      {/* แจ้งเตือน LINE เจ้าของหอ */}
+      {/* แจ้งเตือน LINE เจ้าของหอ — ซ่อนไว้ก่อน (ยังไม่เปิดใช้)
       <LineOwnerCard
         linked={Boolean(org?.owner_line_user_id)}
         code={org?.line_link_code ?? ""}
-      />
+      /> */}
 
       {/* LINE OA ของหอ (QR ให้ผู้เช่าสแกน) */}
       <LineOaCard lineOaId={lineOaId} orgName={org?.name ?? "หอพัก"} />

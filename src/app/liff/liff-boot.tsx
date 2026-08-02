@@ -78,7 +78,10 @@ export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: b
           setErr("ยืนยันบัญชีไม่สำเร็จ กรุณาลองใหม่");
           return;
         }
-        window.location.replace("/liff");
+        // ไปหน้าตามสถานะจริง: ผูกแล้ว → เมนู, ยังไม่ผูก → หน้ากรอกเบอร์
+        // (กันเด้ง /liff ↔ /liff/link วนเป็น loop เมื่อยังไม่ผูก)
+        const data = (await res.json().catch(() => ({ linked: false }))) as { linked?: boolean };
+        window.location.replace(data.linked ? "/liff" : "/liff/link");
       } catch {
         if (!cancelled) setErr("เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่");
       }

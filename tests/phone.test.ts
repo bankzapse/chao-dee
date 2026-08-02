@@ -15,6 +15,11 @@ describe("toE164", () => {
     expect(toE164("1234567890")).toBeNull();
     expect(toE164("")).toBeNull();
   });
+  it("ปฏิเสธเบอร์ต่างประเทศ (รับเฉพาะ +66)", () => {
+    expect(toE164("+14155552671")).toBeNull(); // US
+    expect(toE164("+442071838750")).toBeNull(); // UK
+    expect(toE164("+8613800138000")).toBeNull(); // CN
+  });
 });
 
 describe("toE164Digits", () => {

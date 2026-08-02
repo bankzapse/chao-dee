@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { QRCodeImg, PrintButton } from "@/components/qr-code";
-import { lineOaUrl } from "@/lib/line-oa";
+import { CHAO_DEE_OA_ID, lineOaUrl } from "@/lib/line-oa";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,8 @@ export default async function LineQrPrintPage({
   searchParams: Promise<{ oa?: string; name?: string }>;
 }) {
   const sp = await searchParams;
-  const id = (sp.oa ?? "").trim();
+  // ไม่ส่ง oa มา → ใช้ OA กลางของ Chao-Dee
+  const id = (sp.oa ?? "").trim() || CHAO_DEE_OA_ID;
   const name = (sp.name ?? "").trim() || "หอพัก";
   const url = lineOaUrl(id);
 

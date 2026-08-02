@@ -23,9 +23,7 @@ export default async function SettingsPage() {
     supabase.from("subscriptions").select("*").maybeSingle(),
   ]);
 
-  // แยก query + resilient เผื่อ prod ยังไม่ได้รัน migration ใหม่ (line_oa_id / บัญชีธนาคาร)
-  const { data: oaRow } = await supabase.from("organizations").select("line_oa_id").maybeSingle();
-  const lineOaId = (oaRow as { line_oa_id?: string } | null)?.line_oa_id ?? "";
+  // แยก query + resilient เผื่อ prod ยังไม่ได้รัน migration ใหม่ (บัญชีธนาคาร)
   const { data: bankRow } = await supabase
     .from("organizations")
     .select("bank_name, bank_account_no, bank_account_name")
@@ -90,8 +88,8 @@ export default async function SettingsPage() {
         code={org?.line_link_code ?? ""}
       /> */}
 
-      {/* LINE OA ของหอ (QR ให้ผู้เช่าสแกน) */}
-      <LineOaCard lineOaId={lineOaId} orgName={org?.name ?? "หอพัก"} />
+      {/* LINE OA ของ Chao-Dee (QR กลางให้ผู้เช่าสแกน) */}
+      <LineOaCard orgName={org?.name ?? "หอพัก"} />
 
       {/* ค่าขยะ — ระบุรายห้อง หรือ เหมาทุกห้อง */}
       <GarbageCard org={garbage} />

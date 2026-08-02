@@ -86,9 +86,11 @@ export async function setLiffSession(sub: string, tenantId: string | null): Prom
   jar.set(COOKIE, token, {
     httpOnly: true,
     secure: true,
-    sameSite: "none", // LIFF เปิดใน webview ของ LINE = cross-site
+    // Lax (ไม่ใช่ None): หน้า LIFF เป็น top-level document ใน LINE webview (ไม่ใช่ iframe)
+    // → นับเป็น first-party จึงส่ง cookie ครบทุก navigation และ "เก็บได้ชัวร์" ใน iOS WKWebView
+    // (SameSite=None ที่ตั้งผ่าน fetch มักถูก ITP บล็อก → session อ่านไม่ติด → LIFF วน loop)
+    sameSite: "lax",
     // path "/" เพราะทั้งหน้า /liff/* และ API /api/liff/* + หน้าบิล /bill/* ต้องอ่าน cookie นี้
-    // (เดิม "/liff" ทำให้ /api/liff/link, /api/liff/maintenance, /bill ไม่ได้รับ cookie → เซสชันหลุด)
     path: "/",
     maxAge: MAX_AGE,
   });

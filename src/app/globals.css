@@ -106,6 +106,44 @@ body {
   text-size-adjust: 100%;
   overscroll-behavior-y: contain; /* ดึงเกินขอบไม่รีเฟรชทั้งหน้า */
   touch-action: manipulation; /* ตัด tap-delay 300ms */
+  overflow-x: clip; /* กันหน้าที่กำลัง slide เข้าดันให้เลื่อนแนวนอน */
+}
+
+/* ---- LIFF: slide เปลี่ยนหน้าแบบ iOS push (รู้ทิศตามลำดับ tab) ---- */
+@keyframes chao-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(28%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes chao-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+/* ease แบบ iOS (ออกตัวเร็ว หน่วงตอนจบ) */
+.slide-right {
+  animation: chao-slide-right 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.slide-left {
+  animation: chao-slide-left 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+/* เคารพผู้ใช้ที่ตั้ง reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .slide-right,
+  .slide-left,
+  .animate-in {
+    animation-duration: 0.01ms;
+  }
 }
 
 /* แถบโหลดบนสุดของจอ — วิ่งไปมาแบบไม่รู้เวลาจบ (indeterminate) */

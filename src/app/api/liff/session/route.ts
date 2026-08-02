@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const sub = await verifyLineIdToken(idToken);
 
   if (!sub) {
-    if (isForm) return NextResponse.redirect(new URL("/liff/link", req.url), 303);
+    if (isForm) return NextResponse.redirect(new URL("/liff/link?s=1", req.url), 303);
     return NextResponse.json({ error: "ตรวจสอบบัญชี LINE ไม่สำเร็จ" }, { status: 401 });
   }
 
@@ -46,8 +46,10 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (isForm) {
-    // ผูกแล้ว → เมนู, ยังไม่ผูก → หน้ากรอกเบอร์ · set cookie บน response redirect โดยตรง (ชัวร์สุด)
-    const res = NextResponse.redirect(new URL(tenant ? "/liff" : "/liff/link", req.url), 303);
+    // ผูกแล้ว → เมนู, ยังไม่ผูก → หน้าผูกผ่านแชท · set cookie บน redirect โดยตรง (ชัวร์สุด)
+    // เติม ?s=1 = ธงว่า "แลก session แล้ว" → ถ้าคุกกี้ไม่ติด LiffBoot จะไม่วนแลกซ้ำ
+    const dest = tenant ? "/liff?s=1" : "/liff/link?s=1";
+    const res = NextResponse.redirect(new URL(dest, req.url), 303);
     for (const c of liffSessionCookieSpecs(sub, tenant?.id ?? null)) res.cookies.set(c.name, c.value, c.options);
     return res;
   }

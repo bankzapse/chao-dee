@@ -14,10 +14,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht } from "@/lib/format";
 import { IconBadge, type IconTone } from "@/components/icon-badge";
 
-export default async function LiffHome() {
+export default async function LiffHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ s?: string }>;
+}) {
   // เซสชัน + liff.init() จัดการที่ layout (LiffBoot) แล้ว — ที่นี่แค่เช็คว่าผูกบัญชีหรือยัง
   const tenant = await getLiffTenant();
-  if (!tenant) redirect("/liff/link");
+  if (!tenant) {
+    // ส่งต่อ ?s (ธงว่า "แลก session แล้ว") เพื่อกัน LiffBoot วนแลกซ้ำถ้าคุกกี้ไม่ติด
+    const sp = await searchParams;
+    redirect(sp?.s === "1" ? "/liff/link?s=1" : "/liff/link");
+  }
 
   const admin = createAdminClient();
   // ดึงข้อมูลสรุปแบบขนาน: บิล / พัสดุ / งานซ่อม / ชื่อหอ

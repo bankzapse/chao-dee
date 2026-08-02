@@ -57,20 +57,12 @@ export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: b
         }
         await liff.init({ liffId }); // ต้องเรียกเสมอ — ดับหน้า loading ของ LINE
         if (cancelled) return;
-        if (hasSession) {
-          // เซสชันใช้ได้แล้ว — ล้าง flag กัน loop
-          try { sessionStorage.removeItem("liff_x"); } catch {}
-          return;
-        }
-        // กัน loop: ถ้าเพิ่งแลก session ไปแล้วรอบก่อน แต่ server ยังมองว่า "ไม่มี session"
-        // = เบราว์เซอร์ (LINE webview) ไม่ยอมเก็บคุกกี้ → หยุดวน แล้วบอกทางผูกผ่านแชทแทน
-        let exchanged = false;
-        try { exchanged = sessionStorage.getItem("liff_x") === "1"; } catch {}
-        if (exchanged) {
-          try { sessionStorage.removeItem("liff_x"); } catch {}
-          setErr("เปิดผ่าน LINE ไม่สำเร็จ (เบราว์เซอร์บล็อกคุกกี้) — พิมพ์ “เบอร์โทรของคุณ” ในแชทเพื่อผูกบัญชีได้เลย");
-          return;
-        }
+        if (hasSession) return;
+        // ถ้าเพิ่งแลก session มาแล้ว (มี ?s=1 จาก redirect) แต่ server ยังมองว่า "ไม่มี session"
+        // = LINE webview ไม่เก็บคุกกี้ → อย่าแลกซ้ำ (กัน loop) ปล่อยให้หน้าแสดงวิธีผูกผ่านแชท
+        try {
+          if (new URLSearchParams(window.location.search).get("s") === "1") return;
+        } catch {}
         if (!liff.isLoggedIn()) {
           // ใช้ redirectUri "สะอาด" (ตัด query เช่น ?liff.state=... ที่ LINE ใส่มา)
           // ไม่งั้น LINE มักตอบ 400 Bad Request ตอน login (โดยเฉพาะหลังเปลี่ยนสถานะบัญชี/ค้าง cache)
@@ -83,8 +75,6 @@ export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: b
           return;
         }
         if (cancelled) return;
-        // ทำเครื่องหมายว่าแลก session แล้ว — ถ้ารอบหน้ายัง "ไม่มี session" = คุกกี้ไม่ติด (กัน loop ด้านบน)
-        try { sessionStorage.setItem("liff_x", "1"); } catch {}
         // ตั้ง session ผ่าน "form POST (top-level navigation)" แทน fetch —
         // เซิร์ฟเวอร์ตรวจ token, set cookie, แล้ว redirect เอง (ผูกแล้ว→/liff, ยังไม่ผูก→/liff/link)
         // คุกกี้จาก navigation response เก็บได้ชัวร์ใน iOS WKWebView (ต่างจาก fetch/XHR ที่มักถูกบล็อก)

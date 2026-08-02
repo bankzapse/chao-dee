@@ -30,6 +30,21 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
+  // ห้องของผู้เช่า: ใช้ tenants.room_id ก่อน ถ้าว่างค่อย fallback ไปห้องของสัญญา active
+  // (ให้ตรงกับหน้า "ข้อมูลห้อง" — ไม่งั้นแจ้งซ่อมจะไปกอง "ไม่ระบุห้อง")
+  let roomId: string | null = tenant.room_id;
+  if (!roomId) {
+    const { data: c } = await admin
+      .from("contracts")
+      .select("room_id")
+      .eq("tenant_id", tenant.id)
+      .eq("status", "active")
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    roomId = (c as { room_id?: string } | null)?.room_id ?? null;
+  }
+
   // อัปโหลดรูป (ถ้ามี) — ตรวจชนิด/ขนาดฝั่ง server ไม่เชื่อ client
   let photo_url = "";
   const file = form.get("photo");
@@ -54,7 +69,7 @@ export async function POST(req: Request) {
 
   const { error } = await admin.from("maintenance_requests").insert({
     org_id: tenant.org_id,
-    room_id: tenant.room_id,
+    room_id: roomId,
     tenant_id: tenant.id,
     title,
     description,

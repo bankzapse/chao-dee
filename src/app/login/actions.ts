@@ -3,9 +3,8 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
-import { toE164, toE164Digits } from "@/lib/phone";
+import { toE164 } from "@/lib/phone";
 import { thaiAuthError } from "@/lib/auth-errors";
 import { sendWelcomeIfNeeded } from "@/lib/onboarding";
 
@@ -34,15 +33,6 @@ function authLimit(scope: string, phone: string, ip: string, limit: number, wind
   const perIp = rateLimit(`${scope}:ip:${ip}`, limit * 4, windowMs);
   if (!perIp.ok) return perIp.retryAfter;
   return 0;
-}
-
-/** เช็คว่ามีบัญชีที่ใช้เบอร์นี้แล้วหรือยัง (กันการยิง OTP ใส่เบอร์มั่ว) */
-async function phoneRegistered(input: string): Promise<boolean> {
-  const digits = toE164Digits(input);
-  if (!digits) return false;
-  const admin = createAdminClient();
-  const { data } = await admin.from("profiles").select("id").eq("phone", digits).maybeSingle();
-  return Boolean(data);
 }
 
 /** ยืนยันรหัส OTP → สร้าง session (ใช้ตอนสมัครสมาชิกยืนยันเบอร์) */
@@ -100,19 +90,14 @@ export async function requestPasswordReset(
   const ra = authLimit("reset-otp", phone, await clientIp(), 5, 5 * 60_000);
   if (ra) return { error: `ขอรหัสบ่อยเกินไป กรุณารอ ${ra} วินาที`, phone };
 
-  if (!(await phoneRegistered(raw))) {
-    return { error: "ไม่พบบัญชีที่ใช้เบอร์นี้", phone };
-  }
+  // กัน user enumeration: ไม่เปิดเผยว่าเบอร์นี้มีบัญชีหรือไม่ — ตอบ "ส่งรหัสแล้ว" เหมือนกันทุกกรณี
+  // shouldCreateUser:false → ถ้าเบอร์ไม่มีบัญชี Supabase จะไม่ส่ง SMS (ไม่เปลืองไม่สร้างบัญชี)
+  // ถ้ามีบัญชีจริงจะได้รับ OTP · กรณี error (ไม่มีบัญชี/SMS ขัดข้อง) ไม่ surface ต่างกัน
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  await supabase.auth.signInWithOtp({
     phone,
     options: { channel: "sms", shouldCreateUser: false },
   });
-  if (error) {
-    if (error.status === 429) return { error: "ขอรหัสถี่เกินไป กรุณารอสักครู่", phone };
-    // ส่ง OTP ไม่สำเร็จ (เช่น ผู้ให้บริการ SMS ขัดข้อง) → แนะนำใช้รหัสผ่าน
-    return { error: "ส่งรหัส OTP ไม่สำเร็จชั่วคราว กรุณาลองใหม่ หรือเข้าสู่ระบบด้วยรหัสผ่าน", phone };
-  }
   return { otpSent: true, phone };
 }
 

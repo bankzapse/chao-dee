@@ -82,22 +82,22 @@ export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: b
           setErr("อ่านข้อมูลบัญชี LINE ไม่ได้ ลองเปิดใหม่อีกครั้ง");
           return;
         }
-        const res = await fetch("/api/liff/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        });
         if (cancelled) return;
-        if (!res.ok) {
-          setErr("ยืนยันบัญชีไม่สำเร็จ กรุณาลองใหม่");
-          return;
-        }
-        // ไปหน้าตามสถานะจริง: ผูกแล้ว → เมนู, ยังไม่ผูก → หน้ากรอกเบอร์
-        // (กันเด้ง /liff ↔ /liff/link วนเป็น loop เมื่อยังไม่ผูก)
-        const data = (await res.json().catch(() => ({ linked: false }))) as { linked?: boolean };
         // ทำเครื่องหมายว่าแลก session แล้ว — ถ้ารอบหน้ายัง "ไม่มี session" = คุกกี้ไม่ติด (กัน loop ด้านบน)
         try { sessionStorage.setItem("liff_x", "1"); } catch {}
-        window.location.replace(data.linked ? "/liff" : "/liff/link");
+        // ตั้ง session ผ่าน "form POST (top-level navigation)" แทน fetch —
+        // เซิร์ฟเวอร์ตรวจ token, set cookie, แล้ว redirect เอง (ผูกแล้ว→/liff, ยังไม่ผูก→/liff/link)
+        // คุกกี้จาก navigation response เก็บได้ชัวร์ใน iOS WKWebView (ต่างจาก fetch/XHR ที่มักถูกบล็อก)
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/api/liff/session";
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "idToken";
+        input.value = idToken;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
       } catch {
         if (!cancelled) setErr("เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่");
       }

@@ -1,31 +1,56 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyLineIdToken, setLiffSession } from "@/lib/liff";
+import { verifyLineIdToken, setLiffSession, liffSessionCookieSpecs } from "@/lib/liff";
 
 export const runtime = "nodejs";
 
 /**
  * แลก LINE ID token → เซสชันผู้เช่า
- * client (LIFF) เรียกตอนเปิดแอป ส่ง id_token มา เราตรวจกับ LINE แล้วออก cookie
- * คืน { linked } เพื่อให้หน้าเว็บรู้ว่าต้องพาไปหน้าผูกบัญชีหรือเข้าเมนูได้เลย
+ *
+ * รองรับ 2 แบบ:
+ * - form POST (แนะนำ): ตอบเป็น redirect 303 → คุกกี้ถูก set บน "navigation response"
+ *   ซึ่งเก็บได้ชัวร์ใน iOS WKWebView (ต่างจากคุกกี้ที่ตั้งผ่าน fetch/XHR ที่มักถูกบล็อก)
+ * - JSON POST (เดิม): ตอบ { linked } — เผื่อ client เก่า
  */
+async function resolve(req: Request) {
+  const ct = req.headers.get("content-type") ?? "";
+  const isForm = ct.includes("form");
+  let idToken = "";
+  if (isForm) {
+    const fd = await req.formData().catch(() => null);
+    idToken = String(fd?.get("idToken") ?? "");
+  } else {
+    const body = ((await req.json().catch(() => ({}))) as { idToken?: string }) ?? {};
+    idToken = body.idToken ?? "";
+  }
+  return { isForm, idToken };
+}
+
 export async function POST(req: Request) {
-  const { idToken } = (await req.json().catch(() => ({}))) as { idToken?: string };
-  const sub = await verifyLineIdToken(idToken ?? "");
+  const { isForm, idToken } = await resolve(req);
+  const sub = await verifyLineIdToken(idToken);
+
   if (!sub) {
+    if (isForm) return NextResponse.redirect(new URL("/liff/link", req.url), 303);
     return NextResponse.json({ error: "ตรวจสอบบัญชี LINE ไม่สำเร็จ" }, { status: 401 });
   }
 
-  // ผู้เช่ารายนี้เคยผูก LINE ไว้แล้วหรือยัง
+  // ผู้เช่ารายนี้เคยผูก LINE ไว้แล้วหรือยัง (limit 1 กัน crash ถ้าเผลอผูกซ้ำ)
   const admin = createAdminClient();
   const { data: tenant } = await admin
     .from("tenants")
     .select("id")
     .eq("line_user_id", sub)
     .order("created_at", { ascending: false })
-    .limit(1) // กัน crash ถ้ามีผู้เช่า >1 คนผูก LINE เดียวกัน
+    .limit(1)
     .maybeSingle();
 
+  if (isForm) {
+    // ผูกแล้ว → เมนู, ยังไม่ผูก → หน้ากรอกเบอร์ · set cookie บน response redirect โดยตรง (ชัวร์สุด)
+    const res = NextResponse.redirect(new URL(tenant ? "/liff" : "/liff/link", req.url), 303);
+    for (const c of liffSessionCookieSpecs(sub, tenant?.id ?? null)) res.cookies.set(c.name, c.value, c.options);
+    return res;
+  }
   await setLiffSession(sub, tenant?.id ?? null);
   return NextResponse.json({ linked: Boolean(tenant) });
 }

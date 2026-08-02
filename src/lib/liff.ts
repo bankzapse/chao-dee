@@ -100,6 +100,18 @@ export async function setLiffSession(sub: string, tenantId: string | null): Prom
   jar.set(LEGACY_COOKIE, "", { ...kill, path: "/" });
 }
 
+/** สเปกคุกกี้เซสชัน (ไว้ set บน NextResponse โดยตรง เช่น redirect ของ route handler) */
+export function liffSessionCookieSpecs(sub: string, tenantId: string | null) {
+  const token = sign({ sub, tenantId, exp: Date.now() + MAX_AGE * 1000 });
+  const base = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
+  return [
+    { name: COOKIE, value: token, options: { ...base, maxAge: MAX_AGE } },
+    // ล้าง cookie เก่าเวอร์ชันก่อน
+    { name: LEGACY_COOKIE, value: "", options: { ...base, path: "/liff", maxAge: 0 } },
+    { name: LEGACY_COOKIE, value: "", options: { ...base, maxAge: 0 } },
+  ];
+}
+
 export async function readLiffSession(): Promise<LiffSession | null> {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;

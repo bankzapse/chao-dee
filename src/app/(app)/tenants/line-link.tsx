@@ -31,7 +31,11 @@ export function LineLinkCell({
           disabled={pending}
           onClick={() =>
             startTransition(async () => {
-              await unlinkLine(tenantId);
+              const res = await unlinkLine(tenantId);
+              if (res.error) {
+                alert("ยกเลิกการเชื่อมไม่สำเร็จ: " + res.error);
+                return;
+              }
               router.refresh();
             })
           }

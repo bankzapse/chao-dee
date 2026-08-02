@@ -89,9 +89,16 @@ export async function generateLinkCode(id: string): Promise<{ code?: string; err
   return { code };
 }
 
-export async function unlinkLine(id: string): Promise<void> {
+export async function unlinkLine(id: string): Promise<FormState> {
   const supabase = await createClient();
-  await supabase.from("tenants").update({ line_user_id: "", line_link_code: "" }).eq("id", id);
+  const { data, error } = await supabase
+    .from("tenants")
+    .update({ line_user_id: "", line_link_code: "" })
+    .eq("id", id)
+    .select("id");
+  if (error) return { error: dbErrorMessage(error.message) };
+  if (!data?.length) return { error: NO_ROWS_MESSAGE };
+  return { ok: true };
 }
 
 // ───────── เอกสารผู้เช่า (รูปบัตร ปชช./ทะเบียนบ้าน ฯลฯ) ─────────

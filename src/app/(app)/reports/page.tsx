@@ -11,6 +11,8 @@ import {
   recentPeriods,
 } from "@/lib/format";
 import { SeedDemoButton } from "../dashboard/demo-button";
+import { OnboardingChecklist, type OnboardingStep } from "@/components/onboarding-checklist";
+import { GuidedTour } from "@/components/guided-tour";
 
 type ExpiringContract = {
   id: string;
@@ -106,12 +108,38 @@ export default async function ReportsPage() {
     .filter((c) => c.end_date && c.end_date <= in30)
     .sort((a, b) => (a.end_date ?? "").localeCompare(b.end_date ?? ""));
 
+  // ── เช็คลิสต์เริ่มต้นใช้งาน: ตรวจ "ช่องทางรับเงิน" + "ผู้เช่าเชื่อม LINE" (แยก query + resilient) ──
+  const { data: ppRow } = await supabase.from("organizations").select("promptpay_id").maybeSingle();
+  let paymentSet = Boolean((ppRow as { promptpay_id?: string } | null)?.promptpay_id);
+  if (!paymentSet) {
+    const bankRes = await supabase.from("organizations").select("bank_account_no").maybeSingle();
+    if (!bankRes.error) paymentSet = Boolean((bankRes.data as { bank_account_no?: string } | null)?.bank_account_no);
+  }
+  const { count: lineLinked } = await supabase
+    .from("tenants")
+    .select("*", { count: "exact", head: true })
+    .not("line_user_id", "is", null);
+
+  const onboardingSteps: OnboardingStep[] = [
+    { key: "buildings", label: "เพิ่มอาคาร", desc: "ระบุชื่อ + จำนวนชั้น เป็นฐานของทุกอย่าง", href: "/buildings", cta: "เพิ่มอาคาร", done: (buildingCount ?? 0) > 0 },
+    { key: "rooms", label: "เพิ่มห้องพัก", desc: "กำหนดค่าเช่า อัตราค่าน้ำ-ไฟ", href: "/rooms", cta: "เพิ่มห้อง", done: totalRooms > 0 },
+    { key: "tenants", label: "เพิ่มผู้เช่า", desc: "ชื่อ + เบอร์โทร (ใช้ผูก LINE)", href: "/tenants", cta: "เพิ่มผู้เช่า", done: (tenantCount ?? 0) > 0 },
+    { key: "contracts", label: "ทำสัญญาเช่า", desc: "จับคู่ห้องกับผู้เช่า ระบบใช้ออกบิล", href: "/contracts", cta: "ทำสัญญา", done: contracts.length > 0 },
+    { key: "payment", label: "ตั้งช่องทางรับเงิน", desc: "พร้อมเพย์ หรือ บัญชีธนาคาร (แสดงในบิล)", href: "/settings", cta: "ตั้งค่า", done: paymentSet },
+    { key: "line", label: "เชื่อม LINE ผู้เช่า", desc: "อย่างน้อย 1 คน เพื่อส่งบิล/แจ้งเตือน", href: "/tenants", cta: "วิธีเชื่อม", done: (lineLinked ?? 0) > 0 },
+  ];
+
   const isEmpty = (buildingCount ?? 0) === 0 && totalRooms === 0;
 
   if (isEmpty) {
     return (
       <div>
-        <PageHeader title="แดชบอร์ด / รายงาน" subtitle="ภาพรวมหอพักของคุณ" action={<SeedDemoButton />} />
+        <PageHeader
+          title="แดชบอร์ด / รายงาน"
+          subtitle="ภาพรวมหอพักของคุณ"
+          action={<div className="flex flex-wrap gap-2"><GuidedTour /><SeedDemoButton /></div>}
+        />
+        <OnboardingChecklist steps={onboardingSteps} />
         <EmptyState
           title="ยินดีต้อนรับสู่ Chao-Dee"
           description="เริ่มต้นด้วยการเพิ่มอาคารและห้องพัก หรือลองโหลดข้อมูลตัวอย่างเพื่อดูการทำงานของระบบ"
@@ -130,7 +158,9 @@ export default async function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title="แดชบอร์ด / รายงาน" subtitle="ภาพรวมหอพัก · การเงิน · การเข้าพัก" />
+      <PageHeader title="แดชบอร์ด / รายงาน" subtitle="ภาพรวมหอพัก · การเงิน · การเข้าพัก" action={<GuidedTour />} />
+
+      <OnboardingChecklist steps={onboardingSteps} />
 
       {/* ===== ภาพรวมวันนี้ ===== */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

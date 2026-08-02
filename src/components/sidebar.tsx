@@ -60,6 +60,7 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.href.slice(1)}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 active
                   ? "bg-indigo-500/15 text-white ring-1 ring-inset ring-indigo-400/20"

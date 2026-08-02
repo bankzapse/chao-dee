@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function LiffLayout({ children }: { children: React.ReactNode }) {
   const sess = await readLiffSession();
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-slate-50 px-4 py-5">
+    <div className="liff-shell mx-auto min-h-screen max-w-md bg-slate-50 px-4 py-5">
       {/* liff.init() ต้องรันทุกหน้า ไม่งั้น LINE ค้างหน้า loading */}
       <LiffBoot liffId={process.env.NEXT_PUBLIC_LIFF_ID ?? ""} hasSession={Boolean(sess)} />
       {children}

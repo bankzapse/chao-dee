@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -103,8 +104,9 @@ export async function readLiffSession(): Promise<LiffSession | null> {
   return token ? unsign(token) : null;
 }
 
-/** โหลดข้อมูลผู้เช่าจากเซสชัน (คืน null ถ้าไม่ล็อกอิน/ยังไม่ผูก/ผู้เช่าถูกลบ) */
-export async function getLiffTenant() {
+/** โหลดข้อมูลผู้เช่าจากเซสชัน (คืน null ถ้าไม่ล็อกอิน/ยังไม่ผูก/ผู้เช่าถูกลบ)
+ *  ห่อด้วย cache() → ถ้าหลายที่ในเรนเดอร์เดียวเรียก จะ query DB แค่ครั้งเดียว */
+export const getLiffTenant = cache(async () => {
   const sess = await readLiffSession();
   if (!sess) return null;
   const admin = createAdminClient();
@@ -125,4 +127,4 @@ export async function getLiffTenant() {
     room_id: string | null;
     line_user_id: string;
   };
-}
+});

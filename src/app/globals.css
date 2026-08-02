@@ -96,7 +96,16 @@ body {
   }
 }
 .animate-in {
-  animation: chao-fade-in 0.28s ease-out both;
+  animation: chao-fade-in 0.2s ease-out both;
+}
+
+/* ---- LIFF: ให้รู้สึกเหมือนแอป native (ลื่น กดไว) ---- */
+.liff-shell {
+  -webkit-tap-highlight-color: transparent; /* ไม่มีกล่องเทาตอนแตะ */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior-y: contain; /* ดึงเกินขอบไม่รีเฟรชทั้งหน้า */
+  touch-action: manipulation; /* ตัด tap-delay 300ms */
 }
 
 /* แถบโหลดบนสุดของจอ — วิ่งไปมาแบบไม่รู้เวลาจบ (indeterminate) */

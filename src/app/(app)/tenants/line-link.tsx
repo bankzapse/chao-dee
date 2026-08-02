@@ -32,7 +32,7 @@ export function LineLinkCell({
           onClick={() =>
             startTransition(async () => {
               const res = await unlinkLine(tenantId);
-              if (res.error) {
+              if (res?.error) {
                 alert("ยกเลิกการเชื่อมไม่สำเร็จ: " + res.error);
                 return;
               }

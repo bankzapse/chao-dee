@@ -22,6 +22,8 @@ export async function POST(req: Request) {
     .from("tenants")
     .select("id")
     .eq("line_user_id", sub)
+    .order("created_at", { ascending: false })
+    .limit(1) // กัน crash ถ้ามีผู้เช่า >1 คนผูก LINE เดียวกัน
     .maybeSingle();
 
   await setLiffSession(sub, tenant?.id ?? null);

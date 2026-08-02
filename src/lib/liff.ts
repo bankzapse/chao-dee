@@ -113,10 +113,14 @@ export const getLiffTenant = cache(async () => {
   // หาจาก sub (LINE id ที่ตรวจแล้ว) โดยตรงเสมอ — ไม่พึ่ง tenantId ที่ cache ใน cookie
   // เพราะถ้าผูกบัญชีผ่านแชท (webhook) หลังเปิด LIFF ไปแล้ว tenantId ใน cookie จะ stale
   // แต่ line_user_id ใน DB คือแหล่งจริง เทียบกับ sub ได้ตรงทุกเคส
+  // limit(1) กัน crash: ถ้าเผลอมีผู้เช่า >1 คนผูก LINE เดียวกัน (เช่น ลบ/สร้างใหม่แล้วผูกซ้ำ)
+  // maybeSingle จะ throw ทำให้ "ทุกหน้า LIFF" พังเป็น Error — เลือกคนล่าสุดแทน
   const { data } = await admin
     .from("tenants")
     .select("id, org_id, full_name, phone, room_id, line_user_id")
     .eq("line_user_id", sess.sub)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (!data) return null;
   return data as {

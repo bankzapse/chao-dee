@@ -164,6 +164,8 @@ export async function POST(req: Request) {
       .from("tenants")
       .select("id, full_name, org_id, line_state")
       .eq("line_user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1) // กัน crash ถ้ามีผู้เช่า >1 คนผูก LINE เดียวกัน
       .maybeSingle();
 
     if (tenant) {
@@ -204,6 +206,12 @@ export async function POST(req: Request) {
         .from("tenants")
         .update({ line_user_id: userId, line_link_code: "" })
         .eq("id", matchTenant.id);
+      // กัน LINE เดียวผูกหลายผู้เช่า — เคลียร์ออกจากคนอื่น
+      await supabase
+        .from("tenants")
+        .update({ line_user_id: "", line_link_code: "" })
+        .eq("line_user_id", userId)
+        .neq("id", matchTenant.id);
       await replyMessage(replyToken, [
         textMessage(`เชื่อมบัญชีสำเร็จ ✅\nสวัสดีคุณ ${matchTenant.full_name}\n\n${HELP}`),
       ]);
@@ -243,6 +251,12 @@ export async function POST(req: Request) {
           .from("tenants")
           .update({ line_user_id: userId, line_link_code: "" })
           .eq("id", byPhone[0].id);
+        // กัน LINE เดียวผูกหลายผู้เช่า — เคลียร์ออกจากคนอื่น
+        await supabase
+          .from("tenants")
+          .update({ line_user_id: "", line_link_code: "" })
+          .eq("line_user_id", userId)
+          .neq("id", byPhone[0].id);
         await replyMessage(replyToken, [
           textMessage(`เชื่อมบัญชีสำเร็จ ✅\nสวัสดีคุณ ${byPhone[0].full_name}\n\n${HELP}`),
         ]);

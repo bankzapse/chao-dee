@@ -69,6 +69,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "บัญชีนี้เพิ่งถูกผูกไปแล้ว กรุณาลองใหม่" }, { status: 409 });
   }
 
+  // กัน LINE เดียวผูกหลายผู้เช่า (เช่น ลบ/สร้างใหม่แล้วมีตกค้าง) — เคลียร์ sub ออกจากคนอื่น
+  await admin
+    .from("tenants")
+    .update({ line_user_id: "", line_link_code: "" })
+    .eq("line_user_id", sess.sub)
+    .neq("id", tenant.id);
+
   await setLiffSession(sess.sub, tenant.id);
   return NextResponse.json({ ok: true, tenantId: tenant.id, name: tenant.full_name });
 }

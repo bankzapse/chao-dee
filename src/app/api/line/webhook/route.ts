@@ -8,6 +8,7 @@ import {
   imageMessage,
   getLineContent,
   isLineConfigured,
+  lineToken,
 } from "@/lib/line";
 import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import { toLocalThai } from "@/lib/phone";
@@ -24,6 +25,29 @@ type LineEvent = {
 
 const HELP =
   "พิมพ์คำสั่งเพื่อใช้งาน:\n• “บิล” — ดูยอดค้างชำระ\n• “แจ้งซ่อม …” — แจ้งงานซ่อม\n• “พัสดุ” — เช็คพัสดุค้างรับ\n• “ห้อง” — ข้อมูลห้องพัก\n• “ชำระเงิน” — วิธีชำระเงิน\n• “ติดต่อ” — ติดต่อผู้ดูแล";
+
+const LINE_API = "https://api.line.me/v2/bot";
+
+/** ผูก rich menu ของเจ้าของหอให้ userId (แทนเมนู default ของผู้เช่า) — best-effort */
+async function linkOwnerRichMenu(userId: string) {
+  try {
+    if (!isLineConfigured()) return;
+    const token = lineToken();
+    const listRes = await fetch(`${LINE_API}/richmenu/list`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!listRes.ok) return;
+    const { richmenus } = (await listRes.json()) as { richmenus: { richMenuId: string; name: string }[] };
+    const owner = (richmenus ?? []).find((r) => r.name === "Chao-Dee Owner");
+    if (!owner) return; // ยังไม่ได้สร้างเมนูเจ้าของ (รัน setup-richmenu ก่อน)
+    await fetch(`${LINE_API}/user/${userId}/richmenu/${owner.richMenuId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    /* best-effort — ไม่ให้ล้มการเชื่อมบัญชีถ้าผูกเมนูไม่ได้ */
+  }
+}
 
 /** ส่งแจ้งเตือนไปยัง LINE ของเจ้าของหอ (ถ้าผูกไว้) */
 async function notifyOwner(
@@ -230,9 +254,11 @@ export async function POST(req: Request) {
         .from("organizations")
         .update({ owner_line_user_id: userId, line_link_code: "" })
         .eq("id", matchOrg.id);
+      // สลับให้เจ้าของเห็น rich menu ของเจ้าของ (แทนเมนูผู้เช่า)
+      await linkOwnerRichMenu(userId);
       await replyMessage(replyToken, [
         textMessage(
-          `เชื่อมบัญชีเจ้าของหอสำเร็จ ✅\n${matchOrg.name}\n\nคุณจะได้รับแจ้งเตือนทันทีเมื่อมีผู้เช่าแจ้งซ่อมผ่าน LINE`
+          `เชื่อมบัญชีเจ้าของหอสำเร็จ ✅\n${matchOrg.name}\n\nเมนูด้านล่างเปลี่ยนเป็นเมนูเจ้าของแล้ว · คุณจะได้รับแจ้งเตือนทันทีเมื่อผู้เช่าแจ้งซ่อม`
         ),
       ]);
       continue;
@@ -300,8 +326,37 @@ async function handleOwner(
     ]);
     return;
   }
+  if (t.includes("ค้าง") || t.includes("ชำระ")) {
+    const { data: invs } = await supabase
+      .from("invoices")
+      .select("total_amount, paid_amount")
+      .eq("org_id", orgId)
+      .neq("status", "void");
+    const rows = invs ?? [];
+    const outstanding = rows.reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
+    const n = rows.filter((i) => Number(i.total_amount) - Number(i.paid_amount) > 0).length;
+    await replyMessage(replyToken, [
+      textMessage(`💰 ${orgName}\nค้างชำระรวม: ${formatBaht(outstanding)}\nจำนวนบิลค้าง: ${n} ใบ\n\nดูรายละเอียด/ทวงถามได้ในแอป Chao-Dee`),
+    ]);
+    return;
+  }
+  if (t.includes("สรุป") || t.includes("ภาพรวม")) {
+    const [{ data: contracts }, { data: invs }] = await Promise.all([
+      supabase.from("contracts").select("rent_amount").eq("org_id", orgId).eq("status", "active"),
+      supabase.from("invoices").select("total_amount, paid_amount").eq("org_id", orgId).neq("status", "void"),
+    ]);
+    const occupied = (contracts ?? []).length;
+    const income = (contracts ?? []).reduce((s, c) => s + Number(c.rent_amount), 0);
+    const outstanding = (invs ?? []).reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount)), 0);
+    await replyMessage(replyToken, [
+      textMessage(`📊 สรุป ${orgName}\nห้องมีผู้เช่า: ${occupied} ห้อง\nรายได้ค่าเช่า/เดือน: ${formatBaht(income)}\nค้างชำระสะสม: ${formatBaht(outstanding)}\n\nดูละเอียดในแอป Chao-Dee`),
+    ]);
+    return;
+  }
   await replyMessage(replyToken, [
-    textMessage(`สวัสดีเจ้าของหอ ${orgName} 👋\nพิมพ์ “แจ้งซ่อม” เพื่อดูจำนวนงานที่รอดำเนินการ\nจัดการทั้งหมดได้ในแอป Chao-Dee`),
+    textMessage(
+      `สวัสดีเจ้าของหอ ${orgName} 👋\nพิมพ์คำสั่ง:\n• “แจ้งซ่อม” — งานซ่อมที่รอดำเนินการ\n• “ค้างชำระ” — ยอด/จำนวนบิลค้าง\n• “สรุป” — ภาพรวมหอ\nหรือจัดการทั้งหมดในแอป Chao-Dee`
+    ),
   ]);
 }
 

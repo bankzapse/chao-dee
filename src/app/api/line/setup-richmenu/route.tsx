@@ -11,7 +11,7 @@ const LINE_DATA_API = "https://api-data.line.me/v2/bot";
 // 4 ปุ่ม (2 แถว x 2 คอลัมน์) — พื้นหลังรูปภาพ + overlay ไล่สี + ไอคอนเส้น
 // path "" = เปิดหน้าแรก LIFF (/liff) ที่มี tab bar · path "/x" = เปิด LIFF หน้านั้นตรง ๆ
 // (ข้อมูลห้อง/วิธีชำระ/ติดต่อ เข้าถึงได้จาก tab bar + แดชบอร์ดหน้าแรกแล้ว จึงไม่ต้องมีใน rich menu)
-const BUTTONS = [
+const TENANT_BUTTONS = [
   {
     label: "หน้าแรก",
     sub: "แดชบอร์ด · เมนูผู้เช่า",
@@ -49,6 +49,49 @@ const BUTTONS = [
     icon: ["M7.5 4.27l9 5.15", "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z", "M3.3 7l8.7 5 8.7-5", "M12 22V12"],
   },
 ];
+// เมนูสำหรับ "เจ้าของหอ" (ผูกรายบุคคลตอนเชื่อมบัญชีเจ้าของ) — ปุ่มส่งคำสั่งแชท + เปิดเว็บ
+const OWNER_BUTTONS = [
+  {
+    label: "งานซ่อมค้าง",
+    sub: "รอดำเนินการ",
+    text: "owner-maint",
+    img: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=560&q=42",
+    overlay: "linear-gradient(160deg, rgba(217,119,6,0.55) 0%, rgba(120,53,15,0.88) 100%)",
+    icon: ["M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"],
+  },
+  {
+    label: "ค้างชำระ",
+    sub: "ยอดที่ผู้เช่าค้าง",
+    text: "owner-debt",
+    img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=560&q=42",
+    overlay: "linear-gradient(160deg, rgba(225,29,72,0.55) 0%, rgba(76,5,25,0.9) 100%)",
+    icon: ["M2 6h20v12H2z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M6 12h.01", "M18 12h.01"],
+  },
+  {
+    label: "สรุปหอ",
+    sub: "เข้าพัก · รายได้",
+    text: "owner-summary",
+    img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=560&q=42",
+    overlay: "linear-gradient(160deg, rgba(79,70,229,0.55) 0%, rgba(30,27,75,0.88) 100%)",
+    icon: ["M3 3v18h18", "M7 16v-5", "M12 16V8", "M17 16v-9"],
+  },
+  {
+    label: "เปิดเว็บจัดการ",
+    sub: "จัดการทั้งหมด",
+    text: "owner-web",
+    img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=560&q=42",
+    overlay: "linear-gradient(160deg, rgba(124,58,237,0.55) 0%, rgba(46,16,101,0.9) 100%)",
+    icon: ["M3 4h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z", "M8 20h8", "M12 16v4"],
+  },
+];
+type LineArea = { type: "uri"; uri: string } | { type: "message"; text: string };
+const OWNER_ACTIONS: LineArea[] = [
+  { type: "message", text: "แจ้งซ่อม" },
+  { type: "message", text: "ค้างชำระ" },
+  { type: "message", text: "สรุป" },
+  { type: "uri", uri: "https://www.chao-dee.com/dashboard" },
+];
+
 const W = 1200;
 const H = 810;
 const COLS = 2;
@@ -57,11 +100,12 @@ const CW = W / COLS;
 const CH = H / ROWS;
 
 /** รูปเมนู — แต่ละช่อง: รูปพื้นหลัง + overlay ไล่สี + ไอคอนเส้นในวงกระจก + ตัวใหญ่ + คำอธิบาย */
-function menuImage() {
+type MenuButton = { label: string; sub: string; text: string; img: string; overlay: string; icon: string[] };
+function menuImage(buttons: MenuButton[]) {
   return new ImageResponse(
     (
       <div style={{ display: "flex", flexWrap: "wrap", width: W, height: H, background: "#0f172a" }}>
-        {BUTTONS.map((b) => (
+        {buttons.map((b) => (
           <div key={b.text} style={{ width: CW, height: CH, display: "flex", padding: 8 }}>
             <div
               style={{
@@ -136,11 +180,12 @@ function menuImage() {
 }
 
 /** ดูตัวอย่างรูปเมนู (เฉพาะ dev — กันยิงถี่เปลือง CPU บน production) */
-export async function GET() {
+export async function GET(req: Request) {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "not available" }, { status: 404 });
   }
-  return menuImage();
+  const owner = new URL(req.url).searchParams.get("menu") === "owner";
+  return menuImage(owner ? OWNER_BUTTONS : TENANT_BUTTONS);
 }
 
 /** ตั้งค่า Rich Menu ของ LINE OA — ต้องเป็นแอดมินแพลตฟอร์ม หรือแนบ Bearer CRON_SECRET */
@@ -189,55 +234,66 @@ export async function POST(req: Request) {
     /* best-effort */
   }
 
-  // 1) สร้าง rich menu object
-  const richmenu = {
-    size: { width: W, height: H },
-    selected: true,
-    name: "Chao-Dee Menu",
-    chatBarText: "เมนู Chao-Dee",
-    areas: BUTTONS.map((b, i) => ({
-      bounds: {
-        x: Math.round((i % COLS) * CW),
-        y: Math.round(Math.floor(i / COLS) * CH),
-        width: Math.round(CW),
-        height: Math.round(CH),
-      },
-      // เปิด LIFF ถ้าตั้งค่า LIFF ID ไว้ (path "" = หน้าแรก /liff) ไม่งั้นถอยไปส่งข้อความ
-      action: liffId
-        ? { type: "uri", uri: `https://liff.line.me/${liffId}${b.path}` }
-        : { type: "message", text: b.text },
-    })),
-  };
-  const createRes = await fetch(`${LINE_API}/richmenu`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(richmenu),
-  });
-  if (!createRes.ok) {
-    return NextResponse.json({ error: "สร้าง rich menu ไม่สำเร็จ", detail: await createRes.text() }, { status: 502 });
+  // helper: สร้างเมนู 1 อัน (object → อัปโหลดรูป → set default ถ้าใช่) คืน richMenuId
+  async function createMenu(
+    name: string,
+    chatBarText: string,
+    buttons: MenuButton[],
+    actions: LineArea[],
+    setDefault: boolean
+  ) {
+    const richmenu = {
+      size: { width: W, height: H },
+      selected: setDefault,
+      name,
+      chatBarText,
+      areas: buttons.map((_, i) => ({
+        bounds: {
+          x: Math.round((i % COLS) * CW),
+          y: Math.round(Math.floor(i / COLS) * CH),
+          width: Math.round(CW),
+          height: Math.round(CH),
+        },
+        action: actions[i],
+      })),
+    };
+    const createRes = await fetch(`${LINE_API}/richmenu`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(richmenu),
+    });
+    if (!createRes.ok) throw new Error("สร้าง rich menu ไม่สำเร็จ: " + (await createRes.text()));
+    const { richMenuId } = (await createRes.json()) as { richMenuId: string };
+
+    const imgBytes = new Uint8Array(await menuImage(buttons).arrayBuffer());
+    const uploadRes = await fetch(`${LINE_DATA_API}/richmenu/${richMenuId}/content`, {
+      method: "POST",
+      headers: { "Content-Type": "image/png", Authorization: `Bearer ${token}` },
+      body: imgBytes,
+    });
+    if (!uploadRes.ok) throw new Error("อัปโหลดรูปเมนูไม่สำเร็จ: " + (await uploadRes.text()));
+
+    if (setDefault) {
+      const defRes = await fetch(`${LINE_API}/user/all/richmenu/${richMenuId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!defRes.ok) throw new Error("ตั้งเมนูเริ่มต้นไม่สำเร็จ: " + (await defRes.text()));
+    }
+    return richMenuId;
   }
-  const { richMenuId } = (await createRes.json()) as { richMenuId: string };
 
-  // 2) สร้างรูปเมนู แล้วอัปโหลด
-  const imgBytes = new Uint8Array(await menuImage().arrayBuffer());
+  // tenant: เปิด LIFF (path "" = หน้าแรก) ไม่งั้นส่งข้อความ · owner: ตาม OWNER_ACTIONS
+  const tenantActions: LineArea[] = TENANT_BUTTONS.map((b) =>
+    liffId ? { type: "uri", uri: `https://liff.line.me/${liffId}${b.path}` } : { type: "message", text: b.text }
+  );
 
-  const uploadRes = await fetch(`${LINE_DATA_API}/richmenu/${richMenuId}/content`, {
-    method: "POST",
-    headers: { "Content-Type": "image/png", Authorization: `Bearer ${token}` },
-    body: imgBytes,
-  });
-  if (!uploadRes.ok) {
-    return NextResponse.json({ error: "อัปโหลดรูปเมนูไม่สำเร็จ", detail: await uploadRes.text() }, { status: 502 });
+  try {
+    // เมนูผู้เช่า = default ทุกคน · เมนูเจ้าของ = ผูกรายบุคคลตอนเชื่อมบัญชี (ชื่อ "Chao-Dee Owner")
+    const tenantRichMenuId = await createMenu("Chao-Dee Menu", "เมนู Chao-Dee", TENANT_BUTTONS, tenantActions, true);
+    const ownerRichMenuId = await createMenu("Chao-Dee Owner", "เมนูเจ้าของหอ", OWNER_BUTTONS, OWNER_ACTIONS, false);
+    return NextResponse.json({ ok: true, tenantRichMenuId, ownerRichMenuId });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
-
-  // 3) ตั้งเป็นเมนูเริ่มต้นของทุกผู้ใช้
-  const defRes = await fetch(`${LINE_API}/user/all/richmenu/${richMenuId}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!defRes.ok) {
-    return NextResponse.json({ error: "ตั้งเมนูเริ่มต้นไม่สำเร็จ", detail: await defRes.text() }, { status: 502 });
-  }
-
-  return NextResponse.json({ ok: true, richMenuId });
 }

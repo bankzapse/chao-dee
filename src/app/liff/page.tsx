@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   ReceiptText,
   Wrench,
@@ -13,19 +12,13 @@ import { getLiffTenant } from "@/lib/liff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBaht } from "@/lib/format";
 import { IconBadge, type IconTone } from "@/components/icon-badge";
+import { LinkPrompt } from "./link-prompt";
 
-export default async function LiffHome({
-  searchParams,
-}: {
-  searchParams: Promise<{ s?: string }>;
-}) {
+export default async function LiffHome() {
   // เซสชัน + liff.init() จัดการที่ layout (LiffBoot) แล้ว — ที่นี่แค่เช็คว่าผูกบัญชีหรือยัง
   const tenant = await getLiffTenant();
-  if (!tenant) {
-    // ส่งต่อ ?s (ธงว่า "แลก session แล้ว") เพื่อกัน LiffBoot วนแลกซ้ำถ้าคุกกี้ไม่ติด
-    const sp = await searchParams;
-    redirect(sp?.s === "1" ? "/liff/link?s=1" : "/liff/link");
-  }
+  // ยังไม่ผูก → แสดงการ์ด "ผูกผ่านแชท" ตรงนี้เลย (ไม่ redirect — client-redirect ใน LINE webview วน)
+  if (!tenant) return <LinkPrompt />;
 
   const admin = createAdminClient();
   // ดึงข้อมูลสรุปแบบขนาน: บิล / พัสดุ / งานซ่อม / ชื่อหอ

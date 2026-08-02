@@ -58,7 +58,9 @@ export function LiffBoot({ liffId, hasSession }: { liffId: string; hasSession: b
         await liff.init({ liffId }); // ต้องเรียกเสมอ — ดับหน้า loading ของ LINE
         if (cancelled || hasSession) return;
         if (!liff.isLoggedIn()) {
-          liff.login({ redirectUri: window.location.href });
+          // ใช้ redirectUri "สะอาด" (ตัด query เช่น ?liff.state=... ที่ LINE ใส่มา)
+          // ไม่งั้น LINE มักตอบ 400 Bad Request ตอน login (โดยเฉพาะหลังเปลี่ยนสถานะบัญชี/ค้าง cache)
+          liff.login({ redirectUri: window.location.origin + window.location.pathname });
           return;
         }
         const idToken = liff.getIDToken();

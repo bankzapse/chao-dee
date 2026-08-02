@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Building2, Lightbulb, Gift, Star, Hourglass } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { getPlatformPayment } from "@/lib/platform-settings";
 import { BrandMark } from "@/components/brand-mark";
 import { DeleteButton } from "@/components/action-form";
 import { formatBaht, formatDate } from "@/lib/format";
@@ -32,7 +33,7 @@ export default async function RentManage() {
   if (!user) redirect("/rent/login");
 
   const org_id = await getOrgId();
-  const platformPromptPay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY ?? "";
+  const { promptpay_id: platformPromptPay } = await getPlatformPayment();
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: listingsRaw }, promoPlans] = await Promise.all([

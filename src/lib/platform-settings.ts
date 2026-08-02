@@ -45,7 +45,12 @@ export async function getPlatformPayment(): Promise<PlatformPayment> {
       .select("promptpay_id, promptpay_name, bank_name, bank_account_no, bank_account_name")
       .eq("id", 1)
       .maybeSingle();
-    if (error || !data) return empty;
+    if (error) {
+      // DB error = อาจทำ QR/พร้อมเพย์หายจากบิลเงียบ ๆ → ต้องดังพอให้รู้ (ข้อ 7)
+      console.error(`[platform-payment] อ่าน platform_settings ไม่สำเร็จ (fallback env): ${error.message}`);
+      return empty;
+    }
+    if (!data) return empty; // ยังไม่ได้ตั้งค่า — เคสปกติ ไม่ต้อง log
 
     const base: PlatformPayment = {
       ...empty,
@@ -83,8 +88,14 @@ export async function getPlatformPayment(): Promise<PlatformPayment> {
       .eq("id", 1)
       .maybeSingle();
     if (qrRow) base.bank_qr_url = (qrRow.bank_qr_url as string) ?? "";
+
+    // เตือนถ้าไม่มีช่องทางรับเงินเลย (พร้อมเพย์ว่าง + บัญชีว่าง + รูป QR ว่าง) — QR จะหายจากบิลบริษัท
+    if (!base.promptpay_id && !base.bank_account_no && !base.bank_qr_url) {
+      console.warn("[platform-payment] ไม่มีช่องทางรับเงินของบริษัทเลย (พร้อมเพย์/บัญชี/QR ว่างทั้งหมด) — QR จะหายจากบิล/ใบแจ้งหนี้");
+    }
     return base;
-  } catch {
+  } catch (e) {
+    console.error(`[platform-payment] exception (fallback env): ${(e as Error).message}`);
     return empty;
   }
 }

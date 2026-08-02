@@ -26,20 +26,19 @@ async function loadRoom(admin: Admin, roomId: string | null) {
   return core.data as Record<string, unknown> | null;
 }
 
-async function loadContract(admin: Admin, tenantId: string) {
+/** สัญญาทั้งหมดของผู้เช่า (ล่าสุดก่อน) — ใช้ตัวที่ active เป็นหลัก แต่ดึงเอกสารจากทุกสัญญา */
+async function loadContracts(admin: Admin, tenantId: string) {
   const q = (cols: string) =>
     admin
       .from("contracts")
       .select(cols)
       .eq("tenant_id", tenantId)
-      .eq("status", "active")
-      .order("start_date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-  const full = await q("id, room_id, start_date, end_date, rent_amount, deposit_amount, occupant_count, late_fee, late_fee_mode, terms");
-  if (!full.error) return full.data as Record<string, unknown> | null;
-  const core = await q("id, room_id, start_date, end_date, rent_amount, deposit_amount");
-  return core.data as Record<string, unknown> | null;
+      .order("start_date", { ascending: false });
+  const full = await q("id, room_id, status, start_date, end_date, rent_amount, deposit_amount, occupant_count, late_fee, late_fee_mode, terms");
+  const rows = (full.error
+    ? (await q("id, room_id, status, start_date, end_date, rent_amount, deposit_amount")).data
+    : full.data) as Record<string, unknown>[] | null;
+  return rows ?? [];
 }
 
 type Doc = { name: string; url: string };
@@ -101,16 +100,24 @@ export default async function LiffRoom() {
   if (!tenant) redirect("/liff/link");
 
   const admin = createAdminClient();
-  // โหลดสัญญาก่อน แล้วใช้ห้องจากสัญญาถ้าผู้เช่าไม่ได้ผูกห้องตรง (tenant.room_id ว่าง)
-  const contract = await loadContract(admin, tenant.id);
+  // โหลดสัญญาทั้งหมด แล้วเลือก active เป็นหลัก (ไม่มีก็เอาล่าสุด) — ใช้ห้องจากสัญญาถ้าผู้เช่าไม่ได้ผูกห้องตรง
+  const contracts = await loadContracts(admin, tenant.id);
+  const contract = contracts.find((c) => str(c.status) === "active") ?? contracts[0] ?? null;
   const roomId = tenant.room_id ?? (contract?.room_id ? str(contract.room_id) : null);
-  const contractId = contract?.id ? str(contract.id) : "";
-  const [room, contractDocs, tenantDocs] = await Promise.all([
+  // เอกสารสัญญา: ดึงจาก "ทุกสัญญา" ของผู้เช่า เผื่อไฟล์ถูกอัปไว้ที่สัญญาที่ไม่ใช่ active
+  const contractIds = contracts.map((c) => str(c.id)).filter(Boolean);
+  const [room, contractDocGroups, tenantDocs] = await Promise.all([
     loadRoom(admin, roomId),
-    contractId ? loadContractDocs(admin, contractId) : Promise.resolve([] as Doc[]),
+    Promise.all(contractIds.map((id) => loadContractDocs(admin, id))),
     loadTenantDocs(admin, tenant.id),
   ]);
-  const docs = [...contractDocs, ...tenantDocs];
+  // รวม + กันซ้ำด้วย url
+  const seen = new Set<string>();
+  const docs = [...contractDocGroups.flat(), ...tenantDocs].filter((d) => {
+    if (seen.has(d.url)) return false;
+    seen.add(d.url);
+    return true;
+  });
 
   const b = room?.buildings as { name?: string } | { name?: string }[] | null | undefined;
   const buildingName = Array.isArray(b) ? b[0]?.name : b?.name;

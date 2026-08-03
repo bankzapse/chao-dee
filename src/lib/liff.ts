@@ -25,15 +25,11 @@ const MAX_AGE = 60 * 60 * 12; // 12 ชม.
 function signingSecret(): string {
   return (process.env.LIFF_SESSION_SECRET || "").trim();
 }
-// กุญแจที่ยอมรับตอน "อ่าน" cookie — กุญแจใหม่ + กุญแจเก่า (ช่วงเปลี่ยนผ่าน ≥ MAX_AGE 12 ชม.)
-// กัน session ผู้เช่าที่อยู่ในพอร์ทัล LINE หลุดพร้อมกันตอน deploy (cookie เก่ายังใช้ได้จนหมดอายุ)
-// TODO(หลัง deploy ครบ 12 ชม.): cookie เก่าหมดอายุหมดแล้ว → ลบ LINE_CHANNEL_SECRET/CRON_SECRET ออกจากลิสต์นี้
+// กุญแจที่ยอมรับตอน "อ่าน" cookie — ใช้ LIFF_SESSION_SECRET อย่างเดียว
+// (เลิก dual-verify ช่วงเปลี่ยนผ่านแล้ว: cookie เก่าที่เซ็นด้วย secret อื่นหมดอายุ MAX_AGE 12 ชม.
+//  ตั้งแต่ deploy 2026-08-03 — ผู้เช่าที่เปิด /liff หลังจากนั้นได้ cookie ที่เซ็นด้วยกุญแจนี้แล้ว)
 function verifySecrets(): string[] {
-  return [
-    signingSecret(),
-    (process.env.LINE_CHANNEL_SECRET || "").trim(),
-    (process.env.CRON_SECRET || "").trim(),
-  ].filter(Boolean);
+  return [signingSecret()].filter(Boolean);
 }
 
 function b64url(buf: Buffer): string {

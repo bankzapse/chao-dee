@@ -7,6 +7,7 @@ import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
 import { toE164 } from "@/lib/phone";
 import { thaiAuthError } from "@/lib/auth-errors";
 import { sendWelcomeIfNeeded } from "@/lib/onboarding";
+import { recordConsent } from "@/lib/consent";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
 
@@ -53,9 +54,12 @@ export async function verifyOtp(
   if (error) {
     return { error: thaiAuthError(error), otpSent: true, phone };
   }
-  // ส่งอีเมลต้อนรับครั้งแรก (best-effort — ไม่ขวาง flow)
+  // ส่งอีเมลต้อนรับครั้งแรก + บันทึกการยินยอม PDPA (best-effort — ไม่ขวาง flow)
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) await sendWelcomeIfNeeded(user.id);
+  if (user) {
+    await sendWelcomeIfNeeded(user.id);
+    await recordConsent(user.id, await clientIp());
+  }
   redirect(safeNext(formData.get("next")));
 }
 

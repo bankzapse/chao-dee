@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getPlatformPayment } from "@/lib/platform-settings";
 import { formatBaht, formatDate } from "@/lib/format";
 import { COMPANY } from "@/lib/company";
 import { commissionBreakdown, WHT_RATE } from "@/lib/agency";
@@ -48,7 +49,8 @@ export default async function CommissionInvoicePage({ params }: { params: Promis
 
   const no = `INV-AGC-${String(d.id).slice(0, 8).toUpperCase()}`;
   const paid = d.status === "paid";
-  const promptpay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY || "";
+  // แหล่งเดียว: อ่านจาก platform_settings (fallback env ภายใน) แทนการอ่าน env ตรง (ข้อ 7)
+  const { promptpay_id: promptpay } = await getPlatformPayment();
 
   const tax = commissionBreakdown(d.commission_amount, {
     vatRegistered: COMPANY.vatRegistered,

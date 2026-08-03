@@ -19,9 +19,21 @@ const COOKIE = "liff_sess";
 const LEGACY_COOKIE = "liff_session";
 const MAX_AGE = 60 * 60 * 12; // 12 ชม.
 
-function secret(): string {
-  // ใช้ channel secret ของ LINE เป็นกุญแจเซ็น (server-only อยู่แล้ว) จะได้ไม่ต้องตั้ง env ใหม่
-  return process.env.LINE_CHANNEL_SECRET || process.env.CRON_SECRET || "";
+// กุญแจ "เซ็น" session ของ LIFF — ใช้ env เฉพาะทาง LIFF_SESSION_SECRET เท่านั้น
+// (ห้ามใช้ CRON_SECRET ซึ่งเป็น bearer ของ cron endpoint = เปิดเผยกว่า, และห้าม fallback "" = ปลอม cookie ได้)
+// ไม่ตั้ง = ปฏิเสธออก/อ่าน session (fail-closed แบบเดียวกับ lib/line.ts)
+function signingSecret(): string {
+  return (process.env.LIFF_SESSION_SECRET || "").trim();
+}
+// กุญแจที่ยอมรับตอน "อ่าน" cookie — กุญแจใหม่ + กุญแจเก่า (ช่วงเปลี่ยนผ่าน ≥ MAX_AGE 12 ชม.)
+// กัน session ผู้เช่าที่อยู่ในพอร์ทัล LINE หลุดพร้อมกันตอน deploy (cookie เก่ายังใช้ได้จนหมดอายุ)
+// TODO(หลัง deploy ครบ 12 ชม.): cookie เก่าหมดอายุหมดแล้ว → ลบ LINE_CHANNEL_SECRET/CRON_SECRET ออกจากลิสต์นี้
+function verifySecrets(): string[] {
+  return [
+    signingSecret(),
+    (process.env.LINE_CHANNEL_SECRET || "").trim(),
+    (process.env.CRON_SECRET || "").trim(),
+  ].filter(Boolean);
 }
 
 function b64url(buf: Buffer): string {
@@ -33,9 +45,11 @@ function fromB64url(s: string): Buffer {
 
 export type LiffSession = { sub: string; tenantId: string | null; exp: number };
 
-function sign(payload: LiffSession): string {
+function sign(payload: LiffSession): string | null {
+  const key = signingSecret();
+  if (!key) return null; // fail-closed: ไม่มี LIFF_SESSION_SECRET → ไม่ออก session
   const body = b64url(Buffer.from(JSON.stringify(payload)));
-  const mac = b64url(createHmac("sha256", secret()).update(body).digest());
+  const mac = b64url(createHmac("sha256", key).update(body).digest());
   return `${body}.${mac}`;
 }
 
@@ -44,17 +58,21 @@ function unsign(token: string): LiffSession | null {
   if (dot < 0) return null;
   const body = token.slice(0, dot);
   const mac = token.slice(dot + 1);
-  const expected = b64url(createHmac("sha256", secret()).update(body).digest());
   const a = Buffer.from(mac);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  try {
-    const data = JSON.parse(fromB64url(body).toString()) as LiffSession;
-    if (!data.exp || data.exp < Date.now()) return null;
-    return data;
-  } catch {
-    return null;
+  // dual-verify: ยอมรับกุญแจใหม่ "หรือ" กุญแจเก่า (ช่วงเปลี่ยนผ่าน) · ไม่มีกุญแจเลย = ปฏิเสธ (fail-closed)
+  for (const key of verifySecrets()) {
+    const b = Buffer.from(b64url(createHmac("sha256", key).update(body).digest()));
+    if (a.length === b.length && timingSafeEqual(a, b)) {
+      try {
+        const data = JSON.parse(fromB64url(body).toString()) as LiffSession;
+        if (!data.exp || data.exp < Date.now()) return null;
+        return data;
+      } catch {
+        return null;
+      }
+    }
   }
+  return null;
 }
 
 /**
@@ -82,6 +100,7 @@ export async function verifyLineIdToken(idToken: string): Promise<string | null>
 /** ออก cookie เซสชันหลังตรวจ token ผ่าน (tenantId = null ถ้ายังไม่ผูกบัญชี) */
 export async function setLiffSession(sub: string, tenantId: string | null): Promise<void> {
   const token = sign({ sub, tenantId, exp: Date.now() + MAX_AGE * 1000 });
+  if (!token) return; // fail-closed: ไม่มี LIFF_SESSION_SECRET → ไม่ออก cookie
   const jar = await cookies();
   jar.set(COOKIE, token, {
     httpOnly: true,
@@ -102,14 +121,16 @@ export async function setLiffSession(sub: string, tenantId: string | null): Prom
 
 /** สเปกคุกกี้เซสชัน (ไว้ set บน NextResponse โดยตรง เช่น redirect ของ route handler) */
 export function liffSessionCookieSpecs(sub: string, tenantId: string | null) {
-  const token = sign({ sub, tenantId, exp: Date.now() + MAX_AGE * 1000 });
   const base = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
-  return [
-    { name: COOKIE, value: token, options: { ...base, maxAge: MAX_AGE } },
-    // ล้าง cookie เก่าเวอร์ชันก่อน
+  // ล้าง cookie เก่าเวอร์ชันก่อนเสมอ
+  const specs = [
     { name: LEGACY_COOKIE, value: "", options: { ...base, path: "/liff", maxAge: 0 } },
     { name: LEGACY_COOKIE, value: "", options: { ...base, maxAge: 0 } },
   ];
+  const token = sign({ sub, tenantId, exp: Date.now() + MAX_AGE * 1000 });
+  // fail-closed: ไม่มี LIFF_SESSION_SECRET → ไม่ตั้ง session cookie
+  if (token) specs.unshift({ name: COOKIE, value: token, options: { ...base, maxAge: MAX_AGE } });
+  return specs;
 }
 
 export async function readLiffSession(): Promise<LiffSession | null> {

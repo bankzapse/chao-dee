@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Building2, ExternalLink, Inbox, Gift, Star, Hourglass } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getPlatformPayment } from "@/lib/platform-settings";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatBaht } from "@/lib/format";
@@ -17,7 +18,7 @@ import { deleteListing } from "./actions";
 export default async function ListingPage() {
   const supabase = await createClient();
 
-  const platformPromptPay = process.env.NEXT_PUBLIC_PLATFORM_PROMPTPAY ?? "";
+  const { promptpay_id: platformPromptPay } = await getPlatformPayment();
   const today = new Date().toISOString().slice(0, 10);
   const promoPlans = await getEffectivePromoPlans();
 

@@ -8,7 +8,8 @@ export function QRCodeImg({ text, size = 200 }: { text: string; size?: number })
   const [src, setSrc] = useState("");
   useEffect(() => {
     if (!text) return;
-    QRCode.toDataURL(text, { margin: 1, width: size })
+    // เรนเดอร์ 2 เท่า (retina) แต่แสดง/พิมพ์ที่ size เดิม → คมชัด สแกนง่าย
+    QRCode.toDataURL(text, { margin: 1, width: size * 2 })
       .then(setSrc)
       .catch(() => setSrc(""));
   }, [text, size]);

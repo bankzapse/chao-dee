@@ -27,10 +27,13 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
 
   // LINE นี้ผูกกับผู้เช่าคนอื่นไปแล้วหรือยัง
+  // limit(1) กัน crash: maybeSingle จะ throw ถ้าเผลอมี >1 แถวผูก sub เดียวกัน (ดู lib/liff.ts)
   const { data: already } = await admin
     .from("tenants")
     .select("id")
     .eq("line_user_id", sess.sub)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (already) {
     await setLiffSession(sess.sub, already.id);

@@ -1,11 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { toE164, toE164Digits } from "@/lib/phone";
+import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
+import { toE164 } from "@/lib/phone";
 import { thaiAuthError } from "@/lib/auth-errors";
 import { sendWelcomeIfNeeded } from "@/lib/onboarding";
+import { recordConsent } from "@/lib/consent";
 
 export type AuthState = { error?: string; otpSent?: boolean; phone?: string } | null;
 
@@ -15,13 +17,23 @@ function safeNext(v: FormDataEntryValue | null): string {
   return s.startsWith("/") && !s.startsWith("//") ? s : "/dashboard";
 }
 
-/** เช็คว่ามีบัญชีที่ใช้เบอร์นี้แล้วหรือยัง (กันการยิง OTP ใส่เบอร์มั่ว) */
-async function phoneRegistered(input: string): Promise<boolean> {
-  const digits = toE164Digits(input);
-  if (!digits) return false;
-  const admin = createAdminClient();
-  const { data } = await admin.from("profiles").select("id").eq("phone", digits).maybeSingle();
-  return Boolean(data);
+/** IP ผู้เรียก (สำหรับ rate limit) */
+async function clientIp(): Promise<string> {
+  return (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
+/**
+ * จำกัดอัตราทางเข้า auth — กัน brute-force รหัสผ่าน/OTP และการยิง OTP ถี่
+ * จำกัดทั้งต่อ "เบอร์" (limit) และต่อ "IP" (หลวมกว่าเผื่อ NAT) · คืน retryAfter วินาที (0 = ผ่าน)
+ * หมายเหตุ: in-memory แยกตาม serverless instance (ดู lib/rate-limit.ts) — ชั้น durable ดูข้อ 6
+ */
+function authLimit(scope: string, phone: string, ip: string, limit: number, windowMs: number): number {
+  sweepIfNeeded();
+  const perPhone = rateLimit(`${scope}:ph:${phone}`, limit, windowMs);
+  if (!perPhone.ok) return perPhone.retryAfter;
+  const perIp = rateLimit(`${scope}:ip:${ip}`, limit * 4, windowMs);
+  if (!perIp.ok) return perIp.retryAfter;
+  return 0;
 }
 
 /** ยืนยันรหัส OTP → สร้าง session (ใช้ตอนสมัครสมาชิกยืนยันเบอร์) */
@@ -33,15 +45,21 @@ export async function verifyOtp(
   const token = String(formData.get("code") ?? "").trim();
   if (!phone || token.length < 4) return { error: "กรุณากรอกรหัส OTP", otpSent: true, phone };
 
+  const ra = authLimit("verify-otp", phone, await clientIp(), 10, 60_000);
+  if (ra) return { error: `ลองบ่อยเกินไป กรุณารอ ${ra} วินาที`, otpSent: true, phone };
+
   const supabase = await createClient();
   const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
 
   if (error) {
     return { error: thaiAuthError(error), otpSent: true, phone };
   }
-  // ส่งอีเมลต้อนรับครั้งแรก (best-effort — ไม่ขวาง flow)
+  // ส่งอีเมลต้อนรับครั้งแรก + บันทึกการยินยอม PDPA (best-effort — ไม่ขวาง flow)
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) await sendWelcomeIfNeeded(user.id);
+  if (user) {
+    await sendWelcomeIfNeeded(user.id);
+    await recordConsent(user.id, await clientIp());
+  }
   redirect(safeNext(formData.get("next")));
 }
 
@@ -54,6 +72,9 @@ export async function loginWithPassword(
   const password = String(formData.get("password") ?? "");
   if (!phone) return { error: "เบอร์โทรไม่ถูกต้อง (เช่น 0812345678)" };
   if (!password) return { error: "กรุณากรอกรหัสผ่าน" };
+
+  const ra = authLimit("login-pw", phone, await clientIp(), 5, 60_000);
+  if (ra) return { error: `พยายามเข้าสู่ระบบบ่อยเกินไป ลองใหม่ใน ${ra} วินาที`, phone };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ phone, password });
@@ -69,19 +90,18 @@ export async function requestPasswordReset(
   const raw = String(formData.get("phone") ?? "");
   const phone = toE164(raw);
   if (!phone) return { error: "เบอร์โทรไม่ถูกต้อง (เช่น 0812345678)" };
-  if (!(await phoneRegistered(raw))) {
-    return { error: "ไม่พบบัญชีที่ใช้เบอร์นี้", phone };
-  }
+
+  const ra = authLimit("reset-otp", phone, await clientIp(), 5, 5 * 60_000);
+  if (ra) return { error: `ขอรหัสบ่อยเกินไป กรุณารอ ${ra} วินาที`, phone };
+
+  // กัน user enumeration: ไม่เปิดเผยว่าเบอร์นี้มีบัญชีหรือไม่ — ตอบ "ส่งรหัสแล้ว" เหมือนกันทุกกรณี
+  // shouldCreateUser:false → ถ้าเบอร์ไม่มีบัญชี Supabase จะไม่ส่ง SMS (ไม่เปลืองไม่สร้างบัญชี)
+  // ถ้ามีบัญชีจริงจะได้รับ OTP · กรณี error (ไม่มีบัญชี/SMS ขัดข้อง) ไม่ surface ต่างกัน
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  await supabase.auth.signInWithOtp({
     phone,
     options: { channel: "sms", shouldCreateUser: false },
   });
-  if (error) {
-    if (error.status === 429) return { error: "ขอรหัสถี่เกินไป กรุณารอสักครู่", phone };
-    // ส่ง OTP ไม่สำเร็จ (เช่น ผู้ให้บริการ SMS ขัดข้อง) → แนะนำใช้รหัสผ่าน
-    return { error: "ส่งรหัส OTP ไม่สำเร็จชั่วคราว กรุณาลองใหม่ หรือเข้าสู่ระบบด้วยรหัสผ่าน", phone };
-  }
   return { otpSent: true, phone };
 }
 
@@ -95,6 +115,9 @@ export async function confirmPasswordReset(
   const password = String(formData.get("password") ?? "");
   if (token.length < 4) return { error: "กรุณากรอกรหัส OTP", otpSent: true, phone };
   if (password.length < 8) return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร", otpSent: true, phone };
+
+  const ra = authLimit("reset-verify", phone, await clientIp(), 10, 60_000);
+  if (ra) return { error: `ลองบ่อยเกินไป กรุณารอ ${ra} วินาที`, otpSent: true, phone };
 
   const supabase = await createClient();
   // ยืนยัน OTP → ได้ session (OTP ใช้ได้ครั้งเดียว)

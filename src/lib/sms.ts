@@ -16,7 +16,8 @@ const UA =
   "Mozilla/5.0 (compatible; Chao-Dee/1.0; +https://chao-dee.com)";
 
 export function isSmsConfigured(): boolean {
-  return Boolean(process.env.SMS_API_URL && process.env.SMS_API_KEY);
+  // ต้องมี sender ที่อนุมัติแล้วด้วย (fail-closed) — ไม่ตั้ง = ถือว่ายังไม่พร้อมส่ง
+  return Boolean(process.env.SMS_API_URL && process.env.SMS_API_KEY && process.env.SMS_SENDER);
 }
 
 function endpoint(base: string): string {
@@ -31,12 +32,12 @@ export async function sendSms(
   // .trim() กันช่องว่าง/newline ที่ติดมาตอน paste ใน env (ทำให้ auth 401)
   const url = process.env.SMS_API_URL?.trim();
   const key = process.env.SMS_API_KEY?.trim();
-  // ผู้ส่งที่อนุมัติแล้ว (ถาวร) — ฝังในโค้ด ไม่พึ่ง env เพื่อเลี่ยงปัญหาตั้งค่า
-  // ถ้าต้องเปลี่ยน sender ในอนาคต ตั้ง env SMS_SENDER ทับได้
-  const sender = (process.env.SMS_SENDER?.trim() && process.env.SMS_SENDER.trim() !== "MindFull")
-    ? process.env.SMS_SENDER.trim()
-    : "Chao-Dee";
-  if (!url || !key) return { ok: false, error: "SMS ยังไม่ได้ตั้งค่า (SMS_API_URL/SMS_API_KEY)" };
+  // ผู้ส่งต้องตั้งผ่าน env SMS_SENDER (ชื่อที่อนุมัติแล้ว) — fail-closed: ไม่ตั้ง = ไม่ส่ง
+  // (เลิก hardcode/hack ค่าเก่า "MindFull" ที่เป็นแผลจากตอนตั้ง sender ผิดแบรนด์)
+  const sender = process.env.SMS_SENDER?.trim();
+  if (!url || !key || !sender) {
+    return { ok: false, error: "SMS ยังไม่ได้ตั้งค่า (SMS_API_URL/SMS_API_KEY/SMS_SENDER)" };
+  }
 
   const to = toLocalThai(phone);
   const auth = "Basic " + Buffer.from(`${key}:`).toString("base64");

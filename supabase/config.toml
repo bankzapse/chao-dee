@@ -26,8 +26,10 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
+# หมายเหตุ: ค่านี้ใช้กับ supabase local (supabase start) เท่านั้น
+# auth URL ของ production ตั้งใน Supabase Dashboard → Authentication → URL Configuration
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000"]
+additional_redirect_urls = ["http://localhost:3000", "https://www.chao-dee.com"]
 jwt_expiry = 3600
 enable_signup = true
 

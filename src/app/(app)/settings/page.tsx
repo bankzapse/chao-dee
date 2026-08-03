@@ -117,6 +117,13 @@ export default async function SettingsPage() {
           bank_qr_url,
         }}
       />
+
+      {/* ลบบัญชี (PDPA / ข้อบังคับ App Store) */}
+      <div className="mt-8 border-t border-slate-200 pt-4">
+        <a href="/settings/delete-account" className="text-sm text-red-600 hover:text-red-700 hover:underline">
+          ลบบัญชีของฉัน
+        </a>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
 import { toE164 } from "@/lib/phone";
 import { thaiAuthError } from "@/lib/auth-errors";
 
@@ -68,6 +70,15 @@ export async function signUpRequest(_prev: SignupState, formData: FormData): Pro
   if (!phone) return fail("เบอร์โทรไม่ถูกต้อง (เช่น 0812345678)", "phone");
   if (!isEmail(email)) return fail("อีเมลไม่ถูกต้อง", "email");
   if (password.length < 8) return fail("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร", "password");
+
+  // กันยิง OTP สมัครถี่ (SMS มีต้นทุน) — จำกัดต่อเบอร์ + ต่อ IP (in-memory · ดูข้อ 6 สำหรับ durable)
+  sweepIfNeeded();
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const rlP = rateLimit(`signup:ph:${phone}`, 3, 10 * 60_000);
+  const rlI = rateLimit(`signup:ip:${ip}`, 12, 10 * 60_000);
+  if (!rlP.ok || !rlI.ok) {
+    return fail(`สมัคร/ขอรหัสบ่อยเกินไป กรุณารอ ${Math.max(rlP.retryAfter, rlI.retryAfter)} วินาที`, "phone");
+  }
 
   const meta = {
     full_name: `${first} ${last}`.trim(),

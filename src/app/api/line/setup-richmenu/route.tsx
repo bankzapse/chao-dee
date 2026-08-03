@@ -85,10 +85,12 @@ const OWNER_BUTTONS = [
   },
 ];
 type LineArea = { type: "uri"; uri: string } | { type: "message"; text: string };
+// ข้อความที่ส่งเมื่อกด ต้องตรงกับ label ของปุ่ม (OWNER_BUTTONS) และตรงกับที่ handleOwner จับ
+// — "งานซ่อมค้าง" มี "ซ่อม", "สรุปหอ" มี "สรุป" → webhook match ได้ (กันสับสน/ชนคำสั่งผู้เช่า)
 const OWNER_ACTIONS: LineArea[] = [
-  { type: "message", text: "แจ้งซ่อม" },
+  { type: "message", text: "งานซ่อมค้าง" },
   { type: "message", text: "ค้างชำระ" },
-  { type: "message", text: "สรุป" },
+  { type: "message", text: "สรุปหอ" },
   { type: "uri", uri: "https://www.chao-dee.com/dashboard" },
 ];
 

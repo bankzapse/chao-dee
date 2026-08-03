@@ -18,7 +18,8 @@ export function PromptPayQR({
   useEffect(() => {
     if (!promptpayId) return;
     const payload = buildPromptPayPayload(promptpayId, amount);
-    QRCode.toDataURL(payload, { margin: 1, width: size })
+    // เรนเดอร์ที่ความละเอียด 2 เท่า (retina) แต่แสดงผลที่ size เดิม → คมชัดบนจอ DPR สูง สแกนง่ายขึ้น
+    QRCode.toDataURL(payload, { margin: 1, width: size * 2 })
       .then(setSrc)
       .catch(() => setSrc(""));
   }, [promptpayId, amount, size]);

@@ -27,6 +27,7 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
   silent: !process.env.CI,
-  disableLogger: true,
+  // หมายเหตุ: เลิกใช้ disableLogger (deprecated + ไม่รองรับ Turbopack ใน Next 16)
+  // ถ้าต้องการตัด debug logging ของ Sentry ให้ใช้ webpack.treeshake.removeDebugLogging แทน
   telemetry: false,
 });

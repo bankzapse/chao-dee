@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, sweepIfNeeded } from "@/lib/rate-limit";
 import { toE164 } from "@/lib/phone";
 import { thaiAuthError } from "@/lib/auth-errors";
@@ -79,6 +80,44 @@ export async function loginWithPassword(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ phone, password });
   if (error) return { error: "เบอร์หรือรหัสผ่านไม่ถูกต้อง", phone };
+  redirect(safeNext(formData.get("next")));
+}
+
+/** เข้าสู่ระบบด้วย username + รหัสผ่าน (ทีมงานที่เจ้าของสร้างบัญชีให้) */
+export async function loginWithUsername(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const username = String(formData.get("username") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!username) return { error: "กรุณากรอกชื่อผู้ใช้" };
+  if (!password) return { error: "กรุณากรอกรหัสผ่าน" };
+
+  // rate limit ต่อ username + ต่อ IP (หลวมกว่าเผื่อ NAT)
+  sweepIfNeeded();
+  const ip = await clientIp();
+  if (!rateLimit(`login-un:un:${username}`, 5, 60_000).ok || !rateLimit(`login-un:ip:${ip}`, 20, 60_000).ok) {
+    return { error: "พยายามเข้าสู่ระบบบ่อยเกินไป ลองใหม่ในอีกสักครู่" };
+  }
+
+  // map username → email สังเคราะห์ของบัญชี (ผ่าน service-role) แล้วค่อย signIn ฝั่ง user
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+  let email: string | undefined;
+  if (profile?.id) {
+    const { data } = await admin.auth.admin.getUserById(profile.id);
+    email = data.user?.email ?? undefined;
+  }
+  // ไม่พบ username → ตอบ generic เหมือนรหัสผิด (กัน enumeration)
+  if (!email) return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
   redirect(safeNext(formData.get("next")));
 }
 

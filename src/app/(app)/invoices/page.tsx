@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, StatCard, Badge } from "@/components/ui";
 import { FilterChip, PendingLink } from "@/components/nav";
 import { PeriodSelect } from "@/components/period-select";
@@ -34,6 +35,7 @@ export default async function InvoicesPage({
   const periods = recentPeriods(12);
   if (!periods.includes(period)) periods.unshift(period);
 
+  await requireModuleView("invoices");
   const supabase = await createClient();
   const [{ data }, { data: buildings }] = await Promise.all([
     supabase

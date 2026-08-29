@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
@@ -15,6 +16,7 @@ export default async function RoomsPage({
   searchParams: Promise<{ building?: string }>;
 }) {
   const { building } = await searchParams;
+  await requireModuleView("rooms");
   const supabase = await createClient();
 
   const [{ data: buildings }, { data: allIds }] = await Promise.all([

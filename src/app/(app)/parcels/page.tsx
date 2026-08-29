@@ -1,5 +1,6 @@
 import { Building2, DoorOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatDate, PARCEL_STATUS_LABEL, PARCEL_STATUS_STYLE } from "@/lib/format";
@@ -15,6 +16,7 @@ type Row = Parcel & {
 const NO_ROOM = "— ไม่ระบุห้อง —";
 
 export default async function ParcelsPage() {
+  await requireModuleView("parcels");
   const supabase = await createClient();
   const [{ data: parcels }, { data: rooms }, { data: tenants }] = await Promise.all([
     supabase

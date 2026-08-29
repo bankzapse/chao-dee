@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui";
 import { TeamUI } from "./team-ui";
+import { TeamRoles, type Role } from "./team-roles";
 
 export type Member = { id: string; full_name: string; phone: string; role: string };
 export type Invitation = {
@@ -28,7 +29,8 @@ export default async function TeamPage() {
   // เฉพาะเจ้าของ/แอดมินเท่านั้นที่จัดการทีมได้
   if (!me || !["owner", "admin"].includes(me.role)) redirect("/dashboard");
 
-  const [{ data: members }, { data: invites }] = await Promise.all([
+  const isOwner = me.role === "owner";
+  const [{ data: members }, { data: invites }, { data: roles }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name, phone, role")
@@ -40,6 +42,12 @@ export default async function TeamPage() {
       .eq("org_id", me.org_id)
       .eq("status", "pending")
       .order("created_at", { ascending: false }),
+    // ประเภททีมงาน (custom role) — สำหรับเจ้าของสร้าง/มอบสิทธิ์
+    supabase
+      .from("roles")
+      .select("id, name, permissions")
+      .eq("org_id", me.org_id)
+      .order("name", { ascending: true }),
   ]);
 
   return (
@@ -48,6 +56,8 @@ export default async function TeamPage() {
         title="ทีมงาน"
         subtitle="เชิญและจัดการผู้ใช้ที่เข้าถึงกิจการของคุณ"
       />
+      {/* เฉพาะเจ้าของ: สร้างประเภททีมงาน (custom role) + สร้างบัญชี username/password */}
+      {isOwner && <TeamRoles roles={(roles ?? []) as Role[]} />}
       <TeamUI
         myId={me.id}
         myRole={me.role}

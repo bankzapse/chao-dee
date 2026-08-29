@@ -1,5 +1,6 @@
 import { User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
@@ -17,6 +18,7 @@ export default async function TenantsPage({
   searchParams: Promise<{ building?: string }>;
 }) {
   const { building } = await searchParams;
+  await requireModuleView("tenants");
   const supabase = await createClient();
   const [{ data }, { data: docs }, { data: contracts }, { data: rooms }, { data: buildings }] =
     await Promise.all([

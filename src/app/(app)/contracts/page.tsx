@@ -1,5 +1,6 @@
 import { DoorOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
@@ -33,6 +34,7 @@ export default async function ContractsPage({
   searchParams: Promise<{ building?: string }>;
 }) {
   const { building } = await searchParams;
+  await requireModuleView("contracts");
   const supabase = await createClient();
 
   const [{ data: contracts }, { data: rooms }, { data: tenants }, { data: buildings }] =

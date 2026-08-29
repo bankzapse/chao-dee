@@ -4,41 +4,50 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { LinkSpinner } from "@/components/nav";
+import { canAccessModule, type Access } from "@/lib/permissions";
 
+// module = key ใน permission catalog (ใช้ซ่อนเมนูตามสิทธิ์ทีมงาน) · ไม่มี module = แสดงเสมอ
 const NAV = [
   { href: "/reports", label: "แดชบอร์ด / รายงาน", icon: "📊" },
-  { href: "/buildings", label: "อาคาร", icon: "🏢" },
-  { href: "/rooms", label: "ห้องพัก", icon: "🚪" },
-  { href: "/floorplan", label: "ผังห้อง", icon: "🗺️" },
-  { href: "/tenants", label: "ผู้เช่า", icon: "👤" },
-  { href: "/contracts", label: "สัญญาเช่า", icon: "📄" },
-  { href: "/meters", label: "จดมิเตอร์", icon: "🔢" },
-  { href: "/invoices", label: "บิล/ใบแจ้งหนี้", icon: "🧾" },
+  { href: "/buildings", label: "อาคาร", icon: "🏢", module: "buildings" },
+  { href: "/rooms", label: "ห้องพัก", icon: "🚪", module: "rooms" },
+  { href: "/floorplan", label: "ผังห้อง", icon: "🗺️", module: "rooms" },
+  { href: "/tenants", label: "ผู้เช่า", icon: "👤", module: "tenants" },
+  { href: "/contracts", label: "สัญญาเช่า", icon: "📄", module: "contracts" },
+  { href: "/meters", label: "จดมิเตอร์", icon: "🔢", module: "meters" },
+  { href: "/invoices", label: "บิล/ใบแจ้งหนี้", icon: "🧾", module: "invoices" },
   { href: "/listing", label: "ลงประกาศหาผู้เช่า", icon: "📣" },
-  { href: "/announcements", label: "ประกาศ LINE", icon: "📢" },
-  { href: "/maintenance", label: "แจ้งซ่อม", icon: "🔧" },
-  { href: "/parcels", label: "พัสดุ", icon: "📦" },
-  { href: "/fees", label: "ค่าจอดรถ/ค่าขยะ", icon: "🅿️" },
-  { href: "/agency", label: "ดีลนายหน้า", icon: "🤝" },
-  { href: "/expenses", label: "ค่าใช้จ่าย", icon: "💸" },
+  { href: "/announcements", label: "ประกาศ LINE", icon: "📢", module: "announcements" },
+  { href: "/maintenance", label: "แจ้งซ่อม", icon: "🔧", module: "maintenance" },
+  { href: "/parcels", label: "พัสดุ", icon: "📦", module: "parcels" },
+  { href: "/fees", label: "ค่าจอดรถ/ค่าขยะ", icon: "🅿️", module: "fees" },
+  { href: "/agency", label: "ดีลนายหน้า", icon: "🤝", module: "agency" },
+  { href: "/expenses", label: "ค่าใช้จ่าย", icon: "💸", module: "expenses" },
   { href: "/team", label: "ทีมงาน", icon: "🧑‍🤝‍🧑", manageTeam: true },
   { href: "/renew", label: "ต่ออายุ/อัปเกรด", icon: "⭐" },
-  { href: "/settings", label: "ตั้งค่าและการชำระเงิน", icon: "⚙️" },
+  { href: "/settings", label: "ตั้งค่าและการชำระเงิน", icon: "⚙️", module: "settings" },
   { href: "/help", label: "ช่วยเหลือ", icon: "❓" },
 ];
 
 export function Sidebar({
   orgName,
   canManageTeam,
+  access = null,
   openMaintenance = 0,
 }: {
   orgName: string;
   canManageTeam?: boolean;
+  access?: Access | null;
   openMaintenance?: number;
 }) {
   const pathname = usePathname();
   // แอปจัดการหอแยกขาดจากแผงเจ้าของระบบ — เข้า /owner ได้ทาง /owner-login เท่านั้น
-  const nav = NAV.filter((item) => !("manageTeam" in item) || canManageTeam);
+  // ซ่อนเมนู: ทีมงาน (manageTeam) เฉพาะเจ้าของ/แอดมิน · โมดูลอื่นตามสิทธิ์ (owner/admin เห็นครบ)
+  const nav = NAV.filter((item) => {
+    if ("manageTeam" in item && item.manageTeam && !canManageTeam) return false;
+    if ("module" in item && item.module && !canAccessModule(access, item.module)) return false;
+    return true;
+  });
 
   return (
     <aside className="no-print hidden w-64 shrink-0 flex-col bg-slate-900 text-slate-300 md:flex">

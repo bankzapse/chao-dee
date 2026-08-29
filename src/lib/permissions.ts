@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
-
 /**
  * Custom RBAC — permission catalog + helper (บังคับสิทธิ์ชั้น app-layer)
+ * ไฟล์นี้ pure (ไม่ import server) → ใช้ได้ทั้ง client และ server
+ * ส่วนโหลดสิทธิ์ผู้ใช้ (getMyAccess) อยู่ที่ lib/access.ts (server เท่านั้น)
  *
  * รูปแบบ key = "<module>:<action>" เช่น "invoices:edit"
  * - owner = สิทธิ์เต็มโดยปริยาย (hasPermission คืน true เสมอ)
@@ -50,43 +50,9 @@ export type Access = {
   permissions: string[]; // key ละเอียดจาก custom role (owner = ครบทุก key)
 };
 
-/** owner มีสิทธิ์เต็ม · admin (เดิม) ถือว่าสิทธิ์เต็มเช่นกันเพื่อความเข้ากันได้ย้อนหลัง */
-function fullAccess(role: string): Access {
+/** owner มีสิทธิ์เต็ม · admin (เดิม) ถือว่าสิทธิ์เต็มเพื่อความเข้ากันได้ย้อนหลัง */
+export function fullAccess(role: string): Access {
   return { role, isOwner: role === "owner", permissions: allPermissionKeys() };
-}
-
-/**
- * โหลดสิทธิ์ของผู้ใช้ที่ล็อกอินอยู่
- * - owner / admin → สิทธิ์เต็ม (admin เดิมยังทำงานได้เหมือนก่อนมี custom role)
- * - staff + role_id → สิทธิ์ตาม roles.permissions
- * - staff ไม่มี role_id → ไม่มีสิทธิ์อะไร (นอกจากหน้า dashboard พื้นฐาน)
- */
-export async function getMyAccess(): Promise<Access | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, role_id")
-    .eq("id", user.id)
-    .single();
-  if (!profile) return null;
-
-  if (profile.role === "owner" || profile.role === "admin") return fullAccess(profile.role);
-
-  let permissions: string[] = [];
-  if (profile.role_id) {
-    const { data: role } = await supabase
-      .from("roles")
-      .select("permissions")
-      .eq("id", profile.role_id)
-      .maybeSingle();
-    permissions = (role?.permissions as string[] | undefined) ?? [];
-  }
-  return { role: profile.role, isOwner: false, permissions };
 }
 
 /** เช็คสิทธิ์ 1 key (owner/admin ผ่านเสมอ) */

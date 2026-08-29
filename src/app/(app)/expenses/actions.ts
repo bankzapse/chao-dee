@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { money } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
@@ -10,6 +11,7 @@ export async function createExpense(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("expenses:create"))) return { error: "ไม่มีสิทธิ์เพิ่มค่าใช้จ่าย" };
   const building_id = String(formData.get("building_id") ?? "");
   const expense_date = String(formData.get("expense_date") ?? "");
   const amount = money(formData.get("amount"));
@@ -32,6 +34,7 @@ export async function createExpense(
 }
 
 export async function deleteExpense(id: string): Promise<FormState> {
+  if (!(await can("expenses:delete"))) return { error: "ไม่มีสิทธิ์ลบค่าใช้จ่าย" };
   const supabase = await createClient();
   // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
   const { data, error } = await supabase.from("building_expenses").delete().eq("id", id).select("id");

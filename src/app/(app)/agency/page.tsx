@@ -1,5 +1,6 @@
 import { FileText, ReceiptText, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, Badge, StatCard } from "@/components/ui";
 import { formatBaht, formatDate } from "@/lib/format";
 import { DEAL_STATUS_LABEL, DEAL_STATUS_STYLE, commissionBreakdown, type DealStatus } from "@/lib/agency";
@@ -23,6 +24,7 @@ type Deal = {
 };
 
 export default async function AgencyPage() {
+  await requireModuleView("agency");
   const supabase = await createClient();
 
   // สถานะการเปิดใช้บริการ (resilient เผื่อยังไม่ได้รัน 0044)

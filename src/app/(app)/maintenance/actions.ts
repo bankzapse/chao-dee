@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import type { FormState } from "@/components/action-form";
@@ -11,6 +12,7 @@ export async function createMaintenance(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("maintenance:edit"))) return { error: "ไม่มีสิทธิ์เพิ่มงานแจ้งซ่อม" };
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return { error: "กรุณาระบุหัวข้อ" };
 
@@ -35,6 +37,7 @@ export async function updateMaintenanceStatus(
   id: string,
   status: MaintenanceStatus
 ): Promise<void> {
+  if (!(await can("maintenance:edit"))) return;
   const supabase = await createClient();
   const { data: req } = await supabase
     .from("maintenance_requests")
@@ -56,6 +59,7 @@ export async function updateMaintenanceStatus(
 }
 
 export async function deleteMaintenance(id: string): Promise<void> {
+  if (!(await can("maintenance:delete"))) return;
   const supabase = await createClient();
   await supabase.from("maintenance_requests").delete().eq("id", id);
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import type { FormState } from "@/components/action-form";
@@ -9,6 +10,7 @@ export async function createParcel(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("parcels:create"))) return { error: "ไม่มีสิทธิ์เพิ่มพัสดุ" };
   const received_at = String(formData.get("received_at") ?? "");
   if (!received_at) return { error: "กรุณาระบุวันที่รับเข้า" };
 
@@ -48,6 +50,7 @@ export async function createParcel(
 }
 
 export async function markPickedUp(id: string): Promise<void> {
+  if (!(await can("parcels:edit"))) return;
   const supabase = await createClient();
   await supabase
     .from("parcels")
@@ -56,6 +59,7 @@ export async function markPickedUp(id: string): Promise<void> {
 }
 
 export async function deleteParcel(id: string): Promise<void> {
+  if (!(await can("parcels:delete"))) return;
   const supabase = await createClient();
   await supabase.from("parcels").delete().eq("id", id);
 }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { PeriodSelect } from "@/components/period-select";
 import { currentPeriod, recentPeriods, formatPeriod } from "@/lib/format";
@@ -14,6 +15,7 @@ export default async function MetersPage({
   const periods = recentPeriods(12);
   if (!periods.includes(period)) periods.unshift(period);
 
+  await requireModuleView("meters");
   const supabase = await createClient();
 
   const [{ data: rooms }, { data: readings }] = await Promise.all([

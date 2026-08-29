@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { checkLimit } from "@/lib/limits";
 import type { FormState } from "@/components/action-form";
@@ -15,6 +16,7 @@ export async function createBuilding(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("buildings:create"))) return { error: "ไม่มีสิทธิ์เพิ่มอาคาร" };
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "กรุณาระบุชื่ออาคาร" };
 
@@ -45,6 +47,7 @@ export async function updateBuilding(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("buildings:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขอาคาร" };
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "กรุณาระบุชื่ออาคาร" };
 
@@ -65,6 +68,7 @@ export async function updateBuilding(
 }
 
 export async function deleteBuilding(id: string): Promise<FormState> {
+  if (!(await can("buildings:delete"))) return { error: "ไม่มีสิทธิ์ลบอาคาร" };
   const supabase = await createClient();
   // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
   const { data, error } = await supabase.from("buildings").delete().eq("id", id).select("id");

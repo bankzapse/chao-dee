@@ -1,5 +1,6 @@
 import { Megaphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatDate } from "@/lib/format";
@@ -19,6 +20,7 @@ type Announcement = {
 };
 
 export default async function AnnouncementsPage() {
+  await requireModuleView("announcements");
   const supabase = await createClient();
   const { data } = await supabase
     .from("announcements")

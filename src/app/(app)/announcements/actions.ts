@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import type { FormState } from "@/components/action-form";
@@ -9,6 +10,7 @@ export async function createAnnouncement(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("announcements:create"))) return { error: "ไม่มีสิทธิ์สร้างประกาศ" };
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return { error: "กรุณาระบุหัวข้อ" };
 
@@ -27,6 +29,7 @@ export async function createAnnouncement(
 export async function sendAnnouncement(
   id: string
 ): Promise<{ ok?: boolean; error?: string; count?: number }> {
+  if (!(await can("announcements:edit"))) return { error: "ไม่มีสิทธิ์ส่งประกาศ" };
   if (!isLineConfigured()) {
     return { error: "ยังไม่ได้ตั้งค่า LINE (ตั้งค่า LINE_CHANNEL_ACCESS_TOKEN ใน .env.local)" };
   }
@@ -62,6 +65,7 @@ export async function sendAnnouncement(
 }
 
 export async function deleteAnnouncement(id: string): Promise<void> {
+  if (!(await can("announcements:delete"))) return;
   const supabase = await createClient();
   await supabase.from("announcements").delete().eq("id", id);
 }

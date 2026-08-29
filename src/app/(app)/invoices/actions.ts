@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
 import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
@@ -142,6 +143,7 @@ function computeCharges(c: ContractLike, ctx: BillingCtx) {
 
 /** ออกบิลอัตโนมัติสำหรับทุกห้องที่มีสัญญา active ในรอบเดือนที่เลือก (ข้ามห้องที่ออกบิลไปแล้ว) */
 export async function generateInvoices(period: string): Promise<FormState> {
+  if (!(await can("invoices:create"))) return { error: "ไม่มีสิทธิ์ออกบิล" };
   if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบบิลไม่ถูกต้อง (ต้องเป็น YYYY-MM)" };
   const supabase = await createClient();
   const org_id = await getOrgId();
@@ -199,6 +201,7 @@ export async function generateInvoices(period: string): Promise<FormState> {
  * ทำเฉพาะบิลที่ยัง "ค้างชำระ" เท่านั้น (บิลที่จ่ายบางส่วน/จ่ายแล้ว ไม่แตะ เพื่อไม่ให้ยอดกับสถานะเพี้ยน)
  */
 export async function recalcInvoices(period: string): Promise<FormState> {
+  if (!(await can("invoices:edit"))) return { error: "ไม่มีสิทธิ์คำนวณบิลใหม่" };
   if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบบิลไม่ถูกต้อง (ต้องเป็น YYYY-MM)" };
   const supabase = await createClient();
 
@@ -298,6 +301,7 @@ export async function updateInvoice(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("invoices:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขบิล" };
   const due_date = String(formData.get("due_date") ?? "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(due_date)) return { error: "กรุณาระบุวันครบกำหนดให้ถูกต้อง" };
 
@@ -333,6 +337,7 @@ export async function addInvoiceItem(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("invoices:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขบิล" };
   const description = String(formData.get("description") ?? "").trim();
   const amount = money(formData.get("amount"));
   if (!description) return { error: "กรุณาระบุรายการ" };
@@ -355,6 +360,7 @@ export async function addInvoiceItem(
 
 /** ลบรายการค่าใช้จ่ายอื่นๆ แล้วปรับยอดรวมให้ */
 export async function deleteInvoiceItem(itemId: string): Promise<FormState> {
+  if (!(await can("invoices:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขบิล" };
   const supabase = await createClient();
   const { data: item } = await supabase
     .from("invoice_items")
@@ -380,6 +386,7 @@ export async function recordPayment(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("invoices:edit"))) return { error: "ไม่มีสิทธิ์บันทึกการชำระเงิน" };
   const amount = Number(formData.get("amount") ?? 0);
   const paid_at = String(formData.get("paid_at") ?? "");
   if (amount <= 0) return { error: "จำนวนเงินต้องมากกว่า 0" };
@@ -400,6 +407,7 @@ export async function recordPayment(
 }
 
 export async function deletePayment(id: string): Promise<FormState> {
+  if (!(await can("invoices:delete"))) return { error: "ไม่มีสิทธิ์ลบการชำระเงิน" };
   const supabase = await createClient();
   const { data, error } = await supabase.from("payments").delete().eq("id", id).select("id");
   if (error) return { error: dbErrorMessage(error.message) };
@@ -411,6 +419,7 @@ export async function deletePayment(id: string): Promise<FormState> {
 export async function sendInvoiceViaLine(
   invoiceId: string
 ): Promise<{ ok?: boolean; error?: string }> {
+  if (!(await can("invoices:edit"))) return { error: "ไม่มีสิทธิ์ส่งบิล" };
   if (!isLineConfigured()) {
     return { error: "ยังไม่ได้ตั้งค่า LINE (ตั้งค่า LINE_CHANNEL_ACCESS_TOKEN ใน .env.local)" };
   }
@@ -448,6 +457,7 @@ export async function sendInvoiceViaLine(
 }
 
 export async function voidInvoice(id: string): Promise<FormState> {
+  if (!(await can("invoices:delete"))) return { error: "ไม่มีสิทธิ์ยกเลิกบิล" };
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("invoices")
@@ -460,6 +470,7 @@ export async function voidInvoice(id: string): Promise<FormState> {
 }
 
 export async function deleteInvoice(id: string): Promise<FormState> {
+  if (!(await can("invoices:delete"))) return { error: "ไม่มีสิทธิ์ลบบิล" };
   const supabase = await createClient();
   // ลบรายการชำระที่ผูกกับบิลก่อน แล้วจึงลบบิล (กัน FK ค้าง)
   const pay = await supabase.from("payments").delete().eq("invoice_id", id);

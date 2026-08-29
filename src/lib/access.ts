@@ -15,25 +15,25 @@ export async function getMyAccess(): Promise<Access | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, role_id")
-    .eq("id", user.id)
-    .single();
-  if (!profile) return null;
+  // เลือก role เดี่ยว ๆ ก่อน (คอลัมน์เดิม มีเสมอ) — กันแอปล่มถ้า migration 0053 ยังไม่รันบน prod
+  const { data: base } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (!base) return null;
+  if (base.role === "owner" || base.role === "admin") return fullAccess(base.role);
 
-  if (profile.role === "owner" || profile.role === "admin") return fullAccess(profile.role);
-
+  // staff: อ่าน role_id + permissions แบบทนทาน (ถ้าคอลัมน์/ตารางยังไม่มี → ถือว่าไม่มีสิทธิ์)
   let permissions: string[] = [];
-  if (profile.role_id) {
-    const { data: role } = await supabase
-      .from("roles")
-      .select("permissions")
-      .eq("id", profile.role_id)
-      .maybeSingle();
+  const { data: p } = await supabase.from("profiles").select("role_id").eq("id", user.id).maybeSingle();
+  const roleId = (p as { role_id?: string } | null)?.role_id;
+  if (roleId) {
+    const { data: role } = await supabase.from("roles").select("permissions").eq("id", roleId).maybeSingle();
     permissions = (role?.permissions as string[] | undefined) ?? [];
   }
-  return { role: profile.role, isOwner: false, permissions };
+  return { role: base.role, isOwner: false, permissions };
+}
+
+/** เช็คสิทธิ์ 1 key ของผู้ใช้ปัจจุบัน (ใช้ gate server action) — owner/admin ผ่านเสมอ */
+export async function can(key: string): Promise<boolean> {
+  return hasPermission(await getMyAccess(), key);
 }
 
 /**

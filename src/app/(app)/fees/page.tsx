@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
 import type { Building, Vehicle, Tenant } from "@/lib/types";
@@ -23,6 +24,7 @@ export default async function FeesPage({
   searchParams: Promise<{ building?: string }>;
 }) {
   const { building } = await searchParams;
+  await requireModuleView("fees");
   const supabase = await createClient();
 
   const { data: buildings } = await supabase.from("buildings").select("*").order("name");

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { money } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
@@ -17,6 +18,7 @@ export async function saveMeterReadings(
   readingDate: string,
   rows: MeterRow[]
 ): Promise<FormState> {
+  if (!(await can("meters:edit"))) return { error: "ไม่มีสิทธิ์บันทึกค่ามิเตอร์" };
   if (!/^\d{4}-\d{2}$/.test(period)) return { error: "รอบเดือนไม่ถูกต้อง (YYYY-MM)" };
   const supabase = await createClient();
   const org_id = await getOrgId();

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { checkLimit } from "@/lib/limits";
 import { money, intMin, intClamp } from "@/lib/num";
 import type { FormState } from "@/components/action-form";
@@ -15,6 +16,7 @@ export type RoomFeeRow = { id: string; parking_fee: number; garbage_fee: number 
 
 /** บันทึกค่าจอดรถ/ค่าขยะ หลายห้องพร้อมกัน (RLS จำกัดให้แก้ได้เฉพาะห้องของกิจการตัวเอง) */
 export async function saveRoomFees(rows: RoomFeeRow[]): Promise<FormState> {
+  if (!(await can("rooms:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขห้องพัก" };
   if (!rows.length) return { ok: true };
   const supabase = await createClient();
   const results = await Promise.all(
@@ -59,6 +61,7 @@ export async function createRoom(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("rooms:create"))) return { error: "ไม่มีสิทธิ์เพิ่มห้องพัก" };
   const data = parseRoom(formData);
   if (!data.building_id) return { error: "กรุณาเลือกอาคาร", values: data };
   if (!data.room_number) return { error: "กรุณาระบุเลขห้อง", values: data };
@@ -80,6 +83,7 @@ export async function createRoomsBulk(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("rooms:create"))) return { error: "ไม่มีสิทธิ์เพิ่มห้องพัก" };
   const building_id = String(formData.get("building_id") ?? "");
   const floor = intMin(formData.get("floor"), 0);
   const prefix = String(formData.get("prefix") ?? "").trim();
@@ -126,6 +130,7 @@ export async function updateRoom(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("rooms:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขห้องพัก" };
   const data = parseRoom(formData);
   if (!data.room_number) return { error: "กรุณาระบุเลขห้อง", values: data };
 
@@ -141,6 +146,7 @@ export async function updateRoom(
 }
 
 export async function deleteRoom(id: string): Promise<FormState> {
+  if (!(await can("rooms:delete"))) return { error: "ไม่มีสิทธิ์ลบห้องพัก" };
   const supabase = await createClient();
   // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
   const { data, error } = await supabase.from("rooms").delete().eq("id", id).select("id");

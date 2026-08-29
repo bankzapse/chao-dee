@@ -2,6 +2,7 @@
 
 import { getOrgId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AGENCY_TERMS_VERSION, commissionBreakdown } from "@/lib/agency";
 import { COMPANY } from "@/lib/company";
@@ -12,6 +13,7 @@ function missingCol(msg?: string) {
 
 /** เจ้าของหอกดยอมรับสัญญานายหน้า (click-wrap) — บันทึกเวอร์ชัน + เวลา */
 export async function acceptAgencyTerms(): Promise<{ ok?: boolean; error?: string }> {
+  if (!(await can("agency:edit"))) return { error: "ไม่มีสิทธิ์จัดการนายหน้า" };
   const supabase = await createClient();
   const org_id = await getOrgId();
   const { error } = await supabase
@@ -31,6 +33,7 @@ export async function acceptAgencyTerms(): Promise<{ ok?: boolean; error?: strin
 
 /** ปิดรับบริการนายหน้า (ไม่กระทบดีลที่เกิดขึ้นแล้ว) */
 export async function disableAgency(): Promise<{ ok?: boolean; error?: string }> {
+  if (!(await can("agency:edit"))) return { error: "ไม่มีสิทธิ์จัดการนายหน้า" };
   const supabase = await createClient();
   const org_id = await getOrgId();
   const { error } = await supabase.from("organizations").update({ agency_enabled: false }).eq("id", org_id);
@@ -50,6 +53,7 @@ export async function submitCommissionPayment(
   slipPath: string,
   withholdTax = false
 ): Promise<{ ok?: boolean; error?: string }> {
+  if (!(await can("agency:edit"))) return { error: "ไม่มีสิทธิ์จัดการนายหน้า" };
   const org_id = await getOrgId();
   const admin = createAdminClient();
   const { data: deal } = await admin

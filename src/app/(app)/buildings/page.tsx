@@ -1,5 +1,6 @@
 import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatNumber } from "@/lib/format";
@@ -8,6 +9,7 @@ import { AddBuildingButton, EditBuildingButton } from "./building-buttons";
 import { deleteBuilding } from "./actions";
 
 export default async function BuildingsPage() {
+  await requireModuleView("buildings");
   const supabase = await createClient();
 
   const [{ data: buildings }, { data: rooms }] = await Promise.all([

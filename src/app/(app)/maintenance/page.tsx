@@ -1,5 +1,6 @@
 import { Building2, Wrench, MessageCircle, ClipboardList, Hourglass, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { DeleteButton } from "@/components/action-form";
 import { formatDate, MAINTENANCE_STATUS_LABEL, MAINTENANCE_STATUS_STYLE } from "@/lib/format";
@@ -26,6 +27,7 @@ const ACCENT: Record<MaintenanceStatus, { bar: string; chip: string }> = {
 };
 
 export default async function MaintenancePage() {
+  await requireModuleView("maintenance");
   const supabase = await createClient();
   const [{ data: reqs }, { data: rooms }, { data: tenants }] = await Promise.all([
     supabase

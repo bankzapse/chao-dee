@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { can } from "@/lib/access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrgId } from "@/lib/auth";
 import { money, intMin } from "@/lib/num";
@@ -54,6 +55,7 @@ export async function createContract(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("contracts:create"))) return { error: "ไม่มีสิทธิ์เพิ่มสัญญา" };
   const room_id = String(formData.get("room_id") ?? "");
   const tenant_id = String(formData.get("tenant_id") ?? "");
   const start_date = String(formData.get("start_date") ?? "");
@@ -116,6 +118,7 @@ export async function updateContract(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("contracts:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขสัญญา" };
   const start_date = String(formData.get("start_date") ?? "");
   const end_date = String(formData.get("end_date") ?? "").trim() || null;
   if (!start_date) return { error: "กรุณาระบุวันเริ่มสัญญา" };
@@ -137,12 +140,14 @@ export async function closeContract(
   room_id: string,
   status: "ended" | "terminated"
 ): Promise<void> {
+  if (!(await can("contracts:edit"))) return;
   const supabase = await createClient();
   await supabase.from("contracts").update({ status }).eq("id", id);
   await supabase.from("rooms").update({ status: "vacant" }).eq("id", room_id);
 }
 
 export async function deleteContract(id: string): Promise<FormState> {
+  if (!(await can("contracts:delete"))) return { error: "ไม่มีสิทธิ์ลบสัญญา" };
   const supabase = await createClient();
   // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
   const { data, error } = await supabase.from("contracts").delete().eq("id", id).select("id");
@@ -179,6 +184,7 @@ export async function listContractDocuments(contractId: string): Promise<Contrac
 }
 
 export async function deleteContractDocument(path: string): Promise<void> {
+  if (!(await can("contracts:delete"))) return;
   const supabase = await createClient();
   await supabase.storage.from("documents").remove([path]);
 }

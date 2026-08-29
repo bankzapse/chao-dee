@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, Badge } from "@/components/ui";
 import { SettingsForm } from "./settings-form";
 import { LineOwnerCard } from "./line-owner-card";
@@ -14,6 +15,7 @@ import {
 } from "@/lib/format";
 
 export default async function SettingsPage() {
+  await requireModuleView("settings");
   const supabase = await createClient();
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase

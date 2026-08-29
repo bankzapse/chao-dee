@@ -1,5 +1,6 @@
 import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { requireModuleView } from "@/lib/access";
 import { PageHeader, EmptyState, StatCard } from "@/components/ui";
 import { FilterChip } from "@/components/nav";
 import { DeleteButton } from "@/components/action-form";
@@ -18,6 +19,7 @@ export default async function ExpensesPage({
   searchParams: Promise<{ building?: string }>;
 }) {
   const { building } = await searchParams;
+  await requireModuleView("expenses");
   const supabase = await createClient();
 
   const { data: buildings } = await supabase.from("buildings").select("*").order("name");

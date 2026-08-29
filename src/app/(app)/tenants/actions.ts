@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/auth";
+import { can } from "@/lib/access";
 import { checkLimit } from "@/lib/limits";
 import { toLocalThai } from "@/lib/phone";
 import type { FormState } from "@/components/action-form";
@@ -35,6 +36,7 @@ export async function createTenant(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("tenants:create"))) return { error: "ไม่มีสิทธิ์เพิ่มผู้เช่า" };
   const data = parse(formData);
   if (!data.full_name) return { error: "กรุณาระบุชื่อผู้เช่า" };
 
@@ -56,6 +58,7 @@ export async function updateTenant(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  if (!(await can("tenants:edit"))) return { error: "ไม่มีสิทธิ์แก้ไขผู้เช่า" };
   const data = parse(formData);
   if (!data.full_name) return { error: "กรุณาระบุชื่อผู้เช่า" };
 
@@ -69,6 +72,7 @@ export async function updateTenant(
 }
 
 export async function deleteTenant(id: string): Promise<FormState> {
+  if (!(await can("tenants:delete"))) return { error: "ไม่มีสิทธิ์ลบผู้เช่า" };
   const supabase = await createClient();
   // .select() เพื่อรู้ว่าลบไปกี่แถว — RLS ไม่ได้ throw error แต่กรองแถวทิ้งเงียบๆ
   const { data, error } = await supabase.from("tenants").delete().eq("id", id).select("id");
@@ -79,6 +83,7 @@ export async function deleteTenant(id: string): Promise<FormState> {
 
 /** สร้างรหัสเชื่อมบัญชี LINE 6 หลักให้ผู้เช่า แล้วคืนรหัสไปแสดง */
 export async function generateLinkCode(id: string): Promise<{ code?: string; error?: string }> {
+  if (!(await can("tenants:edit"))) return { error: "ไม่มีสิทธิ์จัดการผู้เช่า" };
   const code = crypto.randomBytes(3).toString("hex").toUpperCase(); // 6 hex chars
   const supabase = await createClient();
   const { error } = await supabase
@@ -90,6 +95,7 @@ export async function generateLinkCode(id: string): Promise<{ code?: string; err
 }
 
 export async function unlinkLine(id: string): Promise<FormState> {
+  if (!(await can("tenants:edit"))) return { error: "ไม่มีสิทธิ์จัดการผู้เช่า" };
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenants")
@@ -144,6 +150,7 @@ export async function addTenantDocument(
   file_path: string,
   note: string
 ): Promise<{ ok?: boolean; error?: string }> {
+  if (!(await can("tenants:edit"))) return { error: "ไม่มีสิทธิ์เพิ่มเอกสารผู้เช่า" };
   if (!file_path) return { error: "ไม่พบไฟล์ที่อัปโหลด" };
   const supabase = await createClient();
   const org_id = await getOrgId();
@@ -159,6 +166,7 @@ export async function addTenantDocument(
 }
 
 export async function deleteTenantDocument(id: string): Promise<void> {
+  if (!(await can("tenants:delete"))) return;
   const supabase = await createClient();
   const { data } = await supabase
     .from("tenant_documents")

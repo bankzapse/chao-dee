@@ -204,6 +204,19 @@ export async function createTeamMember(_prev: FormState, formData: FormData): Pr
   return { ok: true };
 }
 
+/** เปลี่ยนประเภทสิทธิ์ (role_id) ของสมาชิก staff — เฉพาะเจ้าของ (ผ่าน SECURITY DEFINER กัน guard pin) */
+export async function setMemberRole(memberId: string, roleId: string | null): Promise<{ error?: string }> {
+  const me = await requireOwner();
+  if (!me) return { error: "เฉพาะเจ้าของกิจการเท่านั้น" };
+  const { error } = await me.supabase.rpc("set_member_role", {
+    target_id: memberId,
+    new_role_id: roleId,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/team");
+  return {};
+}
+
 /** ถอดสมาชิกออกจากกิจการ (ลบบัญชีผู้ใช้ → เพิกถอนสิทธิ์ทั้งหมด) */
 export async function removeMember(targetId: string): Promise<{ error?: string }> {
   const me = await currentProfile();

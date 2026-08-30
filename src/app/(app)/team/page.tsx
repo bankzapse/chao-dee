@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui";
 import { TeamUI } from "./team-ui";
 import { TeamRoles, type Role } from "./team-roles";
 
-export type Member = { id: string; full_name: string; phone: string; role: string };
+export type Member = { id: string; full_name: string; phone: string; role: string; role_id: string | null };
 export type Invitation = {
   id: string;
   phone: string;
@@ -33,7 +33,7 @@ export default async function TeamPage() {
   const [{ data: members }, { data: invites }, { data: roles }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, phone, role")
+      .select("id, full_name, phone, role, role_id")
       .eq("org_id", me.org_id)
       .order("role", { ascending: true }),
     supabase
@@ -61,8 +61,10 @@ export default async function TeamPage() {
       <TeamUI
         myId={me.id}
         myRole={me.role}
+        isOwner={isOwner}
         members={(members ?? []) as Member[]}
         invites={(invites ?? []) as Invitation[]}
+        roles={(roles ?? []) as Role[]}
       />
     </div>
   );

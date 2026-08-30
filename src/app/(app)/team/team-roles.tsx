@@ -2,9 +2,9 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { Trash2, Plus, ShieldCheck } from "lucide-react";
+import { Trash2, Plus, ShieldCheck, Pencil } from "lucide-react";
 import { PERMISSION_MODULES, ACTION_LABEL, type PermAction } from "@/lib/permissions";
-import { createRole, deleteRole, createTeamMember } from "./actions";
+import { createRole, updateRole, deleteRole, createTeamMember } from "./actions";
 import type { FormState } from "@/components/action-form";
 
 export type Role = { id: string; name: string; permissions: string[] };
@@ -58,16 +58,59 @@ function PermissionMatrix({ defaultChecked = [] }: { defaultChecked?: string[] }
   );
 }
 
-/** จัดการ role: สร้างใหม่ + รายการ + ลบ */
+/** 1 แถวของประเภท: ดู + แก้ไข (pre-check สิทธิ์เดิม) + ลบ */
+function RoleRow({ role }: { role: Role }) {
+  const [state, action] = useActionState<FormState, FormData>(updateRole.bind(null, role.id), null);
+  const [pending, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
+
+  function onDelete() {
+    if (!confirm(`ลบประเภท "${role.name}"? สมาชิกที่ใช้ประเภทนี้จะไม่มีสิทธิ์จนกว่าจะกำหนดใหม่`)) return;
+    startTransition(async () => { await deleteRole(role.id); });
+  }
+
+  return (
+    <li className="rounded-lg border border-slate-200">
+      <div className="flex items-center justify-between px-3 py-2">
+        <div>
+          <p className="font-medium text-slate-800">{role.name}</p>
+          <p className="text-xs text-slate-400">{role.permissions.length} สิทธิ์</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setEditing((v) => !v)}
+            className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            <Pencil className="h-4 w-4" /> แก้ไข
+          </button>
+          <button onClick={onDelete} disabled={pending} className="text-rose-500 hover:text-rose-600 disabled:opacity-50">
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      {editing && (
+        <form action={action} className="space-y-3 border-t border-slate-200 bg-slate-50 p-4">
+          <div>
+            <label className="label">ชื่อประเภท</label>
+            <input name="name" className="field" defaultValue={role.name} required />
+          </div>
+          <div>
+            <label className="label">สิทธิ์ที่ให้</label>
+            <PermissionMatrix defaultChecked={role.permissions} />
+          </div>
+          {state?.error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{state.error}</p>}
+          {state?.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-600">บันทึกการแก้ไขแล้ว</p>}
+          <SubmitBtn label="บันทึกการแก้ไข" icon={<ShieldCheck className="h-4 w-4" />} />
+        </form>
+      )}
+    </li>
+  );
+}
+
+/** จัดการ role: สร้างใหม่ + รายการ + แก้ไข + ลบ */
 function RolesManager({ roles }: { roles: Role[] }) {
   const [state, action] = useActionState<FormState, FormData>(createRole, null);
-  const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-
-  function onDelete(id: string, name: string) {
-    if (!confirm(`ลบประเภท "${name}"? สมาชิกที่ใช้ประเภทนี้จะไม่มีสิทธิ์จนกว่าจะกำหนดใหม่`)) return;
-    startTransition(async () => { await deleteRole(id); });
-  }
 
   return (
     <div className="card p-5">
@@ -85,15 +128,7 @@ function RolesManager({ roles }: { roles: Role[] }) {
       ) : (
         <ul className="mb-4 space-y-2">
           {roles.map((r) => (
-            <li key={r.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-              <div>
-                <p className="font-medium text-slate-800">{r.name}</p>
-                <p className="text-xs text-slate-400">{r.permissions.length} สิทธิ์</p>
-              </div>
-              <button onClick={() => onDelete(r.id, r.name)} disabled={pending} className="text-rose-500 hover:text-rose-600 disabled:opacity-50">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
+            <RoleRow key={r.id} role={r} />
           ))}
         </ul>
       )}

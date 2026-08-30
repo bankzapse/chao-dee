@@ -17,31 +17,34 @@ type Announcement = {
   sent_at: string | null;
   recipients: number;
   created_at: string;
+  building_id?: string | null;
 };
 
 export default async function AnnouncementsPage() {
   await requireModuleView("announcements");
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("announcements")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data }, { data: buildings }] = await Promise.all([
+    supabase.from("announcements").select("*").order("created_at", { ascending: false }),
+    supabase.from("buildings").select("id, name").order("name", { ascending: true }),
+  ]);
 
   const list = (data ?? []) as Announcement[];
+  const blds = (buildings ?? []) as { id: string; name: string }[];
+  const buildingName = new Map(blds.map((b) => [b.id, b.name]));
 
   return (
     <div>
       <PageHeader
         title="ประกาศผ่าน LINE"
         subtitle="ส่งข่าวสารถึงผู้เช่าที่ผูกบัญชี LINE"
-        action={<AddAnnouncementButton />}
+        action={<AddAnnouncementButton buildings={blds} />}
       />
 
       {list.length === 0 ? (
         <EmptyState
           title="ยังไม่มีประกาศ"
           description="เขียนประกาศแล้วส่งถึงผู้เช่าผ่าน LINE ได้ทันที"
-          action={<AddAnnouncementButton />}
+          action={<AddAnnouncementButton buildings={blds} />}
         />
       ) : (
         <div className="space-y-3">
@@ -56,6 +59,9 @@ export default async function AnnouncementsPage() {
                   {a.body && (
                     <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{a.body}</p>
                   )}
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    ส่งถึง: {a.building_id ? (buildingName.get(a.building_id) ?? "อาคารที่เลือก") : "ทุกอาคาร"}
+                  </p>
                 </div>
                 {a.sent_at ? (
                   <Badge className="bg-emerald-100 text-emerald-700">

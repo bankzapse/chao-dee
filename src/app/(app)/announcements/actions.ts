@@ -16,11 +16,14 @@ export async function createAnnouncement(
 
   const supabase = await createClient();
   const org_id = await getOrgId();
-  const { error } = await supabase.from("announcements").insert({
-    org_id,
-    title,
-    body: String(formData.get("body") ?? "").trim(),
-  });
+  const body = String(formData.get("body") ?? "").trim();
+  const building_id = String(formData.get("building_id") ?? "").trim() || null;
+
+  let { error } = await supabase.from("announcements").insert({ org_id, title, body, building_id });
+  // resilient: เผื่อ prod ยังไม่รัน migration 0054 (คอลัมน์ building_id) → บันทึกแบบทุกอาคาร
+  if (error && /building_id|schema cache|could not find/i.test(error.message)) {
+    ({ error } = await supabase.from("announcements").insert({ org_id, title, body }));
+  }
   if (error) return { error: error.message };
   return { ok: true };
 }
@@ -42,10 +45,20 @@ export async function sendAnnouncement(
     .single();
   if (!ann) return { error: "ไม่พบประกาศ" };
 
-  const { data: tenants } = await supabase
-    .from("tenants")
-    .select("line_user_id")
-    .neq("line_user_id", "");
+  // อาคารเป้าหมาย (resilient เผื่อยังไม่รัน migration 0054) — null = ทุกอาคาร
+  const { data: bRow } = await supabase.from("announcements").select("building_id").eq("id", id).maybeSingle();
+  const buildingId = (bRow as { building_id?: string } | null)?.building_id ?? null;
+
+  // ผู้รับ: ผู้เช่าที่ผูก LINE — ถ้าระบุอาคาร กรองเฉพาะผู้เช่าที่ห้องอยู่ในอาคารนั้น
+  let tq = supabase.from("tenants").select("line_user_id, room_id").neq("line_user_id", "");
+  if (buildingId) {
+    const { data: rooms } = await supabase.from("rooms").select("id").eq("building_id", buildingId);
+    const roomIds = (rooms ?? []).map((r) => r.id);
+    // ไม่มีห้องในอาคาร → ไม่มีผู้รับ (กัน .in([]) ที่บางเวอร์ชันคืนทุกแถว)
+    if (roomIds.length === 0) return { ok: true, count: 0 };
+    tq = tq.in("room_id", roomIds);
+  }
+  const { data: tenants } = await tq;
 
   const targets = (tenants ?? []).map((t) => t.line_user_id).filter(Boolean);
   const message = textMessage(`📢 ${ann.title}\n\n${ann.body}`);

@@ -7,7 +7,11 @@ import { ModalButton } from "@/components/modal";
 import { ActionForm } from "@/components/action-form";
 import { createAnnouncement, sendAnnouncement } from "./actions";
 
-export function AddAnnouncementButton() {
+export function AddAnnouncementButton({
+  buildings = [],
+}: {
+  buildings?: { id: string; name: string }[];
+}) {
   return (
     <ModalButton label="+ เขียนประกาศ" title="เขียนประกาศใหม่">
       {(close) => (
@@ -15,6 +19,18 @@ export function AddAnnouncementButton() {
           <div>
             <label className="label">หัวข้อ *</label>
             <input name="title" className="field" placeholder="แจ้งกำหนดชำระค่าเช่า" required />
+          </div>
+          <div>
+            <label className="label">ส่งถึงอาคาร</label>
+            <select name="building_id" className="field" defaultValue="">
+              <option value="">ทุกอาคาร (ผู้เช่าทั้งหมด)</option>
+              {buildings.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-400">
+              เลือกอาคารเพื่อส่งเฉพาะผู้เช่าในอาคารนั้น (เช่น ไฟดับเฉพาะสันป่าฝ้าย)
+            </p>
           </div>
           <div>
             <label className="label">เนื้อหา</label>

@@ -113,11 +113,18 @@ export async function loginWithUsername(
     email = data.user?.email ?? undefined;
   }
   // ไม่พบ username → ตอบ generic เหมือนรหัสผิด (กัน enumeration)
-  if (!email) return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
+  if (!email) {
+    console.warn(`loginWithUsername: ไม่พบ username/email (username=${username}, profile=${Boolean(profile?.id)})`);
+    return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
+  if (error) {
+    // log เหตุจริง (โผล่ใน Vercel logs) — เช่น "Email logins are disabled" = ต้องเปิด Email provider
+    console.error(`loginWithUsername: signIn ล้มเหลว (username=${username}): ${error.message}`);
+    return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
+  }
   redirect(safeNext(formData.get("next")));
 }
 

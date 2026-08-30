@@ -49,18 +49,36 @@ export async function sendAnnouncement(
   const { data: bRow } = await supabase.from("announcements").select("building_id").eq("id", id).maybeSingle();
   const buildingId = (bRow as { building_id?: string } | null)?.building_id ?? null;
 
-  // ผู้รับ: ผู้เช่าที่ผูก LINE — ถ้าระบุอาคาร กรองเฉพาะผู้เช่าที่ห้องอยู่ในอาคารนั้น
-  let tq = supabase.from("tenants").select("line_user_id, room_id").neq("line_user_id", "");
+  // ผู้รับ: ผู้เช่าที่ผูก LINE — ถ้าระบุอาคาร กรองเฉพาะผู้เช่าที่ "อยู่" ในอาคารนั้น
+  // การอยู่อาคาร = ห้องผูกตรง (tenant.room_id) หรือ มีสัญญา active กับห้องในอาคาร
+  // (ต้องเช็คทั้งสองทาง เหมือนหน้าผู้เช่า ไม่งั้นผู้เช่าที่ผูกห้องผ่านสัญญาจะตกหล่น)
+  let targets: string[];
   if (buildingId) {
     const { data: rooms } = await supabase.from("rooms").select("id").eq("building_id", buildingId);
-    const roomIds = (rooms ?? []).map((r) => r.id);
-    // ไม่มีห้องในอาคาร → ไม่มีผู้รับ (กัน .in([]) ที่บางเวอร์ชันคืนทุกแถว)
-    if (roomIds.length === 0) return { ok: true, count: 0 };
-    tq = tq.in("room_id", roomIds);
-  }
-  const { data: tenants } = await tq;
+    const roomIds = new Set((rooms ?? []).map((r) => r.id as string));
+    if (roomIds.size === 0) return { ok: true, count: 0 };
 
-  const targets = (tenants ?? []).map((t) => t.line_user_id).filter(Boolean);
+    const [{ data: tenants }, { data: contracts }] = await Promise.all([
+      supabase.from("tenants").select("id, line_user_id, room_id").neq("line_user_id", ""),
+      supabase.from("contracts").select("tenant_id, room_id").eq("status", "active"),
+    ]);
+    const inBuildingByContract = new Set(
+      (contracts ?? [])
+        .filter((c: { room_id?: string }) => c.room_id && roomIds.has(c.room_id))
+        .map((c: { tenant_id: string }) => c.tenant_id)
+    );
+    targets = [
+      ...new Set(
+        (tenants ?? [])
+          .filter((t: { id: string; room_id?: string }) => (t.room_id && roomIds.has(t.room_id)) || inBuildingByContract.has(t.id))
+          .map((t: { line_user_id: string }) => t.line_user_id)
+          .filter(Boolean)
+      ),
+    ];
+  } else {
+    const { data: tenants } = await supabase.from("tenants").select("line_user_id").neq("line_user_id", "");
+    targets = [...new Set((tenants ?? []).map((t: { line_user_id: string }) => t.line_user_id).filter(Boolean))];
+  }
   const message = textMessage(`📢 ${ann.title}\n\n${ann.body}`);
 
   let count = 0;

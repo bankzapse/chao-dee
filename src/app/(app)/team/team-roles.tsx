@@ -136,7 +136,7 @@ function MemberCreator({ roles }: { roles: Role[] }) {
           </div>
           <div>
             <label className="label">รหัสผ่าน</label>
-            <input name="password" type="text" className="field" placeholder="อย่างน้อย 8 ตัว" required />
+            <input name="password" type="text" className="field" placeholder="อย่างน้อย 6 ตัว เช่น sss123" required />
           </div>
         </div>
         <div>

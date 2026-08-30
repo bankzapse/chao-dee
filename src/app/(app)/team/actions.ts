@@ -155,7 +155,7 @@ export async function createTeamMember(_prev: FormState, formData: FormData): Pr
   const roleId = String(formData.get("role_id") ?? "").trim() || null;
 
   if (!/^[a-z0-9_.]{3,20}$/.test(username)) return { error: "ชื่อผู้ใช้ต้องเป็น a-z, 0-9, _ . ยาว 3-20 ตัว" };
-  if (password.length < 8) return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" };
+  if (password.length < 6) return { error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" };
   if (!full_name) return { error: "กรุณากรอกชื่อทีมงาน" };
 
   const admin = createAdminClient();

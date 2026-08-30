@@ -64,7 +64,10 @@ export function SendAnnouncementButton({ id }: { id: string }) {
             const res = await sendAnnouncement(id);
             if (res.error) setMsg(res.error);
             else {
-              setMsg(`ส่งแล้ว ${res.count} คน`);
+              setMsg(
+                `ส่งแล้ว ${res.count} คน` +
+                  (res.failed ? ` · ไม่สำเร็จ ${res.failed} (ผู้เช่าอาจไม่ได้เป็นเพื่อน/บล็อก OA)` : "")
+              );
               router.refresh();
             }
           })

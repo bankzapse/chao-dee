@@ -31,7 +31,7 @@ export async function createAnnouncement(
 /** ส่งประกาศไปยังผู้เช่าที่ผูก LINE แล้วทุกคนในองค์กร */
 export async function sendAnnouncement(
   id: string
-): Promise<{ ok?: boolean; error?: string; count?: number }> {
+): Promise<{ ok?: boolean; error?: string; count?: number; failed?: number }> {
   if (!(await can("announcements:edit"))) return { error: "ไม่มีสิทธิ์ส่งประกาศ" };
   if (!isLineConfigured()) {
     return { error: "ยังไม่ได้ตั้งค่า LINE (ตั้งค่า LINE_CHANNEL_ACCESS_TOKEN ใน .env.local)" };
@@ -64,9 +64,15 @@ export async function sendAnnouncement(
   const message = textMessage(`📢 ${ann.title}\n\n${ann.body}`);
 
   let count = 0;
+  let failed = 0;
   for (const uid of targets) {
     const res = await pushMessage(uid, [message]);
     if (res.ok) count++;
+    else {
+      failed++;
+      // ส่วนใหญ่ 400/403 = ผู้เช่าไม่ได้เป็นเพื่อน/บล็อก OA (push ต้องเป็นเพื่อนเท่านั้น)
+      console.warn(`ประกาศ ${id}: push ล้มเหลว status=${res.status} ${res.error ?? ""}`);
+    }
   }
 
   await supabase
@@ -74,7 +80,7 @@ export async function sendAnnouncement(
     .update({ sent_at: new Date().toISOString(), recipients: count })
     .eq("id", id);
 
-  return { ok: true, count };
+  return { ok: true, count, failed };
 }
 
 export async function deleteAnnouncement(id: string): Promise<void> {

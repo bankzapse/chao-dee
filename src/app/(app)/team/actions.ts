@@ -175,20 +175,28 @@ export async function createTeamMember(_prev: FormState, formData: FormData): Pr
   }
   const newUserId = created.user.id;
 
-  // trigger handle_new_user สร้าง org ใหม่ + profile(role=owner) → ย้ายเข้ากิจการเจ้าของ + ลบ org ทิ้ง
+  // trigger handle_new_user สร้าง org ใหม่ + profile(role=owner) ให้ทุกครั้งที่สร้าง auth user
+  // *ห้าม* ใช้ UPDATE ย้าย org/ตั้ง username — เพราะ BEFORE UPDATE guard (0053) pin คอลัมน์สิทธิ์ทิ้ง
+  // → ลบ profile+org ชั่วคราวก่อน แล้ว INSERT profile ใหม่ให้ตรง (INSERT ไม่โดน guard)
   const { data: autoProfile } = await admin.from("profiles").select("org_id").eq("id", newUserId).maybeSingle();
   const throwawayOrg = (autoProfile as { org_id?: string } | null)?.org_id;
 
-  const { error: upErr } = await admin
-    .from("profiles")
-    .update({ org_id: me.org_id, role: "staff", role_id: roleId, username, full_name })
-    .eq("id", newUserId);
-  if (upErr) {
-    await admin.auth.admin.deleteUser(newUserId).catch(() => null); // rollback กันบัญชีค้าง
-    return { error: upErr.message };
-  }
+  await admin.from("profiles").delete().eq("id", newUserId); // ลบ profile(owner) ที่ trigger สร้าง
   if (throwawayOrg && throwawayOrg !== me.org_id) {
-    await admin.from("organizations").delete().eq("id", throwawayOrg); // org ว่างแล้ว (ย้าย profile ออก)
+    await admin.from("organizations").delete().eq("id", throwawayOrg); // ลบ org ว่างที่ trigger สร้าง
+  }
+
+  const { error: insErr } = await admin.from("profiles").insert({
+    id: newUserId,
+    org_id: me.org_id,
+    role: "staff",
+    role_id: roleId,
+    username,
+    full_name,
+  });
+  if (insErr) {
+    await admin.auth.admin.deleteUser(newUserId).catch(() => null); // rollback กันบัญชีค้าง
+    return { error: insErr.message };
   }
 
   await logAudit({ org_id: me.org_id, actor_id: me.id, action: "สร้างบัญชีทีมงาน", target: username, meta: { role_id: roleId } });

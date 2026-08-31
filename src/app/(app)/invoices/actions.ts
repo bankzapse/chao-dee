@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/access";
 import { getOrgId } from "@/lib/auth";
 import { pushMessage, textMessage, isLineConfigured } from "@/lib/line";
-import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
+import { formatBaht, formatDate, formatPeriod, formatNumber } from "@/lib/format";
 import type { FormState } from "@/components/action-form";
 import type { PaymentMethod } from "@/lib/types";
 import { money } from "@/lib/num";
@@ -427,7 +427,7 @@ export async function sendInvoiceViaLine(
   const { data: inv } = await supabase
     .from("invoices")
     .select(
-      "period, rent_amount, water_units, water_amount, electric_units, electric_amount, parking_amount, garbage_amount, other_amount, total_amount, paid_amount, due_date, tenants(full_name, line_user_id), rooms(room_number)"
+      "period, status, room_id, occupant_count, rent_amount, water_units, water_amount, electric_units, electric_amount, parking_amount, garbage_amount, other_amount, total_amount, paid_amount, due_date, tenants(full_name, line_user_id), rooms(room_number)"
     )
     .eq("id", invoiceId)
     .single();
@@ -442,11 +442,29 @@ export async function sendInvoiceViaLine(
   }
   const room = (inv.rooms as unknown as { room_number: string } | null)?.room_number ?? "-";
   const outstanding = Number(inv.total_amount) - Number(inv.paid_amount);
+  const paid = inv.status === "paid" || outstanding <= 0;
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.chao-dee.com").replace(/\/$/, "");
   const link = `${baseUrl}/bill/${invoiceId}`;
+  const n = (v: unknown) => Number(v ?? 0);
+
+  // เลขมิเตอร์ก่อน/หลัง (น้ำ/ไฟ) — เหมือนหน้าใบเสร็จเต็ม
+  const { data: readings } = await supabase
+    .from("meter_readings")
+    .select("period, water_value, electric_value")
+    .eq("room_id", inv.room_id)
+    .lte("period", inv.period)
+    .order("period", { ascending: false })
+    .limit(2);
+  const curR = readings?.[0] as { water_value?: number; electric_value?: number } | undefined;
+  const prevR = readings?.[1] as { water_value?: number; electric_value?: number } | undefined;
+  const meter = (prev?: number, cur?: number, units?: number) =>
+    prev != null && cur != null
+      ? ` (เลขก่อน ${formatNumber(prev)} → เลขหลัง ${formatNumber(cur)} = ${formatNumber(units ?? 0)} หน่วย)`
+      : units
+        ? ` (${formatNumber(units)} หน่วย)`
+        : "";
 
   // รายละเอียดค่าใช้จ่าย (ผู้เช่าเห็นในแชทเลย ไม่ต้องกดลิงก์) — แสดงเฉพาะรายการที่มีค่า
-  const n = (v: unknown) => Number(v ?? 0);
   const { data: itemRows } = await supabase
     .from("invoice_items")
     .select("description, amount")
@@ -456,10 +474,14 @@ export async function sendInvoiceViaLine(
 
   const lines: string[] = [];
   if (n(inv.rent_amount) > 0) lines.push(`• ค่าเช่าห้อง ${formatBaht(n(inv.rent_amount))}`);
-  if (n(inv.water_amount) > 0 || n(inv.water_units) > 0)
-    lines.push(`• ค่าน้ำ${n(inv.water_units) > 0 ? ` (${n(inv.water_units)} หน่วย)` : ""} ${formatBaht(n(inv.water_amount))}`);
+  if (n(inv.water_amount) > 0 || n(inv.water_units) > 0) {
+    const wd = n(inv.occupant_count) > 0
+      ? ` (เหมาจ่าย ${formatNumber(n(inv.occupant_count))} คน)`
+      : meter(prevR?.water_value, curR?.water_value, n(inv.water_units));
+    lines.push(`• ค่าน้ำ${wd} ${formatBaht(n(inv.water_amount))}`);
+  }
   if (n(inv.electric_amount) > 0 || n(inv.electric_units) > 0)
-    lines.push(`• ค่าไฟฟ้า${n(inv.electric_units) > 0 ? ` (${n(inv.electric_units)} หน่วย)` : ""} ${formatBaht(n(inv.electric_amount))}`);
+    lines.push(`• ค่าไฟฟ้า${meter(prevR?.electric_value, curR?.electric_value, n(inv.electric_units))} ${formatBaht(n(inv.electric_amount))}`);
   if (n(inv.parking_amount) > 0) lines.push(`• ค่าจอดรถ ${formatBaht(n(inv.parking_amount))}`);
   if (n(inv.garbage_amount) > 0) lines.push(`• ค่าขยะ ${formatBaht(n(inv.garbage_amount))}`);
   if (items.length > 0) {
@@ -471,13 +493,15 @@ export async function sendInvoiceViaLine(
   }
   const breakdown = lines.length ? `${lines.join("\n")}\n─────────\n` : "";
 
-  const res = await pushMessage(tenant.line_user_id, [
-    textMessage(
-      `🧾 ใบแจ้งหนี้ ห้อง ${room}\nรอบ ${formatPeriod(inv.period)}\n\n${breakdown}ยอดที่ต้องชำระ ${formatBaht(
-        outstanding
-      )}\nครบกำหนด ${formatDate(inv.due_date)}\n\n👉 กดดูใบเสร็จเต็ม + สแกน QR ชำระเงิน:\n${link}\n\nโอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยครับ`
-    ),
-  ]);
+  // ใบเสร็จ (ชำระแล้ว) vs ใบแจ้งหนี้ (ค้างชำระ) — แยกหัว/ท้ายให้ผู้เช่าเห็นชัด
+  const head = paid
+    ? `✅ ใบเสร็จรับเงิน ห้อง ${room}\nรอบ ${formatPeriod(inv.period)}`
+    : `🧾 ใบแจ้งหนี้ ห้อง ${room}\nรอบ ${formatPeriod(inv.period)}`;
+  const foot = paid
+    ? `รวมชำระแล้ว ${formatBaht(n(inv.total_amount))} ✅\n\nขอบคุณที่ชำระเงินครับ 🙏\n👉 ดูใบเสร็จ:\n${link}`
+    : `ยอดที่ต้องชำระ ${formatBaht(outstanding)}\nครบกำหนด ${formatDate(inv.due_date)}\n\n👉 กดดูใบแจ้งหนี้ + สแกน QR ชำระเงิน:\n${link}\n\nโอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยครับ`;
+
+  const res = await pushMessage(tenant.line_user_id, [textMessage(`${head}\n\n${breakdown}${foot}`)]);
   if (!res.ok) return { error: "ส่งไม่สำเร็จ: " + (res.error ?? res.status) };
   return { ok: true };
 }

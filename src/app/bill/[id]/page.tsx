@@ -7,16 +7,33 @@ import {
   formatBaht,
   formatDate,
   formatPeriod,
+  formatNumber,
   INVOICE_STATUS_LABEL,
 } from "@/lib/format";
 import type { Invoice } from "@/lib/types";
 
 export const runtime = "nodejs";
 
-export const metadata = {
-  title: "ใบแจ้งหนี้ / ชำระเงิน",
-  robots: { index: false, follow: false },
-};
+/** ตรวจว่าบิลชำระครบแล้วหรือยัง (จาก status/ยอดคงเหลือ) */
+function isPaid(row: { status?: string; total_amount?: number; paid_amount?: number } | null): boolean {
+  if (!row) return false;
+  return row.status === "paid" || Number(row.total_amount) - Number(row.paid_amount) <= 0;
+}
+
+// title แสดงใน LINE (แถบเบราว์เซอร์) — แยกชัดว่าเป็นใบแจ้งหนี้ หรือ ใบเสร็จ
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("invoices")
+    .select("status, total_amount, paid_amount")
+    .eq("id", id)
+    .maybeSingle();
+  return {
+    title: isPaid(data) ? "ใบเสร็จรับเงิน · Chao-Dee" : "ใบแจ้งหนี้ · Chao-Dee",
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * หน้าบิลสาธารณะ — เปิดผ่านลิงก์ที่ส่งให้ผู้เช่าใน LINE OA
@@ -85,19 +102,47 @@ export default async function PublicBillPage({
   const outstanding = Number(inv.total_amount) - Number(inv.paid_amount);
   const paid = inv.status === "paid" || outstanding <= 0;
 
-  const rows: { label: string; amount: number }[] = [
-    { label: "ค่าเช่าห้อง", amount: Number(inv.rent_amount) },
-    { label: "ค่าน้ำ", amount: Number(inv.water_amount) },
-    { label: "ค่าไฟฟ้า", amount: Number(inv.electric_amount) },
+  // เลขมิเตอร์ก่อน/หลัง (จากการจดมิเตอร์) — แสดงในบิลเหมือนหน้าเจ้าของ
+  const { data: readings } = await supabase
+    .from("meter_readings")
+    .select("period, water_value, electric_value")
+    .eq("room_id", inv.room_id)
+    .lte("period", inv.period)
+    .order("period", { ascending: false })
+    .limit(2);
+  const curR = readings?.[0] as { water_value?: number; electric_value?: number } | undefined;
+  const prevR = readings?.[1] as { water_value?: number; electric_value?: number } | undefined;
+  const meterDetail = (prev?: number, cur?: number, units?: number) =>
+    prev != null && cur != null
+      ? `เลขก่อน ${formatNumber(prev)} → เลขหลัง ${formatNumber(cur)} = ${formatNumber(units ?? 0)} หน่วย`
+      : units
+        ? `${formatNumber(units)} หน่วย`
+        : "";
+
+  const rows: { label: string; detail: string; amount: number }[] = [
+    { label: "ค่าเช่าห้อง", detail: "", amount: Number(inv.rent_amount) },
+    {
+      label: "ค่าน้ำ",
+      detail:
+        Number(inv.occupant_count) > 0
+          ? `เหมาจ่าย ${formatNumber(inv.occupant_count)} คน`
+          : meterDetail(prevR?.water_value, curR?.water_value, Number(inv.water_units)),
+      amount: Number(inv.water_amount),
+    },
+    {
+      label: "ค่าไฟฟ้า",
+      detail: meterDetail(prevR?.electric_value, curR?.electric_value, Number(inv.electric_units)),
+      amount: Number(inv.electric_amount),
+    },
   ];
   // แสดงทุกรายการเสมอ ถ้าไม่มีค่าให้ขึ้น "-" เพื่อให้ผู้เช่าเห็นว่าไม่ได้ถูกเก็บ (ไม่ใช่ตกหล่น)
-  rows.push({ label: "ค่าจอดรถ", amount: Number(inv.parking_amount) });
-  rows.push({ label: "ค่าขยะ", amount: Number(inv.garbage_amount) });
+  rows.push({ label: "ค่าจอดรถ", detail: "", amount: Number(inv.parking_amount) });
+  rows.push({ label: "ค่าขยะ", detail: "", amount: Number(inv.garbage_amount) });
   if (items.length > 0) {
     // ค่าใช้จ่ายอื่นๆ แยกเป็นรายบรรทัด ผู้เช่าจะได้รู้ว่าโดนเก็บอะไร
-    items.forEach((it) => rows.push({ label: it.description, amount: Number(it.amount) }));
+    items.forEach((it) => rows.push({ label: it.description, detail: "", amount: Number(it.amount) }));
   } else {
-    rows.push({ label: "ค่าใช้จ่ายอื่นๆ", amount: Number(inv.other_amount) });
+    rows.push({ label: "ค่าใช้จ่ายอื่นๆ", detail: "", amount: Number(inv.other_amount) });
   }
 
   return (
@@ -105,12 +150,14 @@ export default async function PublicBillPage({
       <div className="mx-auto max-w-md">
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           {/* header */}
-          <div className="bg-indigo-600 px-6 py-5 text-white">
-            <p className="text-sm text-indigo-100">ใบแจ้งหนี้</p>
+          <div className={`px-6 py-5 text-white ${paid ? "bg-emerald-600" : "bg-indigo-600"}`}>
+            <p className={`text-sm font-medium ${paid ? "text-emerald-50" : "text-indigo-100"}`}>
+              {paid ? "ใบเสร็จรับเงิน / RECEIPT" : "ใบแจ้งหนี้ / INVOICE"}
+            </p>
             <h1 className="mt-0.5 text-lg font-bold">
               {org?.promptpay_name || org?.name || "หอพัก"}
             </h1>
-            <p className="mt-1 text-sm text-indigo-100">
+            <p className={`mt-1 text-sm ${paid ? "text-emerald-50" : "text-indigo-100"}`}>
               รอบ {formatPeriod(inv.period)} · เลขที่ #{inv.id.slice(0, 8).toUpperCase()}
             </p>
           </div>
@@ -136,9 +183,12 @@ export default async function PublicBillPage({
             {/* รายการ */}
             <div className="divide-y divide-slate-100 border-y border-slate-100">
               {rows.map((r, i) => (
-                <div key={i} className="flex justify-between py-2 text-sm">
-                  <span className={r.amount > 0 ? "text-slate-600" : "text-slate-400"}>{r.label}</span>
-                  <span className={r.amount > 0 ? "text-slate-900" : "text-slate-400"}>
+                <div key={i} className="flex justify-between gap-2 py-2 text-sm">
+                  <span className={r.amount > 0 ? "text-slate-600" : "text-slate-400"}>
+                    {r.label}
+                    {r.detail && <span className="ml-1 text-xs text-slate-400">({r.detail})</span>}
+                  </span>
+                  <span className={`shrink-0 ${r.amount > 0 ? "text-slate-900" : "text-slate-400"}`}>
                     {r.amount > 0 ? formatBaht(r.amount) : "-"}
                   </span>
                 </div>
@@ -158,7 +208,7 @@ export default async function PublicBillPage({
               <span className="text-base font-bold text-slate-900">
                 {paid ? "ยอดรวมสุทธิ" : "ยอดที่ต้องชำระ"}
               </span>
-              <span className="text-xl font-bold text-indigo-600">
+              <span className={`text-xl font-bold ${paid ? "text-emerald-600" : "text-indigo-600"}`}>
                 {formatBaht(paid ? inv.total_amount : outstanding)}
               </span>
             </div>

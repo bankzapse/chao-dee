@@ -17,10 +17,11 @@ export function PrintButton() {
   );
 }
 
-export function SendInvoiceLineButton({ invoiceId }: { invoiceId: string }) {
+export function SendInvoiceLineButton({ invoiceId, paid = false }: { invoiceId: string; paid?: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState("");
+  const label = paid ? "ส่งใบเสร็จผ่าน LINE" : "ส่งใบแจ้งหนี้ผ่าน LINE";
 
   return (
     <div className="no-print flex items-center gap-2">
@@ -40,7 +41,7 @@ export function SendInvoiceLineButton({ invoiceId }: { invoiceId: string }) {
           })
         }
       >
-        {pending ? "กำลังส่ง…" : "ส่งบิลผ่าน LINE"}
+        {pending ? "กำลังส่ง…" : label}
       </button>
     </div>
   );

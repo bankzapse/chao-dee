@@ -132,7 +132,7 @@ export default async function InvoiceDetailPage({
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <PrintButton />
-          <SendInvoiceLineButton invoiceId={inv.id} />
+          <SendInvoiceLineButton invoiceId={inv.id} paid={inv.status === "paid" || outstanding <= 0} />
           {inv.status !== "void" && (
             <>
               <EditInvoiceButton inv={inv} />

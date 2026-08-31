@@ -26,9 +26,18 @@ export function verifyLineSignature(rawBody: string, signature: string | null): 
   }
 }
 
+export type LineAction =
+  | { type: "postback"; label: string; data: string; displayText?: string }
+  | { type: "uri"; label: string; uri: string };
+
 export type LineMessage =
   | { type: "text"; text: string }
-  | { type: "image"; originalContentUrl: string; previewImageUrl: string };
+  | { type: "image"; originalContentUrl: string; previewImageUrl: string }
+  | {
+      type: "template";
+      altText: string;
+      template: { type: "buttons"; text: string; actions: LineAction[] };
+    };
 
 export function textMessage(text: string): LineMessage {
   return { type: "text", text };
@@ -36,6 +45,15 @@ export function textMessage(text: string): LineMessage {
 
 export function imageMessage(url: string, previewUrl?: string): LineMessage {
   return { type: "image", originalContentUrl: url, previewImageUrl: previewUrl ?? url };
+}
+
+/** ข้อความปุ่ม (buttons template) — text ≤ 160 ตัว, actions ≤ 4 (postback/uri) */
+export function buttonsMessage(altText: string, text: string, actions: LineAction[]): LineMessage {
+  return {
+    type: "template",
+    altText,
+    template: { type: "buttons", text: text.slice(0, 160), actions: actions.slice(0, 4) },
+  };
 }
 
 /** ดาวน์โหลดไฟล์แนบจากข้อความ LINE (เช่น รูปสลิป) — คืน Buffer + content-type */

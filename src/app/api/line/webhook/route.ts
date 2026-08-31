@@ -6,6 +6,7 @@ import {
   pushMessage,
   textMessage,
   imageMessage,
+  buttonsMessage,
   getLineContent,
   isLineConfigured,
   lineToken,
@@ -13,6 +14,8 @@ import {
 import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import { toLocalThai } from "@/lib/phone";
 import { isMaintenanceDetail } from "@/lib/line-commands";
+import { isSlipVerifyConfigured, verifySlipImage } from "@/lib/slip";
+import { buildInvoiceMessage } from "@/lib/invoice-message";
 
 export const runtime = "nodejs";
 
@@ -21,6 +24,7 @@ type LineEvent = {
   replyToken?: string;
   source?: { userId?: string };
   message?: { type: string; text?: string; id?: string };
+  postback?: { data?: string };
 };
 
 const HELP =
@@ -87,7 +91,7 @@ async function handleSlipImage(
     return;
   }
 
-  // ห้องจากสัญญา active (ใช้ในข้อความแจ้งเจ้าของ)
+  // ห้องจากสัญญา active + บิลค้างที่เก่าที่สุดของผู้เช่า
   const { data: contract } = await supabase
     .from("contracts")
     .select("rooms(room_number)")
@@ -96,6 +100,15 @@ async function handleSlipImage(
     .maybeSingle();
   const room =
     (contract?.rooms as unknown as { room_number?: string } | null)?.room_number ?? "-";
+  const { data: openInv } = await supabase
+    .from("invoices")
+    .select("id, total_amount, paid_amount")
+    .eq("tenant_id", tenant.id)
+    .in("status", ["unpaid", "partial"])
+    .order("period", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const outstanding = openInv ? Number(openInv.total_amount) - Number(openInv.paid_amount) : 0;
 
   // ตอบผู้เช่าว่าได้รับแล้ว
   await replyMessage(replyToken, [
@@ -104,11 +117,11 @@ async function handleSlipImage(
     ),
   ]);
 
-  // ดาวน์โหลดรูป + เก็บใน storage แล้วทำลิงก์ให้เจ้าของเปิดดู (best-effort)
+  // ดาวน์โหลดรูป (ใช้ทั้งเก็บไฟล์ + ตรวจสลิป)
+  const content = await getLineContent(messageId).catch(() => null);
   let slipLink = "";
-  try {
-    const content = await getLineContent(messageId);
-    if (content) {
+  if (content) {
+    try {
       const ext = content.contentType.includes("png") ? "png" : "jpg";
       const path = `line/${tenant.org_id}/${tenant.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
@@ -120,30 +133,110 @@ async function handleSlipImage(
           .createSignedUrl(path, 60 * 60 * 24 * 30); // 30 วัน
         slipLink = signed?.signedUrl ?? "";
       }
+    } catch {
+      // เงียบไว้ — ยังแจ้งเจ้าของด้วยข้อความได้แม้เก็บไฟล์ไม่สำเร็จ
     }
-  } catch {
-    // เงียบไว้ — ยังแจ้งเจ้าของด้วยข้อความได้แม้เก็บไฟล์ไม่สำเร็จ
   }
 
-  // แจ้งเจ้าของหอ
   const { data: org } = await supabase
     .from("organizations")
     .select("owner_line_user_id")
     .eq("id", tenant.org_id)
     .maybeSingle();
-  if (org?.owner_line_user_id) {
-    await pushMessage(org.owner_line_user_id, [
-      textMessage(
-        `💸 ผู้เช่าส่งสลิปการโอนเข้ามา\nห้อง ${room} · ${tenant.full_name}${
-          slipLink ? `\n\nดูสลิป: ${slipLink}` : ""
-        }\n\nตรวจสอบและบันทึกการชำระในแอป Chao-Dee`
-      ),
-    ]);
-    // ส่งรูปสลิปให้เจ้าของดูในแชทด้วย (ถ้าเก็บไฟล์สำเร็จ)
-    if (slipLink) {
-      await pushMessage(org.owner_line_user_id, [imageMessage(slipLink)]);
+  const owner = org?.owner_line_user_id;
+  if (!owner) return;
+
+  // Semi-auto: ถ้าตั้งค่าตรวจสลิป + มีบิลค้าง → ตรวจยอด แล้วแจ้งเจ้าของพร้อมปุ่มยืนยัน
+  if (isSlipVerifyConfigured() && content && openInv) {
+    const slip = await verifySlipImage(new Uint8Array(content.buffer).buffer as ArrayBuffer, content.contentType);
+    if (slip.ok && slip.amount != null) {
+      const match = slip.amount >= outstanding - 0.01;
+      const data = `action=confirm-pay&inv=${openInv.id}&ref=${encodeURIComponent(slip.transRef ?? "")}&amt=${slip.amount}`;
+      await pushMessage(owner, [
+        buttonsMessage(
+          `สลิปห้อง ${room}`,
+          `💸 สลิปโอน ห้อง ${room} · ${tenant.full_name}\nยอดโอน ${formatBaht(slip.amount)} · ค้าง ${formatBaht(outstanding)}\n${match ? "✅ ยอดตรง" : "⚠️ ยอดไม่ตรง — ตรวจก่อนยืนยัน"}`,
+          [{ type: "postback", label: "✅ ยืนยันชำระ + ส่งใบเสร็จ", data, displayText: "ยืนยันชำระ" }]
+        ),
+      ]);
+      if (slipLink) await pushMessage(owner, [imageMessage(slipLink)]);
+      return;
     }
   }
+
+  // ไม่ได้ตั้งค่าตรวจสลิป / ตรวจไม่สำเร็จ → แจ้งแบบข้อความให้เจ้าของบันทึกเอง (manual)
+  await pushMessage(owner, [
+    textMessage(
+      `💸 ผู้เช่าส่งสลิปการโอนเข้ามา\nห้อง ${room} · ${tenant.full_name}${
+        slipLink ? `\n\nดูสลิป: ${slipLink}` : ""
+      }\n\nตรวจสอบและบันทึกการชำระในแอป Chao-Dee`
+    ),
+  ]);
+  if (slipLink) await pushMessage(owner, [imageMessage(slipLink)]);
+}
+
+/** เจ้าของกดปุ่ม "ยืนยันชำระ" จากการแจ้งสลิป → mark ชำระ + ส่งใบเสร็จให้ผู้เช่า */
+async function handlePostback(
+  supabase: ReturnType<typeof createAdminClient>,
+  replyToken: string,
+  userId: string,
+  data: string
+) {
+  const params = new URLSearchParams(data);
+  if (params.get("action") !== "confirm-pay") return;
+  const invoiceId = params.get("inv") ?? "";
+  const transRef = params.get("ref") ?? "";
+  const amt = Number(params.get("amt") ?? 0);
+  if (!invoiceId) return;
+
+  const { data: inv } = await supabase
+    .from("invoices")
+    .select("id, org_id, total_amount, paid_amount, status")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (!inv) {
+    await replyMessage(replyToken, [textMessage("ไม่พบบิลนี้แล้ว")]);
+    return;
+  }
+  // เฉพาะเจ้าของ org ของบิลนี้เท่านั้นที่ยืนยันได้
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("owner_line_user_id")
+    .eq("id", inv.org_id)
+    .maybeSingle();
+  if (!org || org.owner_line_user_id !== userId) {
+    await replyMessage(replyToken, [textMessage("เฉพาะเจ้าของหอเท่านั้นที่ยืนยันการชำระได้")]);
+    return;
+  }
+  if (inv.status === "paid" || Number(inv.total_amount) - Number(inv.paid_amount) <= 0) {
+    await replyMessage(replyToken, [textMessage("บิลนี้ชำระครบแล้ว ✅")]);
+    return;
+  }
+
+  // กันใช้สลิปซ้ำ (unique org_id+trans_ref)
+  if (transRef) {
+    const { error: dupErr } = await supabase
+      .from("slip_txns")
+      .insert({ org_id: inv.org_id, invoice_id: invoiceId, trans_ref: transRef, amount: amt });
+    if (dupErr && dupErr.code === "23505") {
+      await replyMessage(replyToken, [textMessage("สลิปนี้ถูกใช้ยืนยันไปแล้ว ⚠️")]);
+      return;
+    }
+  }
+
+  // บันทึกชำระเต็มยอด + ปิดบิล
+  const outstanding = Number(inv.total_amount) - Number(inv.paid_amount);
+  const today = new Date().toISOString().slice(0, 10);
+  await supabase.from("payments").insert({ invoice_id: invoiceId, amount: outstanding, method: "transfer", paid_at: today });
+  await supabase.from("invoices").update({ paid_amount: Number(inv.total_amount), status: "paid" }).eq("id", invoiceId);
+
+  // ส่งใบเสร็จให้ผู้เช่า
+  const built = await buildInvoiceMessage(supabase, invoiceId);
+  if (built?.lineUserId) await pushMessage(built.lineUserId, [textMessage(built.text)]);
+
+  await replyMessage(replyToken, [
+    textMessage(`บันทึกชำระ ${formatBaht(outstanding)} + ส่งใบเสร็จให้ผู้เช่าแล้ว ✅`),
+  ]);
 }
 
 export async function POST(req: Request) {
@@ -174,9 +267,15 @@ export async function POST(req: Request) {
       continue;
     }
 
-    // ผู้เช่าส่งรูป (สลิปการโอน) → เก็บไว้ + แจ้งเจ้าของหอทันที
+    // ผู้เช่าส่งรูป (สลิปการโอน) → เก็บไว้ + ตรวจสลิป + แจ้งเจ้าของหอ
     if (event.type === "message" && event.message?.type === "image" && userId) {
       await handleSlipImage(supabase, replyToken, userId, event.message.id ?? "");
+      continue;
+    }
+
+    // เจ้าของกดปุ่มยืนยันชำระ (จากการแจ้งสลิป)
+    if (event.type === "postback" && userId) {
+      await handlePostback(supabase, replyToken, userId, event.postback?.data ?? "");
       continue;
     }
 

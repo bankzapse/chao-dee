@@ -427,7 +427,7 @@ export async function sendInvoiceViaLine(
   const { data: inv } = await supabase
     .from("invoices")
     .select(
-      "period, total_amount, paid_amount, due_date, tenants(full_name, line_user_id), rooms(room_number)"
+      "period, rent_amount, water_units, water_amount, electric_units, electric_amount, parking_amount, garbage_amount, other_amount, total_amount, paid_amount, due_date, tenants(full_name, line_user_id), rooms(room_number)"
     )
     .eq("id", invoiceId)
     .single();
@@ -445,11 +445,37 @@ export async function sendInvoiceViaLine(
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.chao-dee.com").replace(/\/$/, "");
   const link = `${baseUrl}/bill/${invoiceId}`;
 
+  // รายละเอียดค่าใช้จ่าย (ผู้เช่าเห็นในแชทเลย ไม่ต้องกดลิงก์) — แสดงเฉพาะรายการที่มีค่า
+  const n = (v: unknown) => Number(v ?? 0);
+  const { data: itemRows } = await supabase
+    .from("invoice_items")
+    .select("description, amount")
+    .eq("invoice_id", invoiceId)
+    .order("created_at", { ascending: true });
+  const items = (itemRows ?? []) as { description: string; amount: number }[];
+
+  const lines: string[] = [];
+  if (n(inv.rent_amount) > 0) lines.push(`• ค่าเช่าห้อง ${formatBaht(n(inv.rent_amount))}`);
+  if (n(inv.water_amount) > 0 || n(inv.water_units) > 0)
+    lines.push(`• ค่าน้ำ${n(inv.water_units) > 0 ? ` (${n(inv.water_units)} หน่วย)` : ""} ${formatBaht(n(inv.water_amount))}`);
+  if (n(inv.electric_amount) > 0 || n(inv.electric_units) > 0)
+    lines.push(`• ค่าไฟฟ้า${n(inv.electric_units) > 0 ? ` (${n(inv.electric_units)} หน่วย)` : ""} ${formatBaht(n(inv.electric_amount))}`);
+  if (n(inv.parking_amount) > 0) lines.push(`• ค่าจอดรถ ${formatBaht(n(inv.parking_amount))}`);
+  if (n(inv.garbage_amount) > 0) lines.push(`• ค่าขยะ ${formatBaht(n(inv.garbage_amount))}`);
+  if (items.length > 0) {
+    items.forEach((it) => {
+      if (n(it.amount) !== 0) lines.push(`• ${it.description} ${formatBaht(n(it.amount))}`);
+    });
+  } else if (n(inv.other_amount) > 0) {
+    lines.push(`• ค่าใช้จ่ายอื่นๆ ${formatBaht(n(inv.other_amount))}`);
+  }
+  const breakdown = lines.length ? `${lines.join("\n")}\n─────────\n` : "";
+
   const res = await pushMessage(tenant.line_user_id, [
     textMessage(
-      `🧾 ใบแจ้งหนี้ ห้อง ${room}\nรอบ ${formatPeriod(inv.period)}\n\nยอดที่ต้องชำระ ${formatBaht(
+      `🧾 ใบแจ้งหนี้ ห้อง ${room}\nรอบ ${formatPeriod(inv.period)}\n\n${breakdown}ยอดที่ต้องชำระ ${formatBaht(
         outstanding
-      )}\nครบกำหนด ${formatDate(inv.due_date)}\n\n👉 กดดูรายละเอียด + สแกน QR ชำระเงิน:\n${link}\n\nโอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยครับ`
+      )}\nครบกำหนด ${formatDate(inv.due_date)}\n\n👉 กดดูใบเสร็จเต็ม + สแกน QR ชำระเงิน:\n${link}\n\nโอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยครับ`
     ),
   ]);
   if (!res.ok) return { error: "ส่งไม่สำเร็จ: " + (res.error ?? res.status) };

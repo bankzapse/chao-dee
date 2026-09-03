@@ -14,7 +14,7 @@ import {
 import { formatBaht, formatDate, formatPeriod } from "@/lib/format";
 import { toLocalThai } from "@/lib/phone";
 import { isMaintenanceDetail } from "@/lib/line-commands";
-import { isSlipVerifyConfigured, verifySlipImage } from "@/lib/slip";
+import { isSlipReadable, readSlip } from "@/lib/slip";
 import { buildInvoiceMessage } from "@/lib/invoice-message";
 
 export const runtime = "nodejs";
@@ -147,15 +147,16 @@ async function handleSlipImage(
   if (!owner) return;
 
   // Semi-auto: ถ้าตั้งค่าตรวจสลิป + มีบิลค้าง → ตรวจยอด แล้วแจ้งเจ้าของพร้อมปุ่มยืนยัน
-  if (isSlipVerifyConfigured() && content && openInv) {
-    const slip = await verifySlipImage(new Uint8Array(content.buffer).buffer as ArrayBuffer, content.contentType);
+  if (isSlipReadable() && content && openInv) {
+    const slip = await readSlip(new Uint8Array(content.buffer).buffer as ArrayBuffer, content.contentType);
     if (slip.ok && slip.amount != null) {
       const match = slip.amount >= outstanding - 0.01;
+      const aiNote = slip.method === "ai" ? "\n🔎 อ่านยอดด้วย AI — โปรดดูรูปสลิปก่อนยืนยัน" : "";
       const data = `action=confirm-pay&inv=${openInv.id}&ref=${encodeURIComponent(slip.transRef ?? "")}&amt=${slip.amount}`;
       await pushMessage(owner, [
         buttonsMessage(
           `สลิปห้อง ${room}`,
-          `💸 สลิปโอน ห้อง ${room} · ${tenant.full_name}\nยอดโอน ${formatBaht(slip.amount)} · ค้าง ${formatBaht(outstanding)}\n${match ? "✅ ยอดตรง" : "⚠️ ยอดไม่ตรง — ตรวจก่อนยืนยัน"}`,
+          `💸 สลิปโอน ห้อง ${room} · ${tenant.full_name}\nยอดโอน ${formatBaht(slip.amount)} · ค้าง ${formatBaht(outstanding)}\n${match ? "✅ ยอดตรง" : "⚠️ ยอดไม่ตรง — ตรวจก่อนยืนยัน"}${aiNote}`,
           [{ type: "postback", label: "✅ ยืนยันชำระ + ส่งใบเสร็จ", data, displayText: "ยืนยันชำระ" }]
         ),
       ]);

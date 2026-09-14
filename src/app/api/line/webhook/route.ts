@@ -165,15 +165,24 @@ async function handleSlipImage(
     }
   }
 
-  // ไม่ได้ตั้งค่าตรวจสลิป / ตรวจไม่สำเร็จ → แจ้งแบบข้อความให้เจ้าของบันทึกเอง (manual)
-  await pushMessage(owner, [
-    textMessage(
-      `💸 ผู้เช่าส่งสลิปการโอนเข้ามา\nห้อง ${room} · ${tenant.full_name}${
-        slipLink ? `\n\nดูสลิป: ${slipLink}` : ""
-      }\n\nตรวจสอบและบันทึกการชำระในแอป Chao-Dee`
-    ),
-  ]);
+  // ไม่มี reader (หรืออ่านยอดไม่ได้) → ส่งรูปสลิป + ปุ่มยืนยัน ให้เจ้าของอ่านยอดจากรูปเอง (semi-auto แบบฟรี)
   if (slipLink) await pushMessage(owner, [imageMessage(slipLink)]);
+  if (openInv) {
+    const data = `action=confirm-pay&inv=${openInv.id}&ref=&amt=${outstanding}`;
+    await pushMessage(owner, [
+      buttonsMessage(
+        `สลิปห้อง ${room}`,
+        `💸 สลิปโอน ห้อง ${room} · ${tenant.full_name}\nยอดค้าง ${formatBaht(outstanding)}\n\nโปรดดูรูปสลิปด้านบน ตรวจยอดให้ตรงก่อนกดยืนยัน`,
+        [{ type: "postback", label: "✅ ยืนยันชำระ + ส่งใบเสร็จ", data, displayText: "ยืนยันชำระ" }]
+      ),
+    ]);
+  } else {
+    await pushMessage(owner, [
+      textMessage(
+        `💸 ผู้เช่าส่งสลิป\nห้อง ${room} · ${tenant.full_name}\n\n(ไม่พบบิลค้างของห้องนี้ — ตรวจในแอป Chao-Dee)`
+      ),
+    ]);
+  }
 }
 
 /** เจ้าของกดปุ่ม "ยืนยันชำระ" จากการแจ้งสลิป → mark ชำระ + ส่งใบเสร็จให้ผู้เช่า */

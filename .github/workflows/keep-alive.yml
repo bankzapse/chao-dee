@@ -1,0 +1,19 @@
+name: Keep Supabase alive
+
+# กัน Supabase free pause (pause เมื่อไม่มี activity 7 วัน) — ยิง /api/health ทุก 3 วัน
+# /api/health แตะ DB (query platform_settings) → นับเป็น activity → ไม่ pause
+on:
+  schedule:
+    - cron: "0 0 */3 * *" # ทุก 3 วัน เที่ยงคืน UTC
+  workflow_dispatch: {} # กดรันเองได้จากแท็บ Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          echo "Pinging chao-dee health…"
+          curl -sf --max-time 30 https://www.chao-dee.com/api/health && echo "OK" || {
+            echo "health check failed"; exit 1;
+          }

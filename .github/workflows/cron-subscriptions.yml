@@ -1,0 +1,23 @@
+name: Cron — subscriptions (รายวัน)
+
+# แทน Vercel cron เดิม ("0 1 * * *" ใน vercel.json) หลังย้าย host ไป Netlify
+# auto-expire แพ็คเกจ + แจ้งเตือนใกล้หมดอายุ
+# endpoint ป้องกันด้วย Authorization: Bearer ${CRON_SECRET}
+on:
+  schedule:
+    - cron: "0 1 * * *" # 01:00 UTC = 08:00 ไทย ทุกวัน
+  workflow_dispatch: {} # กดรันเองได้จากแท็บ Actions
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit subscriptions cron
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://www.chao-dee.com/api/cron/subscriptions)
+          echo "HTTP $code"
+          [ "$code" = "200" ] || { echo "cron failed"; exit 1; }
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

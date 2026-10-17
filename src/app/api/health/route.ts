@@ -4,7 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const VERSION = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || "dev";
+// รองรับทั้ง Vercel (VERCEL_GIT_COMMIT_SHA) และ Netlify (COMMIT_REF)
+const VERSION =
+  (process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_REF)?.slice(0, 7) || "dev";
 
 async function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T | null> {
   return Promise.race([

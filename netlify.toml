@@ -1,0 +1,16 @@
+# Netlify config สำหรับ chao-dee (Next.js 16 App Router)
+# DB/Storage/Auth ยังอยู่ Supabase (WebHub) เหมือนเดิม — ที่นี่แค่ host ตัวเว็บ
+#
+# @netlify/plugin-nextjs (Next Runtime v5) จัดการ SSR / API routes / server actions
+# Netlify auto-install adapter ตัวล่าสุดให้เอง (อย่า pin เวอร์ชัน — ตามคำแนะนำ Netlify)
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Next.js 16 ต้องการ Node 20.9+ — ใช้ 22 LTS ที่ Netlify รองรับเต็ม
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
